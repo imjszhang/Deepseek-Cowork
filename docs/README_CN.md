@@ -1,19 +1,29 @@
-# DeepSeek Cowork
+<h1 align="center">DeepSeek Cowork</h1>
 
-<div align="center">
+<p align="center">
+<a href="https://deepseek-cowork.com">
+  <img width="1280" height="640" alt="DeepSeek Cowork banner" src="./images/preview.png">
+</a>
+</p>
 
-**Claude Cowork 的开源平替**
+<p align="center">
+  <a href="https://opensource.org/licenses/MIT">
+    <img src="https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square" alt="License: MIT" />
+  </a>
+  <a href="https://github.com/imjszhang/deepseek-cowork">
+    <img src="https://img.shields.io/badge/Version-0.1.0-blue.svg?style=flat-square" alt="Version" />
+  </a>
+  <a href="https://www.electronjs.org/">
+    <img src="https://img.shields.io/badge/Electron-28.x-47848F?style=flat-square&logo=electron" alt="Electron" />
+  </a>
+  <a href="https://nodejs.org/">
+    <img src="https://img.shields.io/badge/Node.js-18+-339933?style=flat-square&logo=node.js" alt="Node.js" />
+  </a>
+</p>
 
-用 DeepSeek 实现 Claude Cowork 的所有功能
-
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
-[![Version](https://img.shields.io/badge/Version-0.1.0-blue.svg)](https://github.com/imjszhang/deepseek-cowork)
-[![Electron](https://img.shields.io/badge/Electron-28.x-47848F?logo=electron)](https://www.electronjs.org/)
-[![Node.js](https://img.shields.io/badge/Node.js-18+-339933?logo=node.js)](https://nodejs.org/)
-
-[English](../README.md) | 中文
-
-</div>
+<p align="center">
+  <a href="../README.md">English</a> | 中文
+</p>
 
 ---
 
