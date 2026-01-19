@@ -735,6 +735,17 @@ class AccountSetup {
     try {
       console.log('[AccountSetup] Saving secret...');
       
+      // 显示 loading 状态：禁用所有按钮
+      if (this.elements.btnBackupContinue) {
+        this.elements.btnBackupContinue.disabled = true;
+        this.elements.btnBackupContinue.textContent = t('notifications.initializingAccount');
+      }
+      if (this.elements.btnBackupCancel) {
+        this.elements.btnBackupCancel.disabled = true;
+      }
+      // 显示通知提示用户正在处理
+      this.showNotification(t('notifications.initializingAccount'), 'info');
+      
       const result = await window.browserControlManager?.saveHappySecret?.(this.pendingSecret.base64url);
       
       if (result?.success) {
@@ -749,6 +760,15 @@ class AccountSetup {
     } catch (error) {
       console.error('[AccountSetup] confirmBackupAndSave error:', error);
       this.showNotification(t('notifications.saveFailed') + ': ' + error.message, 'error');
+    } finally {
+      // 恢复按钮状态
+      if (this.elements.btnBackupContinue) {
+        this.elements.btnBackupContinue.disabled = false;
+        this.elements.btnBackupContinue.textContent = t('dialogs.secretBackup.confirmContinue');
+      }
+      if (this.elements.btnBackupCancel) {
+        this.elements.btnBackupCancel.disabled = false;
+      }
     }
   }
 
@@ -852,7 +872,7 @@ class AccountSetup {
     
     const t = typeof I18nManager !== 'undefined' ? I18nManager.t.bind(I18nManager) : (k) => k;
     try {
-      // 显示验证中状态
+      // 显示验证中状态，禁用所有按钮
       if (this.elements.secretInputStatus) {
         this.elements.secretInputStatus.textContent = t('notifications.connectingServer');
         this.elements.secretInputStatus.className = 'input-status validating';
@@ -861,11 +881,23 @@ class AccountSetup {
         this.elements.btnSecretInputVerify.disabled = true;
         this.elements.btnSecretInputVerify.textContent = t('common.verifying');
       }
+      if (this.elements.btnSecretInputCancel) {
+        this.elements.btnSecretInputCancel.disabled = true;
+      }
+      if (this.elements.secretInputCloseBtn) {
+        this.elements.secretInputCloseBtn.disabled = true;
+      }
       
       // 验证 Secret 有效性（连接服务器）
       const verifyResult = await window.browserControlManager?.verifyHappySecret?.(input);
       
       if (verifyResult?.success) {
+        // 更新状态：正在初始化账户（服务启动阶段）
+        if (this.elements.secretInputStatus) {
+          this.elements.secretInputStatus.textContent = t('notifications.initializingAccount');
+          this.elements.secretInputStatus.className = 'input-status validating';
+        }
+        
         // 保存 Secret（传递 token 以便同步到 ~/.happy/access.key）
         const saveResult = await window.browserControlManager?.saveHappySecret?.(verifyResult.normalized, verifyResult.token);
         
@@ -895,9 +927,16 @@ class AccountSetup {
         this.elements.secretInputStatus.className = 'input-status invalid';
       }
     } finally {
+      // 恢复所有按钮状态
       if (this.elements.btnSecretInputVerify) {
         this.elements.btnSecretInputVerify.disabled = false;
         this.elements.btnSecretInputVerify.textContent = t('notifications.verifyAndLogin');
+      }
+      if (this.elements.btnSecretInputCancel) {
+        this.elements.btnSecretInputCancel.disabled = false;
+      }
+      if (this.elements.secretInputCloseBtn) {
+        this.elements.secretInputCloseBtn.disabled = false;
       }
     }
   }
