@@ -1386,7 +1386,10 @@ class ExplorerModule {
 
   renderHtmlPreview(htmlContent) {
     const iframe = this.elements.filePreviewIframe;
-    if (!iframe) return;
+    if (!iframe) {
+      console.warn('[ExplorerModule] renderHtmlPreview: iframe element not found');
+      return;
+    }
 
     if (this._previewBlobUrl) {
       URL.revokeObjectURL(this._previewBlobUrl);
@@ -1394,9 +1397,18 @@ class ExplorerModule {
     }
 
     if (this.filePreviewPath) {
-      // 检测运行环境
-      const isWebMode = typeof window.browserControlManager?._isPolyfill === 'boolean' && 
-                        window.browserControlManager._isPolyfill === true;
+      // 检测运行环境：优先检查 apiAdapter 是否存在且连接（更可靠）
+      const hasApiAdapter = window.apiAdapter && typeof window.apiAdapter.isConnected === 'function';
+      const isWebMode = hasApiAdapter || 
+                        (typeof window.browserControlManager?._isPolyfill === 'boolean' && 
+                         window.browserControlManager._isPolyfill === true);
+      
+      console.log('[ExplorerModule] renderHtmlPreview:', {
+        filePath: this.filePreviewPath,
+        isWebMode,
+        hasApiAdapter,
+        baseUrl: window.apiAdapter?._baseUrl
+      });
       
       if (isWebMode) {
         // Web 模式：使用 HTTP 代理服务文件
@@ -1405,6 +1417,7 @@ class ExplorerModule {
         const filePath = this.filePreviewPath.replace(/\\/g, '/');
         const serveUrl = `${baseUrl}/api/files/serve?path=${encodeURIComponent(filePath)}`;
         
+        console.log('[ExplorerModule] Using serve URL:', serveUrl);
         iframe.src = serveUrl;
         iframe.style.display = 'block';
         return;
@@ -1415,6 +1428,7 @@ class ExplorerModule {
           ? `file:///${filePath}` 
           : `file://${filePath}`;
         
+        console.log('[ExplorerModule] Using file:// URL:', fileUrl);
         iframe.src = fileUrl;
         iframe.style.display = 'block';
         return;
@@ -1423,6 +1437,7 @@ class ExplorerModule {
 
     // 如果只有内容没有文件路径，使用 srcdoc
     if (htmlContent) {
+      console.log('[ExplorerModule] Using srcdoc for preview');
       iframe.srcdoc = htmlContent;
       iframe.style.display = 'block';
     }
