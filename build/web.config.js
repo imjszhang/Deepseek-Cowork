@@ -213,6 +213,14 @@ async function build() {
         console.log('\n  ✓ icons');
     }
     
+    // 复制 favicon.ico 到 app 根目录
+    const faviconSrc = path.join(__dirname, '../icons/icon.ico');
+    const faviconDest = path.join(OUT_DIR, 'favicon.ico');
+    if (fs.existsSync(faviconSrc)) {
+        fs.copyFileSync(faviconSrc, faviconDest);
+        console.log('  ✓ favicon.ico');
+    }
+    
     // 创建 .nojekyll 文件（用于 GitHub Pages）
     fs.writeFileSync(path.join(OUT_DIR, '.nojekyll'), '', 'utf8');
     
