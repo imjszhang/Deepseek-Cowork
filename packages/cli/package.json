@@ -6,8 +6,8 @@
   "license": "MIT",
   "type": "module",
   "bin": {
-    "deepseek-cowork": "./bin/cli.mjs",
-    "dsc": "./bin/cli.mjs"
+    "deepseek-cowork": "bin/cli.mjs",
+    "dsc": "bin/cli.mjs"
   },
   "main": "./index.mjs",
   "files": [
@@ -30,7 +30,11 @@
   "scripts": {
     "start": "node bin/cli.mjs start",
     "dev": "node bin/cli.mjs start --debug",
-    "link": "npm link"
+    "link": "npm link",
+    "prepublishOnly": "echo 准备发布...",
+    "version:patch": "npm version patch",
+    "version:minor": "npm version minor",
+    "version:major": "npm version major"
   },
   "dependencies": {
     "chalk": "^5.3.0",
@@ -43,10 +47,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/imjszhang/deepseek-cowork.git"
+    "url": "git+https://github.com/imjszhang/deepseek-cowork.git"
   },
   "homepage": "https://deepseek-cowork.com",
   "bugs": {
     "url": "https://github.com/imjszhang/deepseek-cowork/issues"
+  },
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org",
+    "access": "public"
   }
 }
