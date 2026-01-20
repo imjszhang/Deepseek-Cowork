@@ -384,8 +384,11 @@ class BrowserControlModule {
     
     // 加载历史日志
     const logs = await this.getServerLogs(100);
-    logs?.forEach(log => this.app?.appendLog?.(log, false));
-    this.app?.scrollLogsToBottom?.();
+    // 确保 logs 是数组
+    if (Array.isArray(logs)) {
+      logs.forEach(log => this.app?.appendLog?.(log, false));
+      this.app?.scrollLogsToBottom?.();
+    }
     
     // 获取扩展连接数
     await this.refreshExtensionConnections();
