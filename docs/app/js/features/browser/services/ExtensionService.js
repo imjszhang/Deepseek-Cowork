@@ -61,7 +61,15 @@ class ExtensionService {
    */
   async fetchConnections() {
     try {
-      const connections = await window.browserControlManager.getExtensionConnections();
+      const result = await window.browserControlManager.getExtensionConnections();
+      // 处理不同的返回格式
+      let connections = 0;
+      if (typeof result === 'number') {
+        connections = result;
+      } else if (result && typeof result.connections === 'number') {
+        connections = result.connections;
+      }
+      
       this.connections = connections;
       
       // 通知模块更新 UI

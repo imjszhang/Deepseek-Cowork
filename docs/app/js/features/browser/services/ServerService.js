@@ -80,8 +80,15 @@ class ServerService {
    */
   async getLogs(count = 100) {
     try {
-      const logs = await window.browserControlManager.getServerLogs(count);
-      return logs || [];
+      const result = await window.browserControlManager.getServerLogs(count);
+      // 处理不同的返回格式
+      if (Array.isArray(result)) {
+        return result;
+      }
+      if (result && Array.isArray(result.logs)) {
+        return result.logs;
+      }
+      return [];
     } catch (error) {
       console.error('[ServerService] Failed to get server logs:', error);
       return [];
