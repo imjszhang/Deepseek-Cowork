@@ -1,0 +1,311 @@
+/**
+ * Statusbar Layout - Unified Style
+ * 底部状态栏样式 - 统一格式：标签 ● 状态值
+ */
+
+/* ===== 状态栏容器 ===== */
+#status-bar {
+  height: var(--statusbar-height);
+  min-height: var(--statusbar-height);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 0.75rem;
+  background: var(--card);
+  border-top: 1px solid var(--border);
+  font-size: 0.6875rem;
+  color: var(--muted-foreground);
+  z-index: 100;
+}
+
+#status-left,
+#status-center,
+#status-right {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+/* ===== 统一状态项容器 ===== */
+.status-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+/* ===== 状态标签 ===== */
+.status-label {
+  color: var(--muted-foreground);
+  font-size: 0.6875rem;
+}
+
+/* ===== 状态值 ===== */
+.status-value {
+  color: var(--muted-foreground);
+  font-size: 0.6875rem;
+  font-weight: 500;
+}
+
+/* ===== 统一状态圆点 ===== */
+.status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--muted-foreground);
+  flex-shrink: 0;
+  transition: background 150ms ease, box-shadow 150ms ease;
+}
+
+/* ===== 状态颜色类 ===== */
+
+/* 成功/运行/在线/已连接 */
+.status-dot.state-success,
+.status-dot.state-running,
+.status-dot.state-online,
+.status-dot.state-connected,
+.status-dot.state-ready {
+  background: var(--success);
+}
+
+/* 警告/处理中/连接中 */
+.status-dot.state-warning,
+.status-dot.state-starting,
+.status-dot.state-processing,
+.status-dot.state-connecting,
+.status-dot.state-reconnecting,
+.status-dot.state-thinking,
+.status-dot.state-waiting {
+  background: var(--warning);
+  animation: statusPulse 1.5s ease-in-out infinite;
+}
+
+/* 错误/停止 */
+.status-dot.state-error,
+.status-dot.state-stopped {
+  background: var(--destructive);
+}
+
+/* 空闲/离线/未连接 */
+.status-dot.state-idle,
+.status-dot.state-offline,
+.status-dot.state-disconnected {
+  background: var(--muted-foreground);
+}
+
+/* 静态状态（如 Mode）*/
+.status-dot.state-static {
+  background: var(--muted-foreground);
+  opacity: 0.5;
+}
+
+/* ===== 状态动画 ===== */
+@keyframes statusPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+/* ===== 状态值颜色跟随 ===== */
+.status-item.running .status-value,
+.status-item.online .status-value,
+.status-item.connected .status-value {
+  color: var(--success);
+}
+
+.status-item.starting .status-value,
+.status-item.processing .status-value,
+.status-item.connecting .status-value,
+.status-item.reconnecting .status-value {
+  color: var(--warning);
+}
+
+.status-item.stopped .status-value,
+.status-item.error .status-value {
+  color: var(--destructive);
+}
+
+/* ===== 端口信息样式 ===== */
+.info-item code {
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+  font-size: 0.625rem;
+  background: var(--muted);
+  padding: 0.0625rem 0.25rem;
+  border-radius: 0.1875rem;
+  color: var(--muted-foreground);
+}
+
+/* ===== 分隔符 ===== */
+.info-divider {
+  color: var(--border);
+}
+
+/* ===== 扩展数量指示器 ===== */
+.extension-count {
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+  font-size: 0.625rem;
+  font-weight: 600;
+  background: var(--muted);
+  padding: 0.0625rem 0.375rem;
+  border-radius: 0.625rem;
+  color: var(--muted-foreground);
+  transition: all 150ms ease;
+}
+
+.extension-count.connected {
+  color: var(--success);
+  background: hsl(142 76% 36% / 0.15);
+}
+
+/* ===== 向后兼容的旧类名映射 ===== */
+
+/* 兼容旧的 ai-dot 类 */
+.ai-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--muted-foreground);
+  flex-shrink: 0;
+  transition: background 150ms ease;
+}
+
+.ai-dot.connected {
+  background: var(--success);
+}
+
+.ai-dot.disconnected {
+  background: var(--muted-foreground);
+}
+
+/* 兼容旧的 event-status-dot 类 */
+.event-status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--muted-foreground);
+  flex-shrink: 0;
+  transition: background 150ms ease;
+}
+
+.event-status-dot.event-status-idle {
+  background: var(--muted-foreground);
+}
+
+.event-status-dot.event-status-ready {
+  background: var(--success);
+}
+
+.event-status-dot.event-status-processing,
+.event-status-dot.event-status-thinking,
+.event-status-dot.event-status-waiting {
+  background: var(--warning);
+  animation: statusPulse 1.5s ease-in-out infinite;
+}
+
+.event-status-dot.event-status-disconnected {
+  background: var(--destructive);
+}
+
+/* 兼容旧的 explorer-status 类 */
+.explorer-status .explorer-status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--muted-foreground);
+  flex-shrink: 0;
+  transition: background 150ms ease;
+}
+
+.explorer-status.online .explorer-status-dot,
+.explorer-status.online .status-dot {
+  background: var(--success);
+}
+
+.explorer-status.connecting .explorer-status-dot,
+.explorer-status.connecting .status-dot {
+  background: var(--warning);
+  animation: statusPulse 1.5s ease-in-out infinite;
+}
+
+.explorer-status.reconnecting .explorer-status-dot,
+.explorer-status.reconnecting .status-dot {
+  background: var(--warning);
+  animation: statusPulse 1.5s ease-in-out infinite;
+}
+
+.explorer-status.offline .explorer-status-dot,
+.explorer-status.offline .status-dot {
+  background: var(--muted-foreground);
+}
+
+/* ===== 可点击状态项 ===== */
+.status-clickable {
+  cursor: pointer;
+  padding: 0.125rem 0.375rem;
+  border-radius: 0.25rem;
+  transition: background 150ms ease, color 150ms ease;
+}
+
+.status-clickable:hover {
+  background: var(--muted);
+  color: var(--foreground);
+}
+
+.status-clickable:hover .status-icon svg {
+  stroke: var(--foreground);
+}
+
+.status-clickable:active {
+  background: var(--border);
+}
+
+/* ===== 状态栏图标 ===== */
+.status-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.status-icon svg {
+  stroke: var(--muted-foreground);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  fill: none;
+  transition: stroke 150ms ease;
+}
+
+/* ===== 路径显示样式（支持截断） ===== */
+.status-path {
+  max-width: 280px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  direction: rtl;
+  text-align: left;
+  unicode-bidi: plaintext;
+}
+
+/* 响应式：窄屏时减小路径显示宽度 */
+@media (max-width: 1000px) {
+  .status-path {
+    max-width: 200px;
+  }
+}
+
+@media (max-width: 800px) {
+  .status-path {
+    max-width: 140px;
+  }
+}
+
+@media (max-width: 600px) {
+  .status-path {
+    max-width: 100px;
+  }
+}
+
+/* 极窄屏幕时隐藏路径，只显示图标 */
+@media (max-width: 480px) {
+  .status-path {
+    display: none;
+  }
+}

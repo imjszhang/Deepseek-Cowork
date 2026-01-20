@@ -1,0 +1,147 @@
+/**
+ * Titlebar Layout - Shadcn/UI Style
+ * 标题栏样式
+ */
+
+/* ===== 标题栏 ===== */
+#titlebar {
+  height: var(--titlebar-height);
+  min-height: var(--titlebar-height);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0;
+  background: var(--card);
+  border-bottom: 1px solid var(--border);
+  -webkit-app-region: drag;
+  z-index: 100;
+  user-select: none;
+}
+
+.titlebar-section {
+  display: flex;
+  align-items: center;
+  height: 100%;
+  -webkit-app-region: no-drag;
+}
+
+/* 中间区域 - 拖拽 + 状态 */
+#titlebar-center {
+  flex: 1;
+  justify-content: center;
+  -webkit-app-region: drag;
+  padding: 0 0.5rem;
+}
+
+/* macOS 控制按钮区 */
+#titlebar-macos-controls {
+  padding-left: 0.75rem;
+  gap: 0.5rem;
+  display: none;
+}
+
+/* Windows/Linux 控制按钮区 */
+#titlebar-win-controls {
+  display: none;
+}
+
+/* 平台特定显示 */
+body.platform-darwin #titlebar-macos-controls {
+  display: flex;
+}
+
+body.platform-win32 #titlebar-win-controls,
+body.platform-linux #titlebar-win-controls {
+  display: flex;
+}
+
+/* ===== macOS 风格窗口按钮 ===== */
+.window-btn.macos {
+  width: 0.75rem;
+  height: 0.75rem;
+  border-radius: 50%;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.1s ease;
+}
+
+.window-btn.macos .btn-icon-inner {
+  display: none;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 0.5rem;
+  font-weight: bold;
+  color: rgba(0, 0, 0, 0.5);
+}
+
+.window-btn.macos.close {
+  background: #ff5f57;
+}
+
+.window-btn.macos.minimize {
+  background: #febc2e;
+}
+
+.window-btn.macos.maximize {
+  background: #28c840;
+}
+
+/* macOS 按钮悬停效果 */
+#titlebar-macos-controls:hover .window-btn.macos .btn-icon-inner {
+  display: block;
+}
+
+.window-btn.macos.close .btn-icon-inner::before {
+  content: "×";
+}
+
+.window-btn.macos.minimize .btn-icon-inner::before {
+  content: "−";
+}
+
+.window-btn.macos.maximize .btn-icon-inner::before {
+  content: "+";
+}
+
+/* 非活动窗口状态 */
+body.window-inactive .window-btn.macos {
+  background: #ddd;
+}
+
+/* 深色主题非活动状态 */
+.dark.window-inactive .window-btn.macos {
+  background: #555;
+}
+
+/* ===== Windows/Linux 风格窗口按钮 ===== */
+.window-btn.win {
+  width: 2.875rem;
+  height: var(--titlebar-height);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  color: var(--muted-foreground);
+  cursor: pointer;
+  transition: background 0.1s ease;
+}
+
+.window-btn.win:hover {
+  background: var(--muted);
+  color: var(--foreground);
+}
+
+.window-btn.win.close:hover {
+  background: #e81123;
+  color: white;
+}
+
+.window-btn.win svg {
+  pointer-events: none;
+}

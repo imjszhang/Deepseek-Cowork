@@ -1,0 +1,352 @@
+/**
+ * 连接指引组件样式
+ * 
+ * 用于 Web 模式下显示本地服务安装和连接指引
+ * 
+ * 创建时间: 2026-01-20
+ */
+
+/* 连接指引遮罩层 */
+.connection-guide-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(8px);
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.connection-guide-overlay.visible {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* 连接指引卡片 */
+.connection-guide-card {
+    background: var(--bg-secondary, #1a1a1a);
+    border: 1px solid var(--border-color, #333);
+    border-radius: 16px;
+    padding: 40px;
+    max-width: 600px;
+    width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(20px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+/* 标题区域 */
+.connection-guide-header {
+    text-align: center;
+    margin-bottom: 32px;
+}
+
+.connection-guide-icon {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto 20px;
+    background: var(--primary-color, #6366f1);
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 40px;
+}
+
+.connection-guide-header h2 {
+    margin: 0 0 12px;
+    font-size: 24px;
+    font-weight: 600;
+    color: var(--text-primary, #fff);
+}
+
+.connection-guide-header p {
+    margin: 0;
+    color: var(--text-secondary, #aaa);
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+/* 状态指示器 */
+.connection-status {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 20px;
+    background: var(--bg-tertiary, #252525);
+    border-radius: 8px;
+    margin-bottom: 24px;
+}
+
+.connection-status-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--danger-color, #ef4444);
+    animation: pulse 2s infinite;
+}
+
+.connection-status-dot.connected {
+    background: var(--success-color, #22c55e);
+    animation: none;
+}
+
+.connection-status-dot.connecting {
+    background: var(--warning-color, #f59e0b);
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
+}
+
+.connection-status-text {
+    font-size: 14px;
+    color: var(--text-secondary, #aaa);
+}
+
+/* 安装步骤 */
+.installation-steps {
+    margin-bottom: 24px;
+}
+
+.installation-step {
+    display: flex;
+    gap: 16px;
+    padding: 16px;
+    background: var(--bg-tertiary, #252525);
+    border-radius: 12px;
+    margin-bottom: 12px;
+    border: 1px solid transparent;
+    transition: border-color 0.2s ease;
+}
+
+.installation-step:hover {
+    border-color: var(--border-hover, #444);
+}
+
+.step-number {
+    flex-shrink: 0;
+    width: 32px;
+    height: 32px;
+    background: var(--primary-color, #6366f1);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: 600;
+    color: white;
+}
+
+.step-content {
+    flex: 1;
+}
+
+.step-content h4 {
+    margin: 0 0 8px;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-primary, #fff);
+}
+
+.step-content p {
+    margin: 0 0 12px;
+    font-size: 13px;
+    color: var(--text-secondary, #aaa);
+    line-height: 1.5;
+}
+
+/* 代码块 */
+.code-block {
+    position: relative;
+    background: var(--bg-primary, #0a0a0a);
+    border: 1px solid var(--border-color, #333);
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    font-size: 13px;
+    color: var(--text-primary, #fff);
+    overflow-x: auto;
+}
+
+.code-block code {
+    display: block;
+    white-space: pre;
+}
+
+.code-block .copy-btn {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    padding: 4px 8px;
+    background: var(--bg-secondary, #1a1a1a);
+    border: 1px solid var(--border-color, #333);
+    border-radius: 4px;
+    color: var(--text-secondary, #aaa);
+    font-size: 11px;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.code-block:hover .copy-btn {
+    opacity: 1;
+}
+
+.code-block .copy-btn:hover {
+    background: var(--bg-tertiary, #252525);
+    color: var(--text-primary, #fff);
+}
+
+.code-block .copy-btn.copied {
+    color: var(--success-color, #22c55e);
+}
+
+/* 操作按钮 */
+.connection-guide-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    margin-top: 24px;
+}
+
+.connection-guide-actions button {
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-primary {
+    background: var(--primary-color, #6366f1);
+    border: none;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: var(--primary-hover, #4f46e5);
+}
+
+.btn-primary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.btn-secondary {
+    background: transparent;
+    border: 1px solid var(--border-color, #333);
+    color: var(--text-primary, #fff);
+}
+
+.btn-secondary:hover {
+    background: var(--bg-tertiary, #252525);
+}
+
+/* 帮助链接 */
+.help-links {
+    display: flex;
+    justify-content: center;
+    gap: 24px;
+    margin-top: 24px;
+    padding-top: 24px;
+    border-top: 1px solid var(--border-color, #333);
+}
+
+.help-links a {
+    color: var(--text-secondary, #aaa);
+    text-decoration: none;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: color 0.2s ease;
+}
+
+.help-links a:hover {
+    color: var(--primary-color, #6366f1);
+}
+
+/* 平台选择标签 */
+.platform-tabs {
+    display: flex;
+    gap: 4px;
+    background: var(--bg-primary, #0a0a0a);
+    padding: 4px;
+    border-radius: 8px;
+    margin-bottom: 12px;
+}
+
+.platform-tab {
+    flex: 1;
+    padding: 8px 12px;
+    background: transparent;
+    border: none;
+    border-radius: 6px;
+    color: var(--text-secondary, #aaa);
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.platform-tab.active {
+    background: var(--bg-tertiary, #252525);
+    color: var(--text-primary, #fff);
+}
+
+.platform-tab:hover:not(.active) {
+    color: var(--text-primary, #fff);
+}
+
+/* 响应式 */
+@media (max-width: 600px) {
+    .connection-guide-card {
+        padding: 24px;
+        margin: 16px;
+    }
+    
+    .connection-guide-header h2 {
+        font-size: 20px;
+    }
+    
+    .installation-step {
+        flex-direction: column;
+        gap: 12px;
+    }
+    
+    .connection-guide-actions {
+        flex-direction: column;
+    }
+    
+    .help-links {
+        flex-direction: column;
+        align-items: center;
+        gap: 12px;
+    }
+}

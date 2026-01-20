@@ -1,0 +1,514 @@
+/**
+ * Dialog Component - 玻璃态设计风格
+ * 模态对话框样式
+ * 更新: 2026-01-16 - 增强入场动画和遮罩效果
+ */
+
+/* ===== 遮罩层 - 玻璃态增强 ===== */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(var(--overlay-blur, 4px));
+  -webkit-backdrop-filter: blur(var(--overlay-blur, 4px));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10001;
+  animation: modalOverlayIn 0.3s var(--ease-smooth, cubic-bezier(0.25, 0.46, 0.45, 0.94));
+}
+
+@keyframes modalOverlayIn {
+  from { 
+    opacity: 0;
+    backdrop-filter: blur(0);
+  }
+  to { 
+    opacity: 1;
+    backdrop-filter: blur(var(--overlay-blur, 4px));
+  }
+}
+
+/* 遮罩退出动画类 */
+.modal-overlay.closing {
+  animation: modalOverlayOut 0.2s ease-out forwards;
+}
+
+@keyframes modalOverlayOut {
+  from { 
+    opacity: 1;
+    backdrop-filter: blur(var(--overlay-blur, 4px));
+  }
+  to { 
+    opacity: 0;
+    backdrop-filter: blur(0);
+  }
+}
+
+/* ===== 对话框容器 - 玻璃态增强 ===== */
+.modal-dialog {
+  background: var(--glass-bg, rgba(23, 23, 23, 0.95));
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.1));
+  border-radius: 1rem;
+  min-width: 22.5rem;
+  max-width: 30rem;
+  box-shadow: var(--shadow-glass, 0 16px 70px rgba(0, 0, 0, 0.5)), 0 0 40px rgba(0, 0, 0, 0.3);
+  animation: modalDialogIn 0.35s var(--ease-out-back, cubic-bezier(0.34, 1.56, 0.64, 1));
+}
+
+@keyframes modalDialogIn {
+  from {
+    transform: scale(0.9) translateY(20px);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.02) translateY(-5px);
+  }
+  to {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+  }
+}
+
+/* 对话框退出动画类 */
+.modal-dialog.closing {
+  animation: modalDialogOut 0.2s ease-out forwards;
+}
+
+@keyframes modalDialogOut {
+  from {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+  }
+  to {
+    transform: scale(0.95) translateY(10px);
+    opacity: 0;
+  }
+}
+
+/* ===== 对话框头部 - 玻璃态 ===== */
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.125rem 1.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.modal-header h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--foreground);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  letter-spacing: -0.01em;
+}
+
+.modal-close-btn {
+  width: 2rem;
+  height: 2rem;
+  border: none;
+  background: transparent;
+  color: var(--muted-foreground);
+  font-size: 1.25rem;
+  cursor: pointer;
+  border-radius: var(--radius);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition-fast, 150ms);
+}
+
+.modal-close-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+}
+
+/* ===== 对话框内容 ===== */
+.modal-body {
+  padding: 1.5rem;
+}
+
+.modal-body label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--muted-foreground);
+  margin-bottom: 0.5rem;
+}
+
+/* ===== 对话框底部 - 玻璃态 ===== */
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.625rem;
+  padding: 1.125rem 1.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.3);
+}
+
+/* ===== 特殊对话框样式 ===== */
+
+/* 欢迎设置对话框 */
+.welcome-setup-overlay {
+  background: hsl(0 0% 0% / 0.8);
+}
+
+.welcome-setup-dialog {
+  min-width: 26.25rem;
+  max-width: 31.25rem;
+}
+
+.welcome-setup-dialog .modal-header {
+  justify-content: center;
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.welcome-setup-dialog .modal-header h3 {
+  font-size: 1.25rem;
+}
+
+.welcome-setup-body {
+  text-align: center;
+}
+
+.welcome-description {
+  color: var(--muted-foreground);
+  font-size: 0.875rem;
+  margin-bottom: 1.5rem;
+  line-height: 1.5;
+}
+
+.welcome-options {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+
+.welcome-option-btn {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  background: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  cursor: pointer;
+  transition: all var(--transition-fast, 200ms);
+  text-align: left;
+}
+
+.welcome-option-btn:hover {
+  background: var(--accent);
+  border-color: var(--primary);
+}
+
+.welcome-option-btn .option-icon {
+  font-size: 1.75rem;
+  flex-shrink: 0;
+}
+
+.welcome-option-btn .option-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.welcome-option-btn .option-title {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--foreground);
+}
+
+.welcome-option-btn .option-desc {
+  font-size: 0.8125rem;
+  color: var(--muted-foreground);
+}
+
+.welcome-skip-hint {
+  font-size: 0.75rem;
+  color: var(--muted-foreground);
+  margin-top: 0.5rem;
+}
+
+.welcome-skip-hint a {
+  color: var(--muted-foreground);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.welcome-skip-hint a:hover {
+  color: var(--foreground);
+}
+
+/* Secret 备份对话框 */
+.secret-backup-dialog {
+  min-width: 30rem;
+  max-width: 35rem;
+}
+
+.backup-warning {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.875rem 1rem;
+  background: hsl(38 92% 50% / 0.1);
+  border: 1px solid hsl(38 92% 50% / 0.3);
+  border-radius: var(--radius);
+  margin-bottom: 1.25rem;
+}
+
+.backup-warning .warning-icon {
+  font-size: 1.25rem;
+  flex-shrink: 0;
+}
+
+.backup-warning .warning-content {
+  flex: 1;
+}
+
+.backup-warning strong {
+  display: block;
+  color: var(--warning);
+  font-size: 0.875rem;
+  margin-bottom: 0.25rem;
+}
+
+.backup-warning p {
+  color: var(--muted-foreground);
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  margin: 0;
+}
+
+.secret-display-container {
+  position: relative;
+  margin-bottom: 0.75rem;
+}
+
+.secret-display {
+  display: block;
+  width: 100%;
+  padding: 1rem;
+  padding-right: 5rem;
+  background: var(--background);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+  font-size: 0.8125rem;
+  color: var(--success);
+  word-break: break-all;
+  line-height: 1.6;
+  user-select: all;
+}
+
+.copy-status {
+  font-size: 0.75rem;
+  text-align: center;
+  margin-bottom: 0.75rem;
+}
+
+.copy-status.success {
+  color: var(--success);
+}
+
+.copy-status.error {
+  color: var(--destructive);
+}
+
+.backup-confirm {
+  padding: 0.75rem 0;
+  border-top: 1px solid var(--border);
+  margin-top: 0.75rem;
+}
+
+/* Secret 输入对话框 */
+.secret-input-dialog {
+  min-width: 28.75rem;
+  max-width: 33.75rem;
+}
+
+.input-hint {
+  color: var(--muted-foreground);
+  font-size: 0.8125rem;
+  margin-bottom: 0.5rem;
+}
+
+.format-list {
+  list-style: none;
+  margin-bottom: 1rem;
+  padding-left: 0.5rem;
+}
+
+.format-list li {
+  color: var(--muted-foreground);
+  font-size: 0.75rem;
+  margin-bottom: 0.25rem;
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+}
+
+.format-list li::before {
+  content: "•";
+  margin-right: 0.5rem;
+  color: var(--primary);
+}
+
+/* 设置完成对话框 */
+.setup-complete-dialog {
+  min-width: 22.5rem;
+  max-width: 26.25rem;
+  text-align: center;
+}
+
+.setup-complete-dialog .modal-header {
+  border-bottom: none;
+  justify-content: center;
+}
+
+.setup-complete-dialog .modal-body {
+  padding-top: 0.5rem;
+}
+
+.success-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+}
+
+.success-icon svg {
+  width: 3rem;
+  height: 3rem;
+  stroke: var(--success);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  fill: none;
+}
+
+.success-message {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--foreground);
+  margin-bottom: 0.5rem;
+}
+
+.success-hint {
+  font-size: 0.875rem;
+  color: var(--muted-foreground);
+}
+
+.setup-complete-dialog .modal-footer {
+  justify-content: center;
+  border-top: none;
+  padding-top: 0.5rem;
+}
+
+.setup-complete-dialog .btn-primary {
+  min-width: 7.5rem;
+}
+
+/* 修改服务器对话框 */
+.change-server-dialog {
+  min-width: 25rem;
+}
+
+.change-server-dialog .setting-item {
+  margin-bottom: 1rem;
+}
+
+.change-server-dialog .setting-item label {
+  display: block;
+  font-size: 0.8125rem;
+  color: var(--muted-foreground);
+  margin-bottom: 0.375rem;
+}
+
+.change-server-dialog .setting-item input {
+  width: 100%;
+  padding: 0.625rem 0.75rem;
+  background: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--foreground);
+  font-size: 0.875rem;
+}
+
+.change-server-dialog .setting-item input:focus {
+  border-color: var(--primary);
+  outline: none;
+}
+
+.change-server-dialog .setting-item input.muted {
+  color: var(--muted-foreground);
+  background: var(--card);
+}
+
+.change-server-dialog .setting-hint {
+  font-size: 0.75rem;
+  color: var(--muted-foreground);
+  margin-top: 0.25rem;
+}
+
+/* 警告框 */
+.warning-box {
+  background: hsl(0 84% 60% / 0.1);
+  border: 1px solid hsl(0 84% 60% / 0.3);
+  border-radius: var(--radius);
+  padding: 0.875rem 1rem;
+  margin-top: 0.5rem;
+}
+
+.warning-title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--destructive);
+  margin: 0 0 0.5rem 0;
+}
+
+.warning-text {
+  font-size: 0.8125rem;
+  color: var(--muted-foreground);
+  margin: 0 0 0.5rem 0;
+}
+
+.warning-list {
+  margin: 0;
+  padding-left: 1.25rem;
+  font-size: 0.8125rem;
+  color: var(--muted-foreground);
+  line-height: 1.6;
+}
+
+.warning-list li {
+  margin-bottom: 0.125rem;
+}
+
+/* 退出登录确认对话框 */
+.logout-confirm-dialog {
+  max-width: 25rem;
+}
+
+.logout-confirm-dialog .modal-body {
+  text-align: center;
+  padding: 1.5rem 1.25rem;
+}
+
+.logout-warning-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+}
+
+.logout-warning-text {
+  font-size: 0.875rem;
+  color: var(--muted-foreground);
+  line-height: 1.5;
+}
+
+.logout-confirm-dialog .modal-footer {
+  justify-content: center;
+  gap: 0.75rem;
+}

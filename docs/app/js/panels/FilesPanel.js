@@ -1,0 +1,919 @@
+/**
+ * FilesPanel - 文件面板模块
+ * 管理文件列表、目录导航和文件操作
+ * 
+ * @created 2026-01-16
+ * @module panels/FilesPanel
+ */
+
+class FilesPanel {
+  /**
+   * 构造函数
+   * @param {Object} app 主应用实例引用
+   */
+  constructor(app) {
+    this.app = app;
+    
+    // 路径状态
+    this.workspaceRoot = null;
+    this.currentPath = '';
+    this.pathHistory = [];
+    
+    // 选中状态
+    this.selectedItem = null;
+    this.contextMenuTarget = null;
+    
+    // DOM 元素
+    this.elements = {};
+    
+    // 文件图标映射
+    this.fileIconMap = {
+      // 文件夹
+      'folder': '📁',
+      // 编程语言
+      'js': '📜', 'jsx': '📜', 'ts': '📜', 'tsx': '📜',
+      'py': '🐍', 'pyw': '🐍',
+      'java': '☕', 'class': '☕', 'jar': '☕',
+      'c': '⚙️', 'cpp': '⚙️', 'h': '⚙️', 'hpp': '⚙️',
+      'cs': '🔷', 'vb': '🔷',
+      'go': '🐹', 'rs': '🦀', 'rb': '💎', 'php': '🐘',
+      'swift': '🍎', 'kt': '🟣', 'kts': '🟣',
+      'scala': '🔴', 'clj': '🟢', 'ex': '💜', 'exs': '💜',
+      'lua': '🌙', 'r': '📊', 'jl': '📐',
+      // Web
+      'html': '🌐', 'htm': '🌐',
+      'css': '🎨', 'scss': '🎨', 'sass': '🎨', 'less': '🎨',
+      'vue': '💚', 'svelte': '🧡', 'astro': '🚀',
+      // 数据/配置
+      'json': '📋', 'yaml': '📋', 'yml': '📋', 'toml': '📋',
+      'xml': '📄', 'ini': '⚙️', 'conf': '⚙️', 'cfg': '⚙️',
+      'env': '🔐', '.env': '🔐',
+      // 文档
+      'md': '📝', 'markdown': '📝', 'txt': '📄',
+      'doc': '📘', 'docx': '📘', 'pdf': '📕',
+      'xls': '📗', 'xlsx': '📗', 'csv': '📗',
+      'ppt': '📙', 'pptx': '📙',
+      // 图片
+      'png': '🖼️', 'jpg': '🖼️', 'jpeg': '🖼️', 'gif': '🖼️',
+      'svg': '🖼️', 'ico': '🖼️', 'webp': '🖼️', 'bmp': '🖼️',
+      // 音视频
+      'mp3': '🎵', 'wav': '🎵', 'ogg': '🎵', 'flac': '🎵',
+      'mp4': '🎬', 'avi': '🎬', 'mkv': '🎬', 'mov': '🎬', 'webm': '🎬',
+      // 压缩包
+      'zip': '📦', 'rar': '📦', '7z': '📦', 'tar': '📦', 'gz': '📦',
+      // Shell/脚本
+      'sh': '💻', 'bash': '💻', 'zsh': '💻', 'fish': '💻',
+      'bat': '💻', 'cmd': '💻', 'ps1': '💻',
+      // 数据库
+      'sql': '🗃️', 'db': '🗃️', 'sqlite': '🗃️',
+      // 其他
+      'log': '📋', 'lock': '🔒', 'gitignore': '🔧', '.gitignore': '🔧',
+      'npmrc': '📦', '.npmrc': '📦', 'license': '📜',
+      'default': '📄'
+    };
+  }
+
+  /**
+   * 初始化面板
+   */
+  async init() {
+    // 只在首次初始化时绑定元素和事件
+    if (!this._initialized) {
+      this.bindElements();
+      this.bindEvents();
+      this._initialized = true;
+    }
+    
+    // 重置路径历史
+    this.pathHistory = [];
+    
+    // 获取工作区根目录
+    try {
+      const settings = await (window.apiAdapter || window.browserControlManager)?.getAllHappySettings?.();
+      if (settings?.workspaceDir) {
+        this.workspaceRoot = settings.workspaceDir;
+        this.currentPath = this.workspaceRoot;
+      } else if (settings?.defaultWorkspaceDir) {
+        this.workspaceRoot = settings.defaultWorkspaceDir;
+        this.currentPath = this.workspaceRoot;
+      }
+      console.log('[FilesPanel] Workspace root:', this.workspaceRoot);
+    } catch (error) {
+      console.error('[FilesPanel] Failed to get workspace root:', error);
+    }
+    
+    // 加载初始目录
+    if (this.workspaceRoot) {
+      await this.loadDirectory(this.currentPath);
+    }
+  }
+
+  /**
+   * 绑定 DOM 元素
+   */
+  bindElements() {
+    this.elements = {
+      // 文件列表相关
+      filesList: document.getElementById('files-list'),
+      filesLoading: document.getElementById('files-loading'),
+      noFilesMessage: document.getElementById('no-files-message'),
+      filesError: document.getElementById('files-error'),
+      filesErrorMessage: document.getElementById('files-error-message'),
+      filesBreadcrumb: document.getElementById('files-breadcrumb'),
+      filesBackBtn: document.getElementById('files-back-btn'),
+      filesRefreshBtn: document.getElementById('files-refresh-btn'),
+      filesNewFolderBtn: document.getElementById('files-newfolder-btn'),
+      fileContextMenu: document.getElementById('file-context-menu'),
+      // 新建文件夹对话框
+      newFolderDialog: document.getElementById('new-folder-dialog'),
+      newFolderNameInput: document.getElementById('new-folder-name'),
+      newFolderError: document.getElementById('new-folder-error'),
+      newFolderCreateBtn: document.getElementById('new-folder-create-btn'),
+      newFolderCancelBtn: document.getElementById('new-folder-cancel-btn'),
+      newFolderCancelBtn2: document.getElementById('new-folder-cancel-btn2'),
+      // 重命名对话框
+      renameDialog: document.getElementById('rename-dialog'),
+      renameInput: document.getElementById('rename-input'),
+      renameError: document.getElementById('rename-error'),
+      renameConfirmBtn: document.getElementById('rename-confirm-btn'),
+      renameCancelBtn: document.getElementById('rename-cancel-btn'),
+      renameCancelBtn2: document.getElementById('rename-cancel-btn2')
+    };
+  }
+
+  /**
+   * 绑定事件
+   */
+  bindEvents() {
+    // 导航按钮
+    this.elements.filesBackBtn?.addEventListener('click', () => this.navigateBack());
+    this.elements.filesRefreshBtn?.addEventListener('click', () => this.refresh());
+    this.elements.filesNewFolderBtn?.addEventListener('click', () => this.showNewFolderDialog());
+    
+    // 新建文件夹对话框
+    this.elements.newFolderCreateBtn?.addEventListener('click', () => this.createNewFolder());
+    this.elements.newFolderCancelBtn?.addEventListener('click', () => this.hideNewFolderDialog());
+    this.elements.newFolderCancelBtn2?.addEventListener('click', () => this.hideNewFolderDialog());
+    this.elements.newFolderNameInput?.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        this.createNewFolder();
+      } else if (e.key === 'Escape') {
+        this.hideNewFolderDialog();
+      }
+    });
+    
+    // 重命名对话框
+    this.elements.renameConfirmBtn?.addEventListener('click', () => this.confirmRename());
+    this.elements.renameCancelBtn?.addEventListener('click', () => this.hideRenameDialog());
+    this.elements.renameCancelBtn2?.addEventListener('click', () => this.hideRenameDialog());
+    this.elements.renameInput?.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        this.confirmRename();
+      } else if (e.key === 'Escape') {
+        this.hideRenameDialog();
+      }
+    });
+    
+    // 右键菜单
+    this.elements.fileContextMenu?.querySelectorAll('.context-menu-item').forEach(item => {
+      item.addEventListener('click', (e) => {
+        const action = e.currentTarget.dataset.action;
+        this.handleContextMenuAction(action);
+      });
+    });
+    
+    // 点击空白处关闭右键菜单
+    document.addEventListener('click', (e) => {
+      if (this.elements.fileContextMenu && !this.elements.fileContextMenu.contains(e.target)) {
+        this.hideContextMenu();
+      }
+    });
+  }
+
+  /**
+   * 加载目录内容
+   * @param {string} dirPath 目录路径
+   */
+  async loadDirectory(dirPath) {
+    console.log('[FilesPanel] Loading:', dirPath);
+    this.showLoading();
+    
+    try {
+      const result = await (window.apiAdapter || window.browserControlManager)?.listDirectory?.(dirPath);
+      
+      if (result?.success) {
+        this.currentPath = result.path;
+        this.workspaceRoot = result.workspaceRoot;
+        
+        // 更新返回按钮状态
+        this.updateBackButtonState();
+        
+        // 渲染面包屑
+        this.renderBreadcrumb(result.relativePath);
+        
+        // 渲染文件列表
+        this.renderFileList(result.items);
+        
+        console.log('[FilesPanel] Loaded', result.items.length, 'items');
+      } else {
+        const t = typeof I18nManager !== 'undefined' ? I18nManager.t.bind(I18nManager) : (k) => k;
+        this.showError(result?.error || t('errors.loadFailed'));
+      }
+    } catch (error) {
+      console.error('[FilesPanel] Error:', error);
+      this.showError(error.message);
+    }
+  }
+
+  /**
+   * 显示加载状态
+   */
+  showLoading() {
+    if (this.elements.filesList) this.elements.filesList.innerHTML = '';
+    if (this.elements.filesLoading) this.elements.filesLoading.style.display = 'flex';
+    if (this.elements.noFilesMessage) this.elements.noFilesMessage.style.display = 'none';
+    if (this.elements.filesError) this.elements.filesError.style.display = 'none';
+  }
+
+  /**
+   * 显示错误信息
+   * @param {string} message 错误消息
+   */
+  showError(message) {
+    if (this.elements.filesLoading) this.elements.filesLoading.style.display = 'none';
+    if (this.elements.noFilesMessage) this.elements.noFilesMessage.style.display = 'none';
+    if (this.elements.filesError) this.elements.filesError.style.display = 'flex';
+    if (this.elements.filesErrorMessage) this.elements.filesErrorMessage.textContent = message;
+  }
+
+  /**
+   * 渲染面包屑导航（紧凑模式）
+   * @param {string} relativePath 相对于工作目录的路径
+   */
+  renderBreadcrumb(relativePath) {
+    if (!this.elements.filesBreadcrumb) return;
+    
+    const t = typeof I18nManager !== 'undefined' ? I18nManager.t.bind(I18nManager) : (k) => k;
+    this.elements.filesBreadcrumb.innerHTML = '';
+    
+    // 判断是否在根目录
+    const isAtRoot = !relativePath || relativePath === '.' || relativePath === '';
+    
+    // 1. 返回上级按钮（非根目录时显示）
+    if (!isAtRoot) {
+      const backBtn = document.createElement('button');
+      backBtn.className = 'breadcrumb-back-btn';
+      backBtn.title = t('files.goUp') || 'Go to parent folder';
+      backBtn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>';
+      backBtn.addEventListener('click', () => this.navigateUp());
+      this.elements.filesBreadcrumb.appendChild(backBtn);
+    }
+    
+    // 2. 当前目录显示
+    const currentDir = document.createElement('div');
+    currentDir.className = 'breadcrumb-current-dir';
+    
+    // 文件夹图标
+    const dirIcon = document.createElement('span');
+    dirIcon.className = 'breadcrumb-dir-icon';
+    dirIcon.textContent = '📁';
+    currentDir.appendChild(dirIcon);
+    
+    // 目录名
+    const dirName = document.createElement('span');
+    dirName.className = 'breadcrumb-dir-name';
+    
+    if (isAtRoot) {
+      dirName.textContent = t('common.workDir') || 'Working Directory';
+    } else {
+      // 获取最后一个目录名
+      const segments = relativePath.split(/[\/\\]/).filter(s => s);
+      dirName.textContent = segments[segments.length - 1] || relativePath;
+    }
+    currentDir.appendChild(dirName);
+    
+    // 完整路径作为 tooltip
+    const fullPath = this.currentPath || this.workspaceRoot;
+    currentDir.title = fullPath;
+    
+    // 点击返回根目录
+    currentDir.style.cursor = 'pointer';
+    currentDir.addEventListener('click', () => this.navigateTo(this.workspaceRoot));
+    
+    this.elements.filesBreadcrumb.appendChild(currentDir);
+  }
+  
+  /**
+   * 导航到上级目录
+   */
+  navigateUp() {
+    if (!this.currentPath || this.currentPath === this.workspaceRoot) return;
+    
+    // 获取上级目录路径
+    const separator = window.platform?.isWindows ? '\\' : '/';
+    const parts = this.currentPath.split(/[\/\\]/);
+    parts.pop();
+    const parentPath = parts.join(separator);
+    
+    if (parentPath && parentPath.length >= this.workspaceRoot.length) {
+      this.navigateTo(parentPath);
+    } else {
+      this.navigateTo(this.workspaceRoot);
+    }
+  }
+
+  /**
+   * 简单的路径拼接
+   * @param {string} base 基础路径
+   * @param {string} segment 路径段
+   * @returns {string} 拼接后的路径
+   */
+  joinPath(base, segment) {
+    const separator = window.platform?.isWindows ? '\\' : '/';
+    if (base.endsWith(separator) || base.endsWith('/') || base.endsWith('\\')) {
+      return base + segment;
+    }
+    return base + separator + segment;
+  }
+
+  /**
+   * 渲染文件列表
+   * @param {Array} items 文件列表
+   */
+  renderFileList(items) {
+    if (this.elements.filesLoading) this.elements.filesLoading.style.display = 'none';
+    if (this.elements.filesError) this.elements.filesError.style.display = 'none';
+    
+    if (!items || items.length === 0) {
+      if (this.elements.noFilesMessage) this.elements.noFilesMessage.style.display = 'flex';
+      if (this.elements.filesList) this.elements.filesList.innerHTML = '';
+      return;
+    }
+    
+    if (this.elements.noFilesMessage) this.elements.noFilesMessage.style.display = 'none';
+    if (!this.elements.filesList) return;
+    
+    this.elements.filesList.innerHTML = '';
+    
+    items.forEach(item => {
+      const fileItem = this.createFileItemElement(item);
+      this.elements.filesList.appendChild(fileItem);
+    });
+  }
+
+  /**
+   * 创建文件项 DOM 元素 - VS Code 紧凑风格
+   * @param {Object} item 文件信息
+   * @returns {HTMLElement} 文件项元素
+   */
+  createFileItemElement(item) {
+    const div = document.createElement('div');
+    div.className = `file-item ${item.isDirectory ? 'folder' : 'file'}`;
+    div.dataset.path = item.path;
+    div.dataset.name = item.name;
+    div.dataset.isDirectory = item.isDirectory;
+    
+    // 获取图标
+    const icon = this.getFileIcon(item);
+    
+    // VS Code 紧凑风格：只显示图标和文件名，操作通过右键菜单
+    div.innerHTML = `
+      <div class="file-icon">${icon}</div>
+      <div class="file-info">
+        <div class="file-name" title="${this.escapeHtml(item.name)}">${this.escapeHtml(item.name)}</div>
+      </div>
+    `;
+    
+    // 绑定事件（操作通过右键菜单触发）
+    div.addEventListener('click', (e) => this.handleFileClick(e, item));
+    div.addEventListener('dblclick', (e) => this.handleFileDoubleClick(e, item));
+    div.addEventListener('contextmenu', (e) => this.handleFileContextMenu(e, item));
+    
+    return div;
+  }
+
+  /**
+   * 获取文件图标
+   * @param {Object} item 文件信息
+   * @returns {string} 图标字符
+   */
+  getFileIcon(item) {
+    if (item.isDirectory) {
+      return this.fileIconMap['folder'];
+    }
+    
+    // 支持从 extension 属性或文件名中获取扩展名
+    let ext = item.extension?.toLowerCase();
+    if (!ext && item.name) {
+      const parts = item.name.split('.');
+      if (parts.length > 1) {
+        ext = parts.pop().toLowerCase();
+      }
+    }
+    
+    if (ext && this.fileIconMap[ext]) {
+      return this.fileIconMap[ext];
+    }
+    
+    // 特殊文件名
+    const name = (item.name || '').toLowerCase();
+    if (name === '.gitignore' || name === '.env' || name === '.npmrc') {
+      return this.fileIconMap[name] || this.fileIconMap['default'];
+    }
+    
+    return this.fileIconMap['default'];
+  }
+
+  /**
+   * 格式化文件大小
+   * @param {number} bytes 字节数
+   * @returns {string} 格式化后的大小
+   */
+  formatFileSize(bytes) {
+    if (bytes === 0) return '0 B';
+    const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+    const k = 1024;
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + units[i];
+  }
+
+  /**
+   * 格式化文件日期
+   * @param {string} isoDate ISO 日期字符串
+   * @returns {string} 格式化后的日期
+   */
+  formatFileDate(isoDate) {
+    if (!isoDate) return '';
+    try {
+      const date = new Date(isoDate);
+      return date.toLocaleDateString('zh-CN', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+      });
+    } catch (e) {
+      return '';
+    }
+  }
+
+  /**
+   * HTML 转义
+   * @param {string} text 文本
+   * @returns {string} 转义后的文本
+   */
+  escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  }
+
+  /**
+   * 处理文件单击
+   * @param {Event} e 事件对象
+   * @param {Object} item 文件信息
+   */
+  handleFileClick(e, item) {
+    // 清除之前的选中状态
+    this.elements.filesList?.querySelectorAll('.file-item').forEach(el => {
+      el.classList.remove('selected');
+    });
+    
+    // 选中当前项
+    e.currentTarget.classList.add('selected');
+    this.selectedItem = item;
+  }
+
+  /**
+   * 处理文件双击
+   * @param {Event} e 事件对象
+   * @param {Object} item 文件信息
+   */
+  handleFileDoubleClick(e, item) {
+    e.preventDefault();
+    this.openItem(item);
+  }
+
+  /**
+   * 打开文件项
+   * @param {Object} item 文件信息
+   */
+  async openItem(item) {
+    if (item.isDirectory) {
+      // 进入目录
+      this.pathHistory.push(this.currentPath);
+      await this.loadDirectory(item.path);
+    } else {
+      // 检查是否为可预览的文本文件
+      const ext = item.name.split('.').pop()?.toLowerCase() || '';
+      const previewableExts = ['txt', 'md', 'js', 'ts', 'jsx', 'tsx', 'json', 'html', 'css', 'scss', 'less', 'xml', 'yaml', 'yml', 'toml', 'ini', 'conf', 'sh', 'bash', 'zsh', 'py', 'rb', 'go', 'rs', 'java', 'c', 'cpp', 'h', 'hpp', 'cs', 'php', 'sql', 'vue', 'svelte', 'astro', 'log'];
+      const imageExts = ['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'ico', 'bmp'];
+      
+      if (previewableExts.includes(ext) || imageExts.includes(ext)) {
+        // 使用内置预览功能
+        await this.app.openFilePreview(item.path);
+      } else {
+        // 用系统程序打开文件
+        const t = typeof I18nManager !== 'undefined' ? I18nManager.t.bind(I18nManager) : (k) => k;
+        try {
+          const result = await (window.apiAdapter || window.browserControlManager)?.openFile?.(item.path);
+          if (!result?.success) {
+            this.showNotification(result?.error || t('notifications.cannotOpenFile'), 'error');
+          }
+        } catch (error) {
+          this.showNotification(t('notifications.openFileFailed') + ': ' + error.message, 'error');
+        }
+      }
+    }
+  }
+
+  /**
+   * 处理文件右键菜单
+   * @param {Event} e 事件对象
+   * @param {Object} item 文件信息
+   */
+  handleFileContextMenu(e, item) {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    // 选中当前项
+    this.handleFileClick(e, item);
+    
+    // 保存右键菜单目标
+    this.contextMenuTarget = item;
+    
+    // 显示右键菜单
+    this.showContextMenu(e.clientX, e.clientY, item);
+  }
+
+  /**
+   * 显示文件右键菜单
+   * @param {number} x X 坐标
+   * @param {number} y Y 坐标
+   * @param {Object} item 文件信息
+   */
+  showContextMenu(x, y, item) {
+    if (!this.elements.fileContextMenu) return;
+    
+    // 更新菜单项显示
+    const openItem = this.elements.fileContextMenu.querySelector('[data-action="open"]');
+    const openWithItem = this.elements.fileContextMenu.querySelector('[data-action="openWith"]');
+    
+    if (openItem) {
+      openItem.querySelector('span:last-child').textContent = item.isDirectory ? '打开' : '打开文件夹';
+    }
+    if (openWithItem) {
+      openWithItem.style.display = item.isDirectory ? 'none' : 'flex';
+    }
+    
+    // 定位菜单
+    this.elements.fileContextMenu.style.left = x + 'px';
+    this.elements.fileContextMenu.style.top = y + 'px';
+    this.elements.fileContextMenu.style.display = 'block';
+    
+    // 确保菜单不超出屏幕
+    const rect = this.elements.fileContextMenu.getBoundingClientRect();
+    if (rect.right > window.innerWidth) {
+      this.elements.fileContextMenu.style.left = (window.innerWidth - rect.width - 10) + 'px';
+    }
+    if (rect.bottom > window.innerHeight) {
+      this.elements.fileContextMenu.style.top = (window.innerHeight - rect.height - 10) + 'px';
+    }
+  }
+
+  /**
+   * 隐藏文件右键菜单
+   */
+  hideContextMenu() {
+    if (this.elements.fileContextMenu) {
+      this.elements.fileContextMenu.style.display = 'none';
+    }
+    this.contextMenuTarget = null;
+  }
+
+  /**
+   * 处理右键菜单动作
+   * @param {string} action 动作名称
+   */
+  async handleContextMenuAction(action) {
+    const item = this.contextMenuTarget;
+    this.hideContextMenu();
+    
+    if (!item) return;
+    
+    const t = typeof I18nManager !== 'undefined' ? I18nManager.t.bind(I18nManager) : (k) => k;
+    switch (action) {
+      case 'open':
+        this.openItem(item);
+        break;
+      case 'openWith':
+        try {
+          await (window.apiAdapter || window.browserControlManager)?.openFile?.(item.path);
+        } catch (error) {
+          this.showNotification(t('notifications.openFailed') + ': ' + error.message, 'error');
+        }
+        break;
+      case 'rename':
+        this.showRenameDialog(item);
+        break;
+      case 'showInExplorer':
+        try {
+          await (window.apiAdapter || window.browserControlManager)?.showInExplorer?.(item.path);
+        } catch (error) {
+          this.showNotification(t('notifications.operationFailed') + ': ' + error.message, 'error');
+        }
+        break;
+      case 'delete':
+        this.deleteItem(item);
+        break;
+    }
+  }
+
+  /**
+   * 删除文件项
+   * @param {Object} item 文件信息
+   */
+  async deleteItem(item) {
+    const t = typeof I18nManager !== 'undefined' ? I18nManager.t.bind(I18nManager) : (k) => k;
+    try {
+      const result = await (window.apiAdapter || window.browserControlManager)?.deleteItem?.(item.path);
+      
+      if (result?.success) {
+        this.showNotification(t('notifications.deleteSuccess'), 'success');
+        await this.refresh();
+      } else if (result?.cancelled) {
+        // 用户取消
+      } else {
+        this.showNotification(result?.error || t('notifications.deleteFailed'), 'error');
+      }
+    } catch (error) {
+      this.showNotification(t('notifications.deleteFailed') + ': ' + error.message, 'error');
+    }
+  }
+
+  /**
+   * 导航到指定路径
+   * @param {string} path 目标路径
+   */
+  async navigateTo(path) {
+    // 保存历史
+    if (this.currentPath !== path) {
+      this.pathHistory.push(this.currentPath);
+    }
+    await this.loadDirectory(path);
+  }
+
+  /**
+   * 返回上级目录
+   */
+  async navigateBack() {
+    // 优先从历史栈恢复
+    if (this.pathHistory.length > 0) {
+      const prevPath = this.pathHistory.pop();
+      await this.loadDirectory(prevPath);
+      return;
+    }
+    
+    // 否则尝试返回上级目录
+    if (this.currentPath && this.currentPath !== this.workspaceRoot) {
+      // 获取上级目录路径
+      const separator = window.platform?.isWindows ? '\\' : '/';
+      const parts = this.currentPath.split(/[\/\\]/);
+      parts.pop();
+      const parentPath = parts.join(separator);
+      
+      if (parentPath && parentPath.startsWith(this.workspaceRoot)) {
+        await this.loadDirectory(parentPath);
+      }
+    }
+  }
+
+  /**
+   * 更新返回按钮状态
+   */
+  updateBackButtonState() {
+    if (!this.elements.filesBackBtn) return;
+    
+    // 如果在工作目录根目录且没有历史，禁用按钮
+    const atRoot = this.currentPath === this.workspaceRoot;
+    const hasHistory = this.pathHistory.length > 0;
+    
+    this.elements.filesBackBtn.disabled = atRoot && !hasHistory;
+  }
+
+  /**
+   * 刷新文件列表
+   */
+  async refresh() {
+    await this.loadDirectory(this.currentPath);
+  }
+
+  /**
+   * 显示新建文件夹对话框
+   */
+  showNewFolderDialog() {
+    if (!this.elements.newFolderDialog) return;
+    
+    // 清空输入
+    if (this.elements.newFolderNameInput) {
+      this.elements.newFolderNameInput.value = '';
+    }
+    if (this.elements.newFolderError) {
+      this.elements.newFolderError.style.display = 'none';
+    }
+    
+    this.elements.newFolderDialog.style.display = 'flex';
+    
+    // 聚焦输入框
+    setTimeout(() => {
+      this.elements.newFolderNameInput?.focus();
+    }, 100);
+  }
+
+  /**
+   * 隐藏新建文件夹对话框
+   */
+  hideNewFolderDialog() {
+    if (this.elements.newFolderDialog) {
+      this.elements.newFolderDialog.style.display = 'none';
+    }
+  }
+
+  /**
+   * 创建新文件夹
+   */
+  async createNewFolder() {
+    const name = this.elements.newFolderNameInput?.value?.trim();
+    const t = typeof I18nManager !== 'undefined' ? I18nManager.t.bind(I18nManager) : (k) => k;
+    
+    if (!name) {
+      if (this.elements.newFolderError) {
+        this.elements.newFolderError.textContent = t('notifications.enterFolderName');
+        this.elements.newFolderError.style.display = 'block';
+      }
+      return;
+    }
+    
+    // 验证名称
+    if (/[<>:"/\\|?*]/.test(name)) {
+      if (this.elements.newFolderError) {
+        this.elements.newFolderError.textContent = t('notifications.invalidFolderName');
+        this.elements.newFolderError.style.display = 'block';
+      }
+      return;
+    }
+    
+    try {
+      const folderPath = this.joinPath(this.currentPath, name);
+      const result = await (window.apiAdapter || window.browserControlManager)?.createFolder?.(folderPath);
+      
+      if (result?.success) {
+        this.hideNewFolderDialog();
+        this.showNotification(t('notifications.folderCreated'), 'success');
+        await this.refresh();
+      } else {
+        if (this.elements.newFolderError) {
+          this.elements.newFolderError.textContent = result?.error || t('notifications.createFailed');
+          this.elements.newFolderError.style.display = 'block';
+        }
+      }
+    } catch (error) {
+      if (this.elements.newFolderError) {
+        this.elements.newFolderError.textContent = error.message;
+        this.elements.newFolderError.style.display = 'block';
+      }
+    }
+  }
+
+  /**
+   * 显示重命名对话框
+   * @param {Object} item 文件信息
+   */
+  showRenameDialog(item) {
+    if (!this.elements.renameDialog) return;
+    
+    this.contextMenuTarget = item;
+    
+    // 设置当前名称
+    if (this.elements.renameInput) {
+      this.elements.renameInput.value = item.name;
+    }
+    if (this.elements.renameError) {
+      this.elements.renameError.style.display = 'none';
+    }
+    
+    this.elements.renameDialog.style.display = 'flex';
+    
+    // 聚焦并选中文件名（不包括扩展名）
+    setTimeout(() => {
+      if (this.elements.renameInput) {
+        this.elements.renameInput.focus();
+        // 如果是文件，选中扩展名之前的部分
+        if (!item.isDirectory && item.extension) {
+          const dotIndex = item.name.lastIndexOf('.');
+          if (dotIndex > 0) {
+            this.elements.renameInput.setSelectionRange(0, dotIndex);
+          } else {
+            this.elements.renameInput.select();
+          }
+        } else {
+          this.elements.renameInput.select();
+        }
+      }
+    }, 100);
+  }
+
+  /**
+   * 隐藏重命名对话框
+   */
+  hideRenameDialog() {
+    if (this.elements.renameDialog) {
+      this.elements.renameDialog.style.display = 'none';
+    }
+  }
+
+  /**
+   * 确认重命名
+   */
+  async confirmRename() {
+    const item = this.contextMenuTarget;
+    const newName = this.elements.renameInput?.value?.trim();
+    const t = typeof I18nManager !== 'undefined' ? I18nManager.t.bind(I18nManager) : (k) => k;
+    
+    if (!item || !newName) {
+      if (this.elements.renameError) {
+        this.elements.renameError.textContent = t('notifications.enterNewName');
+        this.elements.renameError.style.display = 'block';
+      }
+      return;
+    }
+    
+    // 名称没有变化
+    if (newName === item.name) {
+      this.hideRenameDialog();
+      return;
+    }
+    
+    // 验证名称
+    if (/[<>:"/\\|?*]/.test(newName)) {
+      if (this.elements.renameError) {
+        this.elements.renameError.textContent = t('notifications.invalidName');
+        this.elements.renameError.style.display = 'block';
+      }
+      return;
+    }
+    
+    try {
+      // 构造新路径
+      const separator = window.platform?.isWindows ? '\\' : '/';
+      const parts = item.path.split(/[\/\\]/);
+      parts.pop();
+      const newPath = parts.join(separator) + separator + newName;
+      
+      const result = await (window.apiAdapter || window.browserControlManager)?.renameItem?.(item.path, newPath);
+      
+      if (result?.success) {
+        this.hideRenameDialog();
+        this.showNotification(t('notifications.renameSuccess'), 'success');
+        await this.refresh();
+      } else {
+        if (this.elements.renameError) {
+          this.elements.renameError.textContent = result?.error || t('notifications.renameFailed');
+          this.elements.renameError.style.display = 'block';
+        }
+      }
+    } catch (error) {
+      if (this.elements.renameError) {
+        this.elements.renameError.textContent = error.message;
+        this.elements.renameError.style.display = 'block';
+      }
+    }
+  }
+
+  /**
+   * 显示通知（委托给 app）
+   * @param {string} message 消息
+   * @param {string} type 类型
+   */
+  showNotification(message, type = 'info') {
+    if (this.app?.showNotification) {
+      this.app.showNotification(message, type);
+    } else {
+      console.log(`[FilesPanel] ${type}: ${message}`);
+    }
+  }
+
+  /**
+   * 销毁面板
+   */
+  destroy() {
+    // 清理事件监听器
+    console.log('[FilesPanel] Destroyed');
+  }
+}
+
+// 导出到全局
+if (typeof window !== 'undefined') {
+  window.FilesPanel = FilesPanel;
+}

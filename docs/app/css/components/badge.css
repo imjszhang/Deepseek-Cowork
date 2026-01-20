@@ -1,0 +1,505 @@
+/**
+ * Badge Component - 玻璃态设计风格
+ * 徽章、状态指示器
+ * 更新: 2026-01-16 - 应用玻璃态设计规范
+ */
+
+/* ===== 基础徽章 ===== */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 9999px;
+  padding: 0.125rem 0.625rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  transition: all var(--transition-fast, 150ms);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+/* 变体 */
+.badge[data-variant="default"] {
+  background: var(--primary);
+  color: var(--primary-foreground);
+}
+
+.badge[data-variant="secondary"] {
+  background: var(--secondary);
+  color: var(--secondary-foreground);
+}
+
+.badge[data-variant="outline"] {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--foreground);
+}
+
+.badge[data-variant="destructive"] {
+  background: var(--destructive);
+  color: var(--destructive-foreground);
+}
+
+/* ===== 玻璃态状态徽章 ===== */
+.badge-glass {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 9999px;
+  padding: 0.25rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  transition: all 0.2s ease;
+}
+
+.badge-glass-success {
+  background: var(--success-bg, hsl(142 76% 36% / 0.2));
+  color: var(--success-text, hsl(142 76% 60%));
+  border: 1px solid var(--success-border, hsl(142 76% 36% / 0.3));
+}
+
+.badge-glass-success.active {
+  box-shadow: 0 0 12px var(--success-border, hsl(142 76% 36% / 0.5));
+}
+
+.badge-glass-error {
+  background: var(--error-bg, hsl(0 84% 60% / 0.2));
+  color: var(--error-text, hsl(0 84% 70%));
+  border: 1px solid var(--error-border, hsl(0 84% 60% / 0.3));
+}
+
+.badge-glass-warning {
+  background: var(--warning-bg, hsl(38 92% 50% / 0.2));
+  color: var(--warning-text, hsl(38 92% 70%));
+  border: 1px solid var(--warning-border, hsl(38 92% 50% / 0.3));
+  animation: pulseGlow 1.5s infinite;
+}
+
+.badge-glass-info {
+  background: var(--info-bg, rgba(255, 255, 255, 0.1));
+  color: var(--info-text, hsl(0 0% 85%));
+  border: 1px solid var(--info-border, rgba(255, 255, 255, 0.15));
+}
+
+@keyframes pulseGlow {
+  0%, 100% { 
+    opacity: 1;
+    box-shadow: 0 0 8px var(--warning-border, hsl(38 92% 50% / 0.3));
+  }
+  50% { 
+    opacity: 0.7;
+    box-shadow: 0 0 16px var(--warning-border, hsl(38 92% 50% / 0.5));
+  }
+}
+
+/* ===== 状态指示器 - 玻璃态增强 ===== */
+.status-indicator {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.1875rem 0.625rem;
+  border-radius: 0.75rem;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  background: transparent;
+  -webkit-app-region: no-drag;
+  transition: all 0.2s ease;
+}
+
+.status-indicator .status-dot {
+  width: 0.375rem;
+  height: 0.375rem;
+  border-radius: 50%;
+  background: var(--muted-foreground);
+  flex-shrink: 0;
+  transition: all 0.3s ease;
+}
+
+.status-indicator .status-text {
+  color: var(--muted-foreground);
+  white-space: nowrap;
+  transition: color 0.2s ease;
+}
+
+/* 运行中状态 - 增强发光效果 */
+.status-indicator.running .status-dot {
+  background: var(--success);
+  box-shadow: 0 0 8px var(--success), 0 0 16px hsl(142 76% 36% / 0.3);
+}
+
+.status-indicator.running .status-text {
+  color: var(--success);
+}
+
+/* 启动中状态 - 脉冲发光 */
+.status-indicator.starting .status-dot {
+  background: var(--warning);
+  animation: statusPulseGlow 1.5s ease-in-out infinite;
+}
+
+.status-indicator.starting .status-text {
+  color: var(--warning);
+}
+
+/* 已停止/错误状态 */
+.status-indicator.stopped .status-dot,
+.status-indicator.error .status-dot {
+  background: var(--destructive);
+}
+
+.status-indicator.stopped .status-text,
+.status-indicator.error .status-text {
+  color: var(--destructive);
+}
+
+/* 改进的脉冲动画 - 带发光 */
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+@keyframes statusPulseGlow {
+  0%, 100% { 
+    opacity: 1;
+    transform: scale(1);
+    box-shadow: 0 0 6px var(--warning);
+  }
+  50% { 
+    opacity: 0.6;
+    transform: scale(1.2);
+    box-shadow: 0 0 12px var(--warning), 0 0 20px hsl(38 92% 50% / 0.3);
+  }
+}
+
+/* ===== 状态点 - 增强发光 ===== */
+.status-dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: var(--muted-foreground);
+  transition: all var(--transition-fast, 150ms);
+}
+
+/* 小型状态点 */
+.status-dot-sm {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  flex-shrink: 0;
+  transition: all 0.3s ease;
+}
+
+.status-dot-sm.connected {
+  background: var(--success);
+  box-shadow: 0 0 8px var(--success), 0 0 16px hsl(142 76% 36% / 0.3);
+}
+
+.status-dot-sm.disconnected {
+  background: var(--destructive);
+}
+
+.status-dot-sm.pending {
+  background: var(--warning);
+  animation: statusPulseGlow 1.5s ease-in-out infinite;
+}
+
+/* ===== AI 状态 - 玻璃态 ===== */
+.ai-status {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.25rem 0.625rem;
+  border-radius: 0.75rem;
+  background: var(--glass-bg, rgba(255, 255, 255, 0.03));
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.1));
+  font-size: 0.75rem;
+  transition: all 0.2s ease;
+}
+
+.ai-status:hover {
+  background: var(--glass-bg-hover, rgba(255, 255, 255, 0.05));
+  border-color: var(--glass-border-hover, rgba(255, 255, 255, 0.15));
+}
+
+.ai-status-dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: var(--muted-foreground);
+  transition: all 0.3s ease;
+}
+
+.ai-status.connected .ai-status-dot {
+  background: var(--success);
+  box-shadow: 0 0 8px var(--success), 0 0 16px hsl(142 76% 36% / 0.3);
+}
+
+.ai-status.connected .ai-status-text {
+  color: var(--success);
+}
+
+.ai-status.disconnected .ai-status-dot {
+  background: var(--destructive);
+}
+
+.ai-status.disconnected .ai-status-text {
+  color: var(--muted-foreground);
+}
+
+/* ===== Happy AI 事件状态指示器 - 玻璃态 ===== */
+.happy-event-status {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.25rem 0.625rem;
+  border-radius: 0.75rem;
+  background: var(--glass-bg, rgba(255, 255, 255, 0.03));
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.1));
+  font-size: 0.6875rem;
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+  transition: all 0.2s ease;
+}
+
+.happy-event-status:hover {
+  background: var(--glass-bg-hover, rgba(255, 255, 255, 0.05));
+  border-color: var(--glass-border-hover, rgba(255, 255, 255, 0.15));
+}
+
+.event-status-dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: var(--muted-foreground);
+  transition: all var(--transition-slow, 300ms);
+}
+
+.event-status-dot.event-status-idle {
+  background: var(--muted-foreground);
+}
+
+.event-status-dot.event-status-ready {
+  background: var(--success);
+  box-shadow: 0 0 8px var(--success), 0 0 16px hsl(142 76% 36% / 0.3);
+}
+
+.event-status-dot.event-status-processing {
+  background: var(--warning);
+  animation: statusPulseGlow 1s ease-in-out infinite;
+}
+
+.event-status-dot.event-status-disconnected {
+  background: var(--destructive);
+}
+
+#happy-event-text {
+  color: var(--muted-foreground);
+}
+
+/* ===== Daemon 状态 - 玻璃态 ===== */
+.daemon-status-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.1875rem 0.625rem;
+  border-radius: 0.75rem;
+  background: var(--glass-bg, rgba(255, 255, 255, 0.03));
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.1));
+  font-size: 0.6875rem;
+  transition: all 0.2s ease;
+}
+
+.daemon-status-badge:hover {
+  background: var(--glass-bg-hover, rgba(255, 255, 255, 0.05));
+}
+
+.daemon-status-dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: var(--muted-foreground);
+  transition: all var(--transition-slow, 300ms);
+}
+
+.daemon-status-dot.running {
+  background: var(--success);
+  box-shadow: 0 0 8px var(--success), 0 0 16px hsl(142 76% 36% / 0.3);
+}
+
+.daemon-status-dot.stopped {
+  background: var(--destructive);
+}
+
+.daemon-status-dot.starting,
+.daemon-status-dot.restarting {
+  background: var(--warning);
+  animation: statusPulseGlow 1s ease-in-out infinite;
+}
+
+.daemon-status-dot.stopping {
+  background: var(--warning);
+  animation: statusPulseGlow 0.5s ease-in-out infinite;
+}
+
+#daemon-status-text {
+  color: var(--muted-foreground);
+  font-weight: 500;
+  transition: color 0.2s ease;
+}
+
+#daemon-status-text.running {
+  color: var(--success);
+}
+
+#daemon-status-text.stopped {
+  color: var(--destructive);
+}
+
+/* ===== AI 底部状态栏指示器 - 已移至 layout/statusbar.css ===== */
+
+/* ===== 扩展数量指示器 - 已移至 layout/statusbar.css ===== */
+
+/* ===== 设置状态 - 玻璃态 ===== */
+.setting-status {
+  display: inline-block;
+  margin-top: 0.5rem;
+  font-size: 0.75rem;
+  padding: 0.25rem 0.625rem;
+  border-radius: 0.75rem;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  transition: all 0.2s ease;
+}
+
+.setting-status.configured {
+  background: var(--success-bg, hsl(142 76% 36% / 0.2));
+  color: var(--success-text, hsl(142 76% 60%));
+  border: 1px solid var(--success-border, hsl(142 76% 36% / 0.3));
+}
+
+.setting-status.not-configured {
+  background: var(--error-bg, hsl(0 84% 60% / 0.2));
+  color: var(--error-text, hsl(0 84% 70%));
+  border: 1px solid var(--error-border, hsl(0 84% 60% / 0.3));
+}
+
+/* ===== 模型徽章 - 玻璃态 ===== */
+.model-badge {
+  padding: 0.125rem 0.5rem;
+  border-radius: var(--radius-sm);
+  background: var(--glass-bg, rgba(255, 255, 255, 0.03));
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  color: var(--info-text, hsl(0 0% 85%));
+  font-size: 0.625rem;
+  font-weight: 500;
+  border: 1px solid var(--info-border, rgba(255, 255, 255, 0.15));
+  transition: all 0.2s ease;
+}
+
+.model-badge:hover {
+  background: var(--info-bg, rgba(255, 255, 255, 0.1));
+}
+
+/* ===== 状态 Spinner ===== */
+.status-spinner {
+  width: 0.875rem;
+  height: 0.875rem;
+  border: 2px solid var(--border);
+  border-top-color: var(--foreground);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ===== 需求徽章 - 玻璃态 ===== */
+.requirement-badge {
+  padding: 0.25rem 0.625rem;
+  border-radius: 0.75rem;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  transition: all 0.2s ease;
+}
+
+.requirement-badge.missing {
+  background: var(--error-bg, hsl(0 84% 60% / 0.2));
+  color: var(--error-text, hsl(0 84% 70%));
+  border: 1px solid var(--error-border, hsl(0 84% 60% / 0.3));
+}
+
+.requirement-badge.installed,
+.requirement-badge.configured {
+  background: var(--success-bg, hsl(142 76% 36% / 0.2));
+  color: var(--success-text, hsl(142 76% 60%));
+  border: 1px solid var(--success-border, hsl(142 76% 36% / 0.3));
+}
+
+/* ===== 复制提示 ===== */
+.copy-hint {
+  font-size: 0.6875rem;
+  text-align: center;
+  margin-top: 0.5rem;
+  transition: color 0.2s ease;
+}
+
+.copy-hint.success {
+  color: var(--success-text, hsl(142 76% 60%));
+}
+
+.copy-hint.error {
+  color: var(--error-text, hsl(0 84% 70%));
+}
+
+/* ===== 软件更新状态徽章 ===== */
+.env-badge.update-available {
+  background: var(--info-bg, hsl(210 100% 50% / 0.2));
+  color: var(--info-accent, hsl(210 100% 70%));
+  border: 1px solid var(--info-border, hsl(210 100% 50% / 0.3));
+  animation: pulseGlow 2s infinite;
+}
+
+.env-badge.update-downloading {
+  background: var(--warning-bg, hsl(38 92% 50% / 0.2));
+  color: var(--warning-text, hsl(38 92% 70%));
+  border: 1px solid var(--warning-border, hsl(38 92% 50% / 0.3));
+}
+
+.env-badge.update-ready {
+  background: var(--success-bg, hsl(142 76% 36% / 0.2));
+  color: var(--success-text, hsl(142 76% 60%));
+  border: 1px solid var(--success-border, hsl(142 76% 36% / 0.3));
+  animation: pulseGlow 1.5s infinite;
+}
+
+.env-badge.update-error {
+  background: var(--error-bg, hsl(0 84% 60% / 0.2));
+  color: var(--error-text, hsl(0 84% 70%));
+  border: 1px solid var(--error-border, hsl(0 84% 60% / 0.3));
+}
+
+/* ===== 更新进度条 ===== */
+.update-progress-bar {
+  width: 100%;
+  height: 4px;
+  background: var(--glass-bg, rgba(255, 255, 255, 0.1));
+  border-radius: 2px;
+  margin-top: 0.5rem;
+  overflow: hidden;
+}
+
+.update-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--primary) 0%, var(--info-accent, hsl(210 100% 70%)) 100%);
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}

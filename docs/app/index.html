@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self' blob: file: https: data:; script-src 'self' 'unsafe-inline' 'unsafe-eval' https: blob:; style-src 'self' 'unsafe-inline' https: blob: file:; font-src 'self' https: data:; img-src 'self' data: blob: file: https:; connect-src 'self' http://localhost:3333 ws://localhost:8080 https:; frame-src blob: file: https:;">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' https:; connect-src 'self' http://localhost:3333 ws://localhost:3333 https:; img-src 'self' data: blob: https:; font-src 'self' data:;">
   <title>DeepSeek Cowork</title>
   <!-- 本地字体: Inter + JetBrains Mono -->
   <link rel="stylesheet" href="fonts/fonts.css">
@@ -42,6 +42,7 @@
   <link id="hljs-theme" rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/styles/atom-one-light.min.css">
   <!-- Three.js 3D 图形库 -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
 </head>
 <body>
   <div id="app">
@@ -1270,6 +1271,9 @@
   <script src="js/wizards/SetupWizard.js"></script>
   <script src="js/wizards/AccountSetup.js"></script>
   
-  <script src="js/app.js"></script>
+  <script src="js/core/ApiAdapter.js"></script>
+    <script src="js/core/WebSocketClient.js"></script>
+    <script src="js/components/ConnectionGuide.js"></script>
+    <script src="js/app.js"></script>
 </body>
 </html>

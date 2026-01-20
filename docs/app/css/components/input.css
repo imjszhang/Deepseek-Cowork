@@ -1,0 +1,583 @@
+/**
+ * Input Component - 玻璃态设计风格
+ * 输入框、文本域、选择框样式
+ * 更新: 2026-01-16 - 添加玻璃态效果和聚焦发光
+ */
+
+/* ===== 基础输入框 - 玻璃态 ===== */
+.input {
+  display: flex;
+  width: 100%;
+  height: 2.5rem;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  background: var(--glass-bg, rgba(255, 255, 255, 0.03));
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.1));
+  border-radius: var(--radius);
+  color: var(--foreground);
+  transition: all 0.2s var(--ease-smooth, cubic-bezier(0.25, 0.46, 0.45, 0.94));
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--foreground);
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.1), var(--glow-primary);
+  background: var(--glass-bg-hover, rgba(255, 255, 255, 0.05));
+}
+
+.input:hover:not(:focus):not(:disabled) {
+  border-color: var(--glass-border-hover, rgba(255, 255, 255, 0.2));
+  background: var(--glass-bg-hover, rgba(255, 255, 255, 0.05));
+}
+
+.input::placeholder {
+  color: var(--muted-foreground);
+}
+
+.input:disabled {
+  background: var(--muted);
+  color: var(--muted-foreground);
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.input:read-only {
+  background: var(--card);
+  color: var(--muted-foreground);
+  cursor: not-allowed;
+}
+
+.input.muted {
+  color: var(--muted-foreground);
+  font-size: 0.8125rem;
+}
+
+/* 输入框成功状态 */
+.input.success,
+.input[data-state="success"] {
+  border-color: var(--success-border, hsl(142 76% 36% / 0.3));
+  box-shadow: 0 0 0 3px hsl(142 76% 36% / 0.15);
+}
+
+.input.success:focus,
+.input[data-state="success"]:focus {
+  box-shadow: 0 0 0 3px hsl(142 76% 36% / 0.2), var(--glow-success, 0 0 12px hsl(142 76% 36% / 0.3));
+}
+
+/* 输入框错误状态 */
+.input.error,
+.input[data-state="error"] {
+  border-color: var(--error-border, hsl(0 84% 60% / 0.3));
+  box-shadow: 0 0 0 3px hsl(0 84% 60% / 0.15);
+}
+
+.input.error:focus,
+.input[data-state="error"]:focus {
+  box-shadow: 0 0 0 3px hsl(0 84% 60% / 0.2), var(--glow-error, 0 0 12px hsl(0 84% 60% / 0.3));
+}
+
+/* ===== 文本域 - 玻璃态 ===== */
+.textarea {
+  display: flex;
+  width: 100%;
+  min-height: 5rem;
+  padding: 0.75rem;
+  font-size: 0.875rem;
+  font-family: inherit;
+  background: var(--glass-bg, rgba(255, 255, 255, 0.03));
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.1));
+  border-radius: var(--radius);
+  color: var(--foreground);
+  resize: vertical;
+  transition: all 0.2s var(--ease-smooth, cubic-bezier(0.25, 0.46, 0.45, 0.94));
+}
+
+.textarea:focus {
+  outline: none;
+  border-color: var(--foreground);
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.1), var(--glow-primary);
+  background: var(--glass-bg-hover, rgba(255, 255, 255, 0.05));
+}
+
+.textarea:hover:not(:focus):not(:disabled) {
+  border-color: var(--glass-border-hover, rgba(255, 255, 255, 0.2));
+}
+
+.textarea::placeholder {
+  color: var(--muted-foreground);
+}
+
+/* ===== 选择框 - 玻璃态 ===== */
+.select {
+  display: flex;
+  width: 100%;
+  height: 2.5rem;
+  padding: 0 0.75rem;
+  font-size: 0.875rem;
+  background: var(--glass-bg, rgba(255, 255, 255, 0.03));
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.1));
+  border-radius: var(--radius);
+  color: var(--foreground);
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23999' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  padding-right: 2rem;
+  transition: all 0.2s var(--ease-smooth, cubic-bezier(0.25, 0.46, 0.45, 0.94));
+}
+
+.select:focus {
+  outline: none;
+  border-color: var(--foreground);
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.1), var(--glow-primary);
+  background: var(--glass-bg-hover, rgba(255, 255, 255, 0.05));
+}
+
+.select:hover:not(:focus):not(:disabled) {
+  border-color: var(--glass-border-hover, rgba(255, 255, 255, 0.2));
+  background: var(--glass-bg-hover, rgba(255, 255, 255, 0.05));
+}
+
+.select option {
+  background: var(--card);
+  color: var(--foreground);
+}
+
+/* ===== 设置项中的输入框 ===== */
+.setting-item input {
+  width: 200px;
+  padding: 0.625rem 0.875rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--muted);
+  color: var(--foreground);
+  font-size: 0.875rem;
+  transition: all var(--transition-fast, 150ms);
+}
+
+.setting-item input:focus {
+  outline: none;
+  border-color: var(--foreground);
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.1);
+}
+
+.setting-item input:hover:not(:focus):not(:read-only) {
+  border-color: hsl(240 5% 26%);
+}
+
+.setting-item input::placeholder {
+  color: var(--muted-foreground);
+}
+
+.setting-item input:read-only {
+  background: var(--card);
+  color: var(--muted-foreground);
+  cursor: not-allowed;
+}
+
+.setting-item input.muted {
+  color: var(--muted-foreground);
+  font-size: 0.8125rem;
+}
+
+/* 设置项中的选择框 */
+.setting-item select {
+  width: 100%;
+  padding: 0.625rem 0.875rem;
+  font-size: 0.875rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--muted);
+  color: var(--foreground);
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23666' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+}
+
+.setting-item select:focus {
+  outline: none;
+  border-color: var(--primary);
+}
+
+.setting-item select option {
+  background: var(--card);
+  color: var(--foreground);
+}
+
+/* ===== AI 输入区 ===== */
+#ai-input {
+  flex: 1;
+  padding: 0.625rem 0.875rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--muted);
+  color: var(--foreground);
+  font-size: 0.875rem;
+  resize: none;
+  min-height: 2.5rem;
+  max-height: 7.5rem;
+}
+
+#ai-input:focus {
+  outline: none;
+  border-color: var(--primary);
+}
+
+#ai-input::placeholder {
+  color: var(--muted-foreground);
+}
+
+/* ===== Secret 输入框 ===== */
+.secret-input-container {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.secret-input-container input {
+  flex: 1;
+  min-width: 200px;
+}
+
+.secret-input-field {
+  width: 100%;
+  padding: 0.875rem;
+  background: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--foreground);
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+  font-size: 0.8125rem;
+  resize: none;
+  line-height: 1.5;
+}
+
+.secret-input-field:focus {
+  outline: none;
+  border-color: var(--primary);
+}
+
+.secret-input-field::placeholder {
+  color: var(--muted-foreground);
+  font-family: inherit;
+}
+
+/* ===== 超时时间输入 ===== */
+.timeout-input-container {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.timeout-input-container input {
+  width: 7.5rem;
+}
+
+.input-suffix {
+  font-size: 0.75rem;
+  color: var(--muted-foreground);
+}
+
+/* ===== 工作目录输入 ===== */
+.workspace-path-container {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.workspace-path-container input {
+  flex: 1;
+  min-width: 250px;
+}
+
+/* ===== Modal 中的输入框 ===== */
+.modal-body input {
+  width: 100%;
+  padding: 0.625rem 0.875rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--muted);
+  color: var(--foreground);
+  font-size: 0.875rem;
+  transition: all var(--transition-fast, 150ms);
+}
+
+.modal-body input:focus {
+  outline: none;
+  border-color: var(--foreground);
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.1);
+}
+
+.modal-body input:hover:not(:focus) {
+  border-color: hsl(240 5% 26%);
+}
+
+.modal-body input::placeholder {
+  color: var(--muted-foreground);
+}
+
+/* ===== Switch 开关 - 玻璃态增强 ===== */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 2.75rem;
+  height: 1.5rem;
+}
+
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: var(--glass-bg, rgba(255, 255, 255, 0.03));
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.1));
+  border-radius: 1.5rem;
+  transition: all 0.3s var(--ease-smooth, cubic-bezier(0.25, 0.46, 0.45, 0.94));
+}
+
+.slider:hover {
+  background-color: var(--glass-bg-hover, rgba(255, 255, 255, 0.06));
+  border-color: var(--glass-border-hover, rgba(255, 255, 255, 0.15));
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 1.125rem;
+  width: 1.125rem;
+  left: 0.125rem;
+  bottom: 0.125rem;
+  background-color: var(--muted-foreground);
+  border-radius: 50%;
+  transition: all 0.3s var(--ease-smooth, cubic-bezier(0.25, 0.46, 0.45, 0.94));
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+input:checked + .slider {
+  background-color: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.3);
+  box-shadow: 0 0 12px rgba(255, 255, 255, 0.15);
+}
+
+input:checked + .slider:before {
+  transform: translateX(1.25rem);
+  background-color: var(--foreground);
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.3);
+}
+
+input:focus + .slider {
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.1);
+}
+
+/* ===== Checkbox ===== */
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  cursor: pointer;
+  font-size: 0.875rem;
+  color: var(--muted-foreground);
+}
+
+.checkbox-label input[type="checkbox"] {
+  width: 1.125rem;
+  height: 1.125rem;
+  accent-color: var(--primary);
+  cursor: pointer;
+}
+
+.checkbox-label:hover {
+  color: var(--foreground);
+}
+
+/* ===== Form 相关 ===== */
+.form-group {
+  margin-bottom: 1.25rem;
+}
+
+.form-group label {
+  display: block;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--muted-foreground);
+  margin-bottom: 0.5rem;
+}
+
+.form-select,
+.form-input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--foreground);
+  font-size: 0.875rem;
+  transition: border-color var(--transition-fast, 150ms);
+}
+
+.form-select:focus,
+.form-input:focus {
+  border-color: var(--primary);
+  outline: none;
+}
+
+.form-hint {
+  font-size: 0.75rem;
+  color: var(--muted-foreground);
+  margin-top: 0.375rem;
+}
+
+.input-with-action {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.input-with-action .form-input {
+  flex: 1;
+}
+
+.input-with-action .btn-icon {
+  padding: 0.75rem 1rem;
+  background: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--muted-foreground);
+  cursor: pointer;
+  transition: all var(--transition-fast, 150ms);
+}
+
+.input-with-action .btn-icon:hover {
+  background: var(--accent);
+  color: var(--foreground);
+}
+
+/* ===== 输入错误状态 ===== */
+.input-error {
+  font-size: 0.8125rem;
+  color: var(--destructive);
+  margin-top: 0.5rem;
+}
+
+.input-status {
+  font-size: 0.75rem;
+  min-height: 1.125rem;
+}
+
+.input-status.validating {
+  color: var(--warning);
+}
+
+.input-status.valid {
+  color: var(--success);
+}
+
+.input-status.invalid {
+  color: var(--destructive);
+}
+
+/* ===== 命令建议下拉框 ===== */
+.command-suggestions {
+  position: absolute;
+  bottom: 100%;
+  left: 0;
+  right: 0;
+  background: rgba(30, 30, 30, 0.98);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: var(--radius);
+  margin-bottom: 0.5rem;
+  max-height: 200px;
+  overflow-y: auto;
+  z-index: 100;
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.4);
+}
+
+.command-item {
+  padding: 0.625rem 0.875rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  transition: background 0.15s ease;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.command-item:last-child {
+  border-bottom: none;
+}
+
+.command-item:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.command-item.selected {
+  background: rgba(255, 255, 255, 0.15) !important;
+  border-left: 3px solid rgba(255, 255, 255, 0.7);
+  padding-left: calc(0.875rem - 3px);
+}
+
+/* 未选中状态 - 文字颜色较暗 */
+.command-name {
+  color: rgba(255, 255, 255, 0.5);
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+  font-size: 0.8125rem;
+  font-weight: 400;
+  transition: color 0.15s ease, font-weight 0.15s ease;
+}
+
+.command-desc {
+  color: rgba(255, 255, 255, 0.3);
+  font-size: 0.75rem;
+  text-align: right;
+  flex-shrink: 0;
+  transition: color 0.15s ease;
+}
+
+/* 选中状态 - 文字颜色高亮 */
+.command-suggestions .command-item.selected .command-name {
+  color: #ffffff !important;
+  font-weight: 600 !important;
+}
+
+.command-suggestions .command-item.selected .command-desc {
+  color: rgba(255, 255, 255, 0.75) !important;
+}
+
+/* 命令建议滚动条 */
+.command-suggestions::-webkit-scrollbar {
+  width: 6px;
+}
+
+.command-suggestions::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.command-suggestions::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 3px;
+}
+
+.command-suggestions::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.25);
+}

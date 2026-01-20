@@ -1,0 +1,344 @@
+/**
+ * File Item Component - Shadcn/UI Style
+ * 文件管理器样式
+ */
+
+/* ===== 面包屑导航 ===== */
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.5rem 0.75rem;
+  background: var(--card);
+  border-radius: var(--radius);
+  margin-bottom: 0.75rem;
+  font-size: 0.8125rem;
+  overflow-x: auto;
+  white-space: nowrap;
+}
+
+/* 紧凑模式面包屑（内联在文件列表顶部） */
+.breadcrumb.breadcrumb-compact {
+  height: 36px;
+  min-height: 36px;
+  padding: 0 0.625rem;
+  margin-bottom: 0;
+  border-radius: 0;
+  border-bottom: 1px solid var(--border);
+  background: var(--muted);
+  gap: 0.375rem;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+/* 返回上级按钮 */
+.breadcrumb-back-btn {
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  color: var(--muted-foreground);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all var(--transition-fast, 150ms);
+  flex-shrink: 0;
+}
+
+.breadcrumb-back-btn:hover {
+  background: var(--accent);
+  color: var(--foreground);
+}
+
+.breadcrumb-back-btn:active {
+  transform: scale(0.95);
+}
+
+.breadcrumb-back-btn svg {
+  width: 16px;
+  height: 16px;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  fill: none;
+}
+
+/* 当前目录显示 */
+.breadcrumb-current-dir {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  padding: 0.25rem 0.5rem;
+  border-radius: var(--radius-sm);
+  cursor: default;
+}
+
+.breadcrumb-current-dir:hover {
+  background: var(--accent);
+}
+
+.breadcrumb-dir-icon {
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+.breadcrumb-dir-name {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--foreground);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.breadcrumb-item {
+  color: var(--muted-foreground);
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+  border-radius: var(--radius-sm);
+  transition: all var(--transition-fast, 150ms);
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.breadcrumb-item:hover {
+  background: var(--muted);
+  color: var(--foreground);
+}
+
+.breadcrumb-item.breadcrumb-root {
+  color: var(--primary);
+  font-weight: 500;
+}
+
+.breadcrumb-item.breadcrumb-current {
+  color: var(--foreground);
+  font-weight: 500;
+  cursor: default;
+}
+
+.breadcrumb-item.breadcrumb-current:hover {
+  background: transparent;
+}
+
+.breadcrumb-separator {
+  color: var(--muted-foreground);
+  font-size: 0.625rem;
+  user-select: none;
+}
+
+/* ===== 文件列表容器 ===== */
+#files-container {
+  flex: 1;
+  overflow-y: auto;
+  position: relative;
+}
+
+#files-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 4px;
+}
+
+/* ===== 文件项 - VS Code 紧凑风格 ===== */
+.file-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  background: transparent;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all var(--transition-fast, 150ms);
+  border: 1px solid transparent;
+  user-select: none;
+  animation: listItemIn var(--transition-normal, 200ms) ease-out;
+  animation-fill-mode: both;
+  min-height: 24px;
+}
+
+.file-item:hover {
+  background: var(--muted);
+  border-color: var(--border);
+}
+
+.file-item.selected {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: var(--primary);
+}
+
+.file-item.folder {
+  cursor: pointer;
+}
+
+.file-item.file {
+  cursor: default;
+}
+
+/* 文件图标 - VS Code 紧凑风格 */
+.file-icon {
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+/* 文件信息 */
+.file-info {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.file-name {
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--foreground);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.4;
+}
+
+/* 文件元信息 - VS Code 风格默认隐藏 */
+.file-meta {
+  display: none;
+}
+
+.file-meta-item {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+/* 文件操作按钮 - VS Code 风格默认隐藏，使用右键菜单 */
+.file-actions {
+  display: none;
+}
+
+/* 列表项依次入场 */
+.file-item:nth-child(1) { animation-delay: 0ms; }
+.file-item:nth-child(2) { animation-delay: 20ms; }
+.file-item:nth-child(3) { animation-delay: 40ms; }
+.file-item:nth-child(4) { animation-delay: 60ms; }
+.file-item:nth-child(5) { animation-delay: 80ms; }
+.file-item:nth-child(n+6) { animation-delay: 100ms; }
+
+/* 文件大小和日期格式化显示 */
+.file-size {
+  color: var(--muted-foreground);
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+  font-size: 0.6875rem;
+}
+
+.file-date {
+  color: var(--muted-foreground);
+}
+
+/* 文件面板内容区滚动 */
+#files-panel-content {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+#files-panel-content .breadcrumb {
+  flex-shrink: 0;
+}
+
+#files-panel-content #files-container {
+  flex: 1;
+  overflow-y: auto;
+}
+
+/* ===== 文件变化实时高亮动画 ===== */
+
+/* 新增文件高亮 */
+.file-item.file-added {
+  animation: fileAdded 2s ease-out;
+}
+
+@keyframes fileAdded {
+  0% {
+    background: hsl(142 76% 36% / 0.3);
+    border-color: hsl(142 76% 36%);
+    transform: scale(1.02);
+  }
+  50% {
+    background: hsl(142 76% 36% / 0.15);
+    border-color: hsl(142 76% 36% / 0.5);
+  }
+  100% {
+    background: var(--card);
+    border-color: transparent;
+    transform: scale(1);
+  }
+}
+
+/* 修改文件高亮 */
+.file-item.file-changed {
+  animation: fileChanged 2s ease-out;
+}
+
+@keyframes fileChanged {
+  0% {
+    background: hsl(45 93% 47% / 0.3);
+    border-color: hsl(45 93% 47%);
+  }
+  50% {
+    background: hsl(45 93% 47% / 0.15);
+    border-color: hsl(45 93% 47% / 0.5);
+  }
+  100% {
+    background: var(--card);
+    border-color: transparent;
+  }
+}
+
+/* 删除文件高亮（淡出） */
+.file-item.file-deleted {
+  animation: fileDeleted 0.5s ease-out forwards;
+}
+
+@keyframes fileDeleted {
+  0% {
+    opacity: 1;
+    background: hsl(0 84% 60% / 0.2);
+    border-color: hsl(0 84% 60%);
+  }
+  100% {
+    opacity: 0;
+    background: hsl(0 84% 60% / 0.3);
+    transform: translateX(-10px);
+  }
+}
+
+/* 文件高亮闪烁效果（用于预览中的文件） */
+.file-item.file-highlight {
+  animation: fileHighlight 0.6s ease-in-out;
+}
+
+@keyframes fileHighlight {
+  0%, 100% {
+    background: var(--card);
+    border-color: transparent;
+  }
+  50% {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: var(--primary);
+  }
+}

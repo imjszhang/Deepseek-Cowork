@@ -1,0 +1,186 @@
+/**
+ * Dropdown Component - Shadcn/UI Style
+ * 下拉菜单、右键菜单
+ */
+
+/* ===== 右键菜单 ===== */
+.context-menu {
+  position: fixed;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.25rem;
+  min-width: 11.25rem;
+  box-shadow: var(--shadow-lg);
+  z-index: 10000;
+  animation: contextMenuIn var(--transition-fast, 150ms) ease-out;
+}
+
+@keyframes contextMenuIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.context-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 0.8125rem;
+  color: var(--muted-foreground);
+  transition: all var(--transition-fast, 150ms);
+}
+
+.context-menu-item:hover {
+  background: var(--muted);
+  color: var(--foreground);
+}
+
+.context-menu-item.context-menu-danger:hover {
+  background: hsl(0 84% 60% / 0.15);
+  color: var(--destructive);
+}
+
+.context-menu-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 0.25rem 0.5rem;
+}
+
+.menu-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.25rem;
+}
+
+.menu-icon svg {
+  width: 1rem;
+  height: 1rem;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  fill: none;
+}
+
+/* ===== 权限按钮菜单 ===== */
+.tool-footer {
+  padding: 0;
+}
+
+.tool-footer:empty {
+  display: none;
+}
+
+.permission-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  padding: 0.5rem 0.75rem;
+  background: var(--card);
+  border-top: 1px solid var(--border);
+}
+
+.perm-btn {
+  display: flex;
+  align-items: center;
+  padding: 0.5rem 0.75rem;
+  border: none;
+  border-left: 3px solid transparent;
+  background: transparent;
+  color: var(--muted-foreground);
+  font-size: 0.8125rem;
+  cursor: pointer;
+  text-align: left;
+  transition: all var(--transition-fast, 150ms);
+  border-radius: 0.125rem;
+}
+
+.perm-btn:hover:not(:disabled) {
+  background: var(--muted);
+}
+
+.perm-btn:disabled {
+  cursor: default;
+  opacity: 0.4;
+}
+
+.perm-btn.loading {
+  opacity: 0.7;
+}
+
+.perm-btn.loading::after {
+  content: '';
+  width: 0.75rem;
+  height: 0.75rem;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin-left: 0.5rem;
+}
+
+/* 允许按钮 */
+.perm-allow {
+  color: var(--success);
+}
+
+.perm-allow:hover:not(:disabled) {
+  background: hsl(142 76% 36% / 0.1);
+}
+
+.perm-allow.selected {
+  border-left-color: var(--success);
+  background: hsl(142 76% 36% / 0.1);
+  color: var(--success);
+  font-weight: 500;
+}
+
+/* 允许所有编辑按钮 */
+.perm-allow-all,
+.perm-allow-session {
+  color: var(--primary);
+}
+
+.perm-allow-all:hover:not(:disabled),
+.perm-allow-session:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.perm-allow-all.selected,
+.perm-allow-session.selected {
+  border-left-color: var(--primary);
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--primary);
+  font-weight: 500;
+}
+
+/* 拒绝按钮 */
+.perm-deny {
+  color: var(--destructive);
+}
+
+.perm-deny:hover:not(:disabled) {
+  background: hsl(0 84% 60% / 0.1);
+}
+
+.perm-deny.selected {
+  border-left-color: var(--destructive);
+  background: hsl(0 84% 60% / 0.1);
+  color: var(--destructive);
+  font-weight: 500;
+}
+
+/* 决定后的状态 */
+.permission-decided .perm-btn:not(.selected) {
+  opacity: 0.3;
+}

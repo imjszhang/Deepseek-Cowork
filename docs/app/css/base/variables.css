@@ -1,0 +1,234 @@
+/**
+ * Shadcn/UI 标准 CSS 变量 - 玻璃态设计系统
+ * 基于 Shadcn/UI 设计系统
+ * 更新：2026-01-16 - 完整玻璃态设计支持 + 对话框专用变量
+ */
+
+:root {
+  /* ===== 字体系统 ===== */
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono', 'Monaco', 'Menlo', 'Consolas', monospace;
+  
+  /* ===== 颜色系统 - 浅色主题 ===== */
+  --background: hsl(0 0% 100%);
+  --foreground: hsl(240 10% 3.9%);
+  
+  --card: hsl(0 0% 100%);
+  --card-foreground: hsl(240 10% 3.9%);
+  
+  --popover: hsl(0 0% 100%);
+  --popover-foreground: hsl(240 10% 3.9%);
+  
+  --primary: hsl(0 0% 20%);
+  --primary-foreground: hsl(0 0% 98%);
+  
+  --secondary: hsl(240 4.8% 95.9%);
+  --secondary-foreground: hsl(240 5.9% 10%);
+  
+  --muted: hsl(240 4.8% 95.9%);
+  --muted-foreground: hsl(240 3.8% 46.1%);
+  
+  --accent: hsl(240 4.8% 95.9%);
+  --accent-foreground: hsl(240 5.9% 10%);
+  
+  --destructive: hsl(0 84.2% 60.2%);
+  --destructive-foreground: hsl(0 0% 98%);
+  
+  --border: hsl(240 5.9% 90%);
+  --input: hsl(240 5.9% 90%);
+  --ring: hsl(0 0% 20%);
+  
+  /* ===== 语义颜色 ===== */
+  --success: hsl(142 76% 36%);
+  --success-foreground: hsl(0 0% 98%);
+  
+  --warning: hsl(38 92% 50%);
+  --warning-foreground: hsl(0 0% 98%);
+  
+  --info: hsl(0 0% 40%);
+  --info-foreground: hsl(0 0% 98%);
+  
+  /* ===== 状态颜色半透明变体 - 浅色主题 ===== */
+  --success-bg: hsl(142 76% 36% / 0.1);
+  --success-text: hsl(142 76% 30%);
+  --success-border: hsl(142 76% 36% / 0.2);
+  
+  --error-bg: hsl(0 84% 60% / 0.1);
+  --error-text: hsl(0 84% 50%);
+  --error-border: hsl(0 84% 60% / 0.2);
+  
+  --warning-bg: hsl(38 92% 50% / 0.1);
+  --warning-text: hsl(38 92% 40%);
+  --warning-border: hsl(38 92% 50% / 0.2);
+  
+  --info-bg: hsl(0 0% 0% / 0.05);
+  --info-text: hsl(0 0% 30%);
+  --info-border: hsl(0 0% 0% / 0.1);
+  
+  /* ===== 玻璃态变量 - 浅色主题 ===== */
+  --glass-bg: rgba(0, 0, 0, 0.02);
+  --glass-bg-hover: rgba(0, 0, 0, 0.05);
+  --glass-border: rgba(0, 0, 0, 0.08);
+  --glass-border-hover: rgba(0, 0, 0, 0.15);
+  --glass-blur: 10px;
+  
+  /* ===== 发光效果变量 - 浅色主题 ===== */
+  --glow-success: 0 0 12px hsl(142 76% 36% / 0.3);
+  --glow-warning: 0 0 12px hsl(38 92% 50% / 0.3);
+  --glow-error: 0 0 12px hsl(0 84% 60% / 0.3);
+  --glow-primary: 0 0 12px rgba(0, 0, 0, 0.15);
+  --glow-info: 0 0 12px rgba(0, 0, 0, 0.1);
+  
+  /* ===== 圆角系统 ===== */
+  --radius: 0.5rem;
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  
+  /* ===== 阴影系统 ===== */
+  --shadow-sm: 0 1px 2px 0 hsl(0 0% 0% / 0.05);
+  --shadow: 0 1px 3px 0 hsl(0 0% 0% / 0.1), 0 1px 2px -1px hsl(0 0% 0% / 0.1);
+  --shadow-md: 0 4px 6px -1px hsl(0 0% 0% / 0.1), 0 2px 4px -2px hsl(0 0% 0% / 0.1);
+  --shadow-lg: 0 10px 15px -3px hsl(0 0% 0% / 0.1), 0 4px 6px -4px hsl(0 0% 0% / 0.1);
+  --shadow-glass: 0 8px 32px rgba(0, 0, 0, 0.1);
+  
+  /* ===== 动画时长 ===== */
+  --duration-fast: 150ms;
+  --duration-normal: 200ms;
+  --duration-slow: 300ms;
+  
+  /* ===== 过渡曲线 ===== */
+  --ease-smooth: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  --ease-bounce: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  --ease-out-back: cubic-bezier(0.34, 1.56, 0.64, 1);
+  
+  /* ===== 布局尺寸 ===== */
+  --titlebar-height: 32px;
+  --statusbar-height: 28px;
+  --sidebar-width: 64px;
+  --sidebar-width-expanded: 180px;
+  --chat-panel-width: 480px;
+  
+  /* ===== 响应式布局 ===== */
+  --breakpoint-compact: 900px;
+  --sidebar-height-top: 48px;
+  
+  /* ===== 遮罩 ===== */
+  --overlay: hsl(0 0% 0% / 0.5);
+  --overlay-blur: 4px;
+}
+
+/* ===== 深色主题 - 玻璃态设计规范 ===== */
+.dark {
+  /* 纯黑背景风格 */
+  --background: hsl(0 0% 0%);
+  --foreground: hsl(0 0% 90%);
+  
+  --card: hsl(0 0% 0%);
+  --card-foreground: hsl(0 0% 90%);
+  
+  --popover: hsl(0 0% 0%);
+  --popover-foreground: hsl(0 0% 90%);
+  
+  --primary: hsl(0 0% 96%);
+  --primary-foreground: hsl(0 0% 9%);
+  
+  --secondary: hsl(0 0% 10%);
+  --secondary-foreground: hsl(0 0% 98%);
+  
+  --muted: hsl(0 0% 10%);
+  --muted-foreground: hsl(0 0% 64%);
+  
+  --accent: hsl(0 0% 10%);
+  --accent-foreground: hsl(0 0% 98%);
+  
+  --destructive: hsl(0 62.8% 30.6%);
+  --destructive-foreground: hsl(0 0% 98%);
+  
+  /* 玻璃态边框 - 白色透明 */
+  --border: hsl(0 0% 100% / 0.1);
+  --input: hsl(0 0% 100% / 0.1);
+  --ring: hsl(0 0% 100% / 0.2);
+  
+  /* 语义颜色 - 深色 */
+  --success: hsl(142 76% 36%);
+  --warning: hsl(38 92% 50%);
+  --info: hsl(0 0% 70%);
+  
+  /* 状态颜色半透明变体 - 深色主题 */
+  --success-bg: hsl(142 76% 36% / 0.2);
+  --success-text: hsl(142 76% 60%);
+  --success-border: hsl(142 76% 36% / 0.3);
+  
+  --error-bg: hsl(0 84% 60% / 0.2);
+  --error-text: hsl(0 84% 70%);
+  --error-border: hsl(0 84% 60% / 0.3);
+  
+  --warning-bg: hsl(38 92% 50% / 0.2);
+  --warning-text: hsl(38 92% 70%);
+  --warning-border: hsl(38 92% 50% / 0.3);
+  
+  --info-bg: hsl(0 0% 100% / 0.1);
+  --info-text: hsl(0 0% 85%);
+  --info-border: hsl(0 0% 100% / 0.15);
+  
+  /* 玻璃态变量 - 深色主题 */
+  --glass-bg: rgba(255, 255, 255, 0.03);
+  --glass-bg-hover: rgba(255, 255, 255, 0.08);
+  --glass-border: rgba(255, 255, 255, 0.1);
+  --glass-border-hover: rgba(255, 255, 255, 0.2);
+  --glass-blur: 10px;
+  
+  /* ===== 对话框专用玻璃态变量 ===== */
+  /* 消息气泡 */
+  --chat-user-bg: rgba(255, 255, 255, 0.1);
+  --chat-user-border: rgba(255, 255, 255, 0.2);
+  --chat-user-text: white;
+  
+  --chat-assistant-bg: rgba(255, 255, 255, 0.03);
+  --chat-assistant-border: rgba(255, 255, 255, 0.08);
+  --chat-assistant-text: rgba(255, 255, 255, 0.9);
+  
+  --chat-system-bg: rgba(255, 255, 255, 0.02);
+  --chat-system-border: rgba(255, 255, 255, 0.05);
+  --chat-system-text: rgba(255, 255, 255, 0.6);
+  
+  /* 输入区域 */
+  --chat-input-bg: rgba(255, 255, 255, 0.05);
+  --chat-input-border: rgba(255, 255, 255, 0.1);
+  --chat-input-focus-border: rgba(255, 255, 255, 0.3);
+  --chat-input-placeholder: rgba(255, 255, 255, 0.4);
+  
+  /* 按钮 */
+  --chat-btn-bg: rgba(255, 255, 255, 0.1);
+  --chat-btn-border: rgba(255, 255, 255, 0.2);
+  --chat-btn-hover-bg: rgba(255, 255, 255, 0.2);
+  --chat-btn-hover-border: rgba(255, 255, 255, 0.3);
+  
+  /* 代码块 */
+  --chat-code-bg: rgba(0, 0, 0, 0.5);
+  --chat-code-border: rgba(255, 255, 255, 0.1);
+  --chat-code-text: rgba(255, 255, 255, 0.8);
+  
+  --chat-inline-code-bg: rgba(255, 255, 255, 0.05);
+  --chat-inline-code-border: rgba(255, 255, 255, 0.08);
+  --chat-inline-code-text: rgba(255, 255, 255, 0.85);
+  
+  /* 发光效果变量 - 深色主题 (更明显) */
+  --glow-success: 0 0 16px hsl(142 76% 36% / 0.4);
+  --glow-warning: 0 0 16px hsl(38 92% 50% / 0.4);
+  --glow-error: 0 0 16px hsl(0 84% 60% / 0.4);
+  --glow-primary: 0 0 16px rgba(255, 255, 255, 0.2);
+  --glow-info: 0 0 16px rgba(255, 255, 255, 0.15);
+  
+  /* 阴影 - 深色 */
+  --shadow-sm: 0 1px 2px 0 hsl(0 0% 0% / 0.3);
+  --shadow: 0 1px 3px 0 hsl(0 0% 0% / 0.3), 0 1px 2px -1px hsl(0 0% 0% / 0.2);
+  --shadow-md: 0 4px 6px -1px hsl(0 0% 0% / 0.4), 0 2px 4px -2px hsl(0 0% 0% / 0.3);
+  --shadow-lg: 0 10px 15px -3px hsl(0 0% 0% / 0.5), 0 4px 6px -4px hsl(0 0% 0% / 0.4);
+  --shadow-glass: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 20px rgba(255, 255, 255, 0.02);
+  
+  /* 遮罩 - 深色 */
+  --overlay: hsl(0 0% 0% / 0.6);
+}

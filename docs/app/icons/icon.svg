@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Deepseek-Cowork Application Icon
+  Design: Holographic Sphere - High Contrast
+  Created: 2026-01-17
+-->
+<svg width="128" height="128" viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg">
+  
+  <!-- Pure black background -->
+  <rect width="128" height="128" rx="20" ry="20" fill="#000000"/>
+  
+  <!-- Holographic Sphere -->
+  <g transform="translate(64, 64)">
+    
+    <!-- Outer orbit ring 1 -->
+    <ellipse cx="0" cy="0" rx="52" ry="18" 
+      fill="none" stroke="#ffffff" stroke-width="1.2" 
+      opacity="0.6" transform="rotate(-15)"/>
+    
+    <!-- Outer orbit ring 2 -->
+    <ellipse cx="0" cy="0" rx="56" ry="20" 
+      fill="none" stroke="#ffffff" stroke-width="1" 
+      opacity="0.5" transform="rotate(60)"/>
+    
+    <!-- Core wireframe sphere -->
+    <g fill="none" stroke="#ffffff" stroke-width="1.5">
+      <!-- Main circle outline -->
+      <circle cx="0" cy="0" r="36" opacity="0.9"/>
+      
+      <!-- Longitude lines -->
+      <ellipse cx="0" cy="0" rx="36" ry="13" opacity="0.7"/>
+      <ellipse cx="0" cy="0" rx="36" ry="13" opacity="0.7" transform="rotate(60)"/>
+      <ellipse cx="0" cy="0" rx="36" ry="13" opacity="0.7" transform="rotate(120)"/>
+      
+      <!-- Latitude line -->
+      <ellipse cx="0" cy="0" rx="13" ry="36" opacity="0.7"/>
+    </g>
+    
+    <!-- Inner core sphere -->
+    <g fill="none" stroke="#ffffff" stroke-width="1">
+      <circle cx="0" cy="0" r="20" opacity="0.4"/>
+      <ellipse cx="0" cy="0" rx="20" ry="8" opacity="0.35" transform="rotate(30)"/>
+      <ellipse cx="0" cy="0" rx="20" ry="8" opacity="0.35" transform="rotate(-30)"/>
+    </g>
+    
+    <!-- Center point -->
+    <circle cx="0" cy="0" r="4" fill="#ffffff"/>
+    
+    <!-- Outer vertex dots -->
+    <g fill="#ffffff">
+      <!-- Cardinal points -->
+      <circle cx="0" cy="-36" r="2.5"/>
+      <circle cx="0" cy="36" r="2.5"/>
+      <circle cx="-36" cy="0" r="2.5"/>
+      <circle cx="36" cy="0" r="2.5"/>
+      <!-- Diagonal corners -->
+      <circle cx="25" cy="-25" r="1.8"/>
+      <circle cx="-25" cy="-25" r="1.8"/>
+      <circle cx="25" cy="25" r="1.8"/>
+      <circle cx="-25" cy="25" r="1.8"/>
+    </g>
+    
+  </g>
+</svg>

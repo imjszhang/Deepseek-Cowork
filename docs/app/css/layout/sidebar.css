@@ -1,0 +1,133 @@
+/**
+ * Sidebar Layout - 玻璃态设计风格
+ * 侧边栏导航样式
+ * 更新: 2026-01-16 - 应用玻璃态设计规范
+ */
+
+/* ===== 侧边栏 - 玻璃态 ===== */
+#sidebar {
+  width: var(--sidebar-width);
+  min-width: var(--sidebar-width);
+  display: flex;
+  flex-direction: column;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 0.5rem;
+  /* 响应式过渡动画 */
+  transition: 
+    width var(--duration-normal, 200ms) var(--ease-smooth),
+    height var(--duration-normal, 200ms) var(--ease-smooth),
+    min-width var(--duration-normal, 200ms) var(--ease-smooth),
+    min-height var(--duration-normal, 200ms) var(--ease-smooth),
+    border var(--duration-normal, 200ms) var(--ease-smooth),
+    padding var(--duration-normal, 200ms) var(--ease-smooth);
+}
+
+.nav-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  /* 响应式过渡 */
+  transition: flex-direction var(--duration-normal, 200ms) var(--ease-smooth);
+}
+
+.nav-spacer {
+  flex: 1;
+}
+
+/* ===== 导航按钮 ===== */
+.nav-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  padding: 0.625rem 0.375rem;
+  border: none;
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--muted-foreground);
+  font-size: 0.625rem;
+  cursor: pointer;
+  /* 响应式过渡 - 包括布局变化 */
+  transition: 
+    background var(--duration-fast, 150ms) var(--ease-smooth),
+    color var(--duration-fast, 150ms) var(--ease-smooth),
+    padding var(--duration-normal, 200ms) var(--ease-smooth),
+    gap var(--duration-normal, 200ms) var(--ease-smooth);
+  outline: none;
+  position: relative;
+}
+
+.nav-btn:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: white;
+}
+
+.nav-btn:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+.nav-btn.active {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+}
+
+.nav-btn.active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 1.5rem;
+  background: var(--primary);
+  border-radius: 0 2px 2px 0;
+  animation: slideIndicatorIn var(--transition-normal, 200ms) ease-out;
+}
+
+@keyframes slideIndicatorIn {
+  from {
+    transform: translateY(-50%) scaleY(0);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(-50%) scaleY(1);
+    opacity: 1;
+  }
+}
+
+.nav-btn.active .nav-icon {
+  color: var(--primary);
+}
+
+/* ===== 导航图标 ===== */
+.nav-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  transition: all var(--transition-fast, 150ms);
+}
+
+.nav-icon svg {
+  width: 1.25rem;
+  height: 1.25rem;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  fill: none;
+}
+
+.nav-label {
+  font-weight: 500;
+  white-space: nowrap;
+  letter-spacing: 0.01em;
+  /* 响应式过渡 */
+  transition: opacity var(--duration-fast, 150ms) var(--ease-smooth);
+}

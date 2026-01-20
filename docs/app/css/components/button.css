@@ -1,0 +1,967 @@
+/**
+ * Button Component - 玻璃态设计风格
+ * 支持变体系统: variant + size
+ * 更新: 2026-01-16 - 增强悬停交互和动画效果
+ */
+
+/* ===== 基础按钮样式 ===== */
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  white-space: nowrap;
+  border-radius: var(--radius);
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  cursor: pointer;
+  outline: none;
+  border: none;
+}
+
+.button:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+.button:hover:not(:disabled) {
+  transform: scale(1.02);
+}
+
+.button:active:not(:disabled) {
+  transform: scale(0.96);
+  transition: transform 0.1s ease;
+}
+
+.button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.button svg {
+  width: 1rem;
+  height: 1rem;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  fill: none;
+  flex-shrink: 0;
+  transition: transform 0.2s ease;
+}
+
+.button:hover:not(:disabled) svg {
+  transform: scale(1.05);
+}
+
+/* ===== 变体 (Variants) ===== */
+
+/* Default - 主要按钮 */
+.button[data-variant="default"],
+.button:not([data-variant]) {
+  background: var(--primary);
+  color: var(--primary-foreground);
+}
+
+.button[data-variant="default"]:hover:not(:disabled),
+.button:not([data-variant]):hover:not(:disabled) {
+  background: hsl(0 0% 15%);
+}
+
+/* Secondary - 次要按钮 */
+.button[data-variant="secondary"] {
+  background: var(--secondary);
+  color: var(--secondary-foreground);
+}
+
+.button[data-variant="secondary"]:hover:not(:disabled) {
+  background: var(--accent);
+}
+
+/* Outline - 边框按钮 */
+.button[data-variant="outline"] {
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--foreground);
+}
+
+.button[data-variant="outline"]:hover:not(:disabled) {
+  background: var(--accent);
+  border-color: var(--border);
+}
+
+/* Ghost - 幽灵按钮 */
+.button[data-variant="ghost"] {
+  background: transparent;
+  color: var(--foreground);
+}
+
+.button[data-variant="ghost"]:hover:not(:disabled) {
+  background: var(--accent);
+}
+
+/* Destructive - 危险按钮 */
+.button[data-variant="destructive"] {
+  background: var(--destructive);
+  color: var(--destructive-foreground);
+}
+
+.button[data-variant="destructive"]:hover:not(:disabled) {
+  background: hsl(0 84% 55%);
+}
+
+/* Link - 链接按钮 */
+.button[data-variant="link"] {
+  background: transparent;
+  color: var(--primary);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.button[data-variant="link"]:hover:not(:disabled) {
+  text-decoration: underline;
+}
+
+/* ===== 尺寸 (Sizes) ===== */
+
+/* Default size */
+.button[data-size="default"],
+.button:not([data-size]) {
+  height: 2.5rem;
+  padding: 0 1rem;
+}
+
+/* Small */
+.button[data-size="sm"] {
+  height: 2.25rem;
+  padding: 0 0.75rem;
+  font-size: 0.8125rem;
+}
+
+/* Large */
+.button[data-size="lg"] {
+  height: 2.75rem;
+  padding: 0 1.5rem;
+  font-size: 1rem;
+}
+
+/* Icon only */
+.button[data-size="icon"] {
+  width: 2.5rem;
+  height: 2.5rem;
+  padding: 0;
+}
+
+.button[data-size="icon-sm"] {
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+}
+
+.button[data-size="icon-lg"] {
+  width: 2.75rem;
+  height: 2.75rem;
+  padding: 0;
+}
+
+/* ===== 兼容旧类名 ===== */
+
+/* btn-primary -> button[data-variant="default"] */
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1.125rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border: none;
+  border-radius: var(--radius);
+  background: var(--primary);
+  color: var(--primary-foreground);
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  outline: none;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: hsl(0 0% 15%);
+  transform: scale(1.02);
+  box-shadow: 0 0 20px rgba(255, 255, 255, 0.15);
+}
+
+.btn-primary:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+.btn-primary:active:not(:disabled) {
+  transform: scale(0.96);
+  transition: transform 0.1s ease;
+}
+
+.btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.btn-primary svg {
+  width: 1rem;
+  height: 1rem;
+  stroke: currentColor;
+  stroke-width: 2;
+  fill: none;
+  transition: transform 0.2s ease;
+}
+
+.btn-primary:hover:not(:disabled) svg {
+  transform: scale(1.05);
+}
+
+/* btn-secondary -> button[data-variant="outline"] */
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1.125rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--muted-foreground);
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  outline: none;
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: var(--muted);
+  color: var(--foreground);
+  border-color: hsl(240 5% 26%);
+  transform: scale(1.02);
+}
+
+.btn-secondary:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+.btn-secondary:active:not(:disabled) {
+  transform: scale(0.96);
+  transition: transform 0.1s ease;
+}
+
+.btn-secondary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.btn-secondary svg {
+  width: 1rem;
+  height: 1rem;
+  stroke: currentColor;
+  stroke-width: 2;
+  fill: none;
+  transition: transform 0.2s ease;
+}
+
+.btn-secondary:hover:not(:disabled) svg {
+  transform: scale(1.05);
+}
+
+/* btn-primary-sm */
+.btn-primary-sm {
+  padding: 0.5rem 0.875rem;
+  font-size: 0.8125rem;
+  border: none;
+  border-radius: var(--radius);
+  background: var(--primary);
+  color: var(--primary-foreground);
+  cursor: pointer;
+  transition: all var(--transition-fast, 150ms);
+}
+
+.btn-primary-sm:hover:not(:disabled) {
+  background: hsl(0 0% 15%);
+}
+
+.btn-primary-sm:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* btn-secondary-sm */
+.btn-secondary-sm {
+  padding: 0.5rem 1rem;
+  background: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--muted-foreground);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-fast, 150ms);
+}
+
+.btn-secondary-sm:hover:not(:disabled) {
+  background: var(--accent);
+  color: var(--foreground);
+}
+
+/* btn-danger */
+.btn-danger {
+  padding: 0.625rem 1.25rem;
+  background: var(--destructive);
+  border: none;
+  border-radius: var(--radius);
+  color: var(--destructive-foreground);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-fast, 150ms);
+}
+
+.btn-danger:hover:not(:disabled) {
+  background: hsl(0 84% 55%);
+}
+
+.btn-danger:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* btn-danger-outline */
+.btn-danger-outline {
+  padding: 0.5rem 1rem;
+  background: transparent;
+  border: 1px solid var(--destructive);
+  border-radius: var(--radius);
+  color: var(--destructive);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-fast, 150ms);
+}
+
+.btn-danger-outline:hover:not(:disabled) {
+  background: hsl(0 84% 60% / 0.1);
+}
+
+/* btn-link */
+.btn-link {
+  background: none;
+  border: none;
+  color: var(--primary);
+  font-size: 0.75rem;
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+  border-radius: var(--radius-sm);
+  transition: background var(--transition-fast, 150ms);
+}
+
+.btn-link:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.btn-link:disabled {
+  color: var(--muted-foreground);
+  cursor: not-allowed;
+}
+
+/* btn-icon */
+.btn-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--muted);
+  color: var(--muted-foreground);
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.btn-icon:hover:not(:disabled) {
+  background: var(--card);
+  border-color: var(--primary);
+  color: var(--foreground);
+  transform: scale(1.05);
+}
+
+.btn-icon:active:not(:disabled) {
+  transform: scale(0.95);
+  transition: transform 0.1s ease;
+}
+
+.btn-icon svg {
+  width: 1rem;
+  height: 1rem;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  fill: none;
+  transition: transform 0.2s ease;
+}
+
+.btn-icon:hover:not(:disabled) svg {
+  transform: scale(1.1);
+}
+
+/* btn-icon-sm */
+.btn-icon-sm {
+  background: none;
+  border: none;
+  color: var(--muted-foreground);
+  cursor: pointer;
+  padding: 0.125rem 0.375rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.875rem;
+  transition: color var(--transition-fast, 150ms), background var(--transition-fast, 150ms);
+}
+
+.btn-icon-sm:hover:not(:disabled) {
+  color: var(--primary);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.btn-icon-sm:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+/* btn-icon-xs */
+.btn-icon-xs {
+  width: 1.375rem;
+  height: 1.375rem;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--muted-foreground);
+  font-size: 0.75rem;
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition-fast, 150ms);
+}
+
+.btn-icon-xs:hover:not(:disabled) {
+  background: var(--accent);
+  color: var(--foreground);
+}
+
+/* btn-copy */
+.btn-copy {
+  position: absolute;
+  right: 0.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  padding: 0.375rem 0.75rem;
+  background: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--muted-foreground);
+  font-size: 0.75rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  transition: all var(--transition-fast, 150ms);
+}
+
+.btn-copy:hover:not(:disabled) {
+  background: var(--accent);
+  color: var(--foreground);
+}
+
+.btn-copy.copied {
+  background: var(--success);
+  border-color: var(--success);
+  color: white;
+}
+
+.btn-copy svg {
+  width: 0.875rem;
+  height: 0.875rem;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  fill: none;
+}
+
+/* btn-copy-inline */
+.btn-copy-inline {
+  position: absolute;
+  right: 0.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  padding: 0.375rem 0.625rem;
+  background: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--muted-foreground);
+  font-size: 0.6875rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  transition: all var(--transition-fast, 150ms);
+}
+
+.btn-copy-inline:hover:not(:disabled) {
+  background: var(--accent);
+  color: var(--foreground);
+}
+
+.btn-copy-inline.copied {
+  background: var(--success);
+  border-color: var(--success);
+  color: white;
+}
+
+/* action-btn */
+.action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  padding: 0.5rem 0.875rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--muted);
+  color: var(--muted-foreground);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-fast, 150ms);
+  outline: none;
+  white-space: nowrap;
+}
+
+.action-btn:hover:not(:disabled) {
+  background: var(--accent);
+  color: var(--foreground);
+  border-color: hsl(240 5% 26%);
+}
+
+.action-btn:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+.action-btn:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.action-btn svg {
+  width: 1rem;
+  height: 1rem;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  fill: none;
+  flex-shrink: 0;
+}
+
+/* btn-daemon */
+.btn-daemon {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.375rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--card);
+  color: var(--muted-foreground);
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: all var(--transition-fast, 150ms);
+}
+
+.btn-daemon:hover:not(:disabled) {
+  background: var(--muted);
+  border-color: var(--primary);
+  color: var(--foreground);
+}
+
+.btn-daemon:active:not(:disabled) {
+  transform: scale(0.96);
+}
+
+.btn-daemon:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-daemon .btn-icon {
+  font-size: 0.625rem;
+  width: auto;
+  height: auto;
+  border: none;
+  background: none;
+}
+
+.btn-daemon .btn-text {
+  font-weight: 500;
+}
+
+.btn-daemon.btn-danger:hover:not(:disabled) {
+  background: hsl(0 84% 60% / 0.15);
+  border-color: var(--destructive);
+  color: var(--destructive);
+}
+
+/* ===== 玻璃态按钮变体 - 增强版 ===== */
+
+/* btn-glass - 基础玻璃态按钮 */
+.btn-glass {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1.125rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  background: var(--glass-bg-hover, rgba(255, 255, 255, 0.08));
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid var(--glass-border-hover, rgba(255, 255, 255, 0.2));
+  border-radius: var(--radius);
+  color: var(--foreground);
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  outline: none;
+}
+
+.btn-glass:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.3);
+  transform: scale(1.02);
+  box-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
+}
+
+.btn-glass:active:not(:disabled) {
+  transform: scale(0.96);
+  transition: transform 0.1s ease;
+}
+
+.btn-glass:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+.btn-glass:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.btn-glass svg {
+  width: 1.25rem;
+  height: 1.25rem;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  fill: none;
+  transition: transform 0.2s ease;
+}
+
+.btn-glass:hover:not(:disabled) svg {
+  transform: scale(1.1);
+}
+
+/* btn-glass-sm - 小型玻璃态按钮 */
+.btn-glass-sm {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  padding: 0.5rem 0.875rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  background: var(--glass-bg, rgba(255, 255, 255, 0.03));
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.1));
+  border-radius: var(--radius);
+  color: var(--foreground);
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.btn-glass-sm:hover:not(:disabled) {
+  background: var(--glass-bg-hover, rgba(255, 255, 255, 0.08));
+  border-color: var(--glass-border-hover, rgba(255, 255, 255, 0.2));
+  transform: scale(1.02);
+}
+
+.btn-glass-sm:active:not(:disabled) {
+  transform: scale(0.96);
+  transition: transform 0.1s ease;
+}
+
+.btn-glass-sm svg {
+  width: 1rem;
+  height: 1rem;
+  stroke: currentColor;
+  stroke-width: 2;
+  fill: none;
+  transition: transform 0.2s ease;
+}
+
+.btn-glass-sm:hover:not(:disabled) svg {
+  transform: scale(1.1);
+}
+
+/* btn-glass-secondary - 次要玻璃态按钮 */
+.btn-glass-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1.125rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  background: var(--glass-bg, rgba(255, 255, 255, 0.03));
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.1));
+  border-radius: var(--radius);
+  color: var(--muted-foreground);
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  outline: none;
+}
+
+.btn-glass-secondary:hover:not(:disabled) {
+  background: var(--glass-bg-hover, rgba(255, 255, 255, 0.08));
+  border-color: var(--glass-border-hover, rgba(255, 255, 255, 0.2));
+  color: var(--foreground);
+  transform: scale(1.02);
+}
+
+.btn-glass-secondary:active:not(:disabled) {
+  transform: scale(0.96);
+  transition: transform 0.1s ease;
+}
+
+.btn-glass-secondary svg {
+  width: 1rem;
+  height: 1rem;
+  stroke: currentColor;
+  stroke-width: 2;
+  fill: none;
+  transition: transform 0.2s ease;
+}
+
+.btn-glass-secondary:hover:not(:disabled) svg {
+  transform: scale(1.1);
+}
+
+/* btn-glass-icon - 玻璃态图标按钮 */
+.btn-glass-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  padding: 0;
+  background: var(--glass-bg, rgba(255, 255, 255, 0.03));
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.1));
+  border-radius: var(--radius);
+  color: var(--muted-foreground);
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.btn-glass-icon:hover:not(:disabled) {
+  background: var(--glass-bg-hover, rgba(255, 255, 255, 0.08));
+  border-color: var(--glass-border-hover, rgba(255, 255, 255, 0.2));
+  color: var(--foreground);
+  transform: scale(1.05);
+}
+
+.btn-glass-icon:active:not(:disabled) {
+  transform: scale(0.95);
+  transition: transform 0.1s ease;
+}
+
+.btn-glass-icon svg {
+  width: 1.25rem;
+  height: 1.25rem;
+  stroke: currentColor;
+  stroke-width: 2;
+  fill: none;
+  transition: transform 0.2s ease;
+}
+
+.btn-glass-icon:hover:not(:disabled) svg {
+  transform: scale(1.15);
+}
+
+/* btn-glass-icon-sm - 小型玻璃态图标按钮 */
+.btn-glass-icon-sm {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  background: var(--glass-bg, rgba(255, 255, 255, 0.03));
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.1));
+  border-radius: var(--radius-sm);
+  color: var(--muted-foreground);
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.btn-glass-icon-sm:hover:not(:disabled) {
+  background: var(--glass-bg-hover, rgba(255, 255, 255, 0.08));
+  border-color: var(--glass-border-hover, rgba(255, 255, 255, 0.2));
+  color: var(--foreground);
+  transform: scale(1.05);
+}
+
+.btn-glass-icon-sm:active:not(:disabled) {
+  transform: scale(0.95);
+  transition: transform 0.1s ease;
+}
+
+.btn-glass-icon-sm svg {
+  width: 1rem;
+  height: 1rem;
+  stroke: currentColor;
+  stroke-width: 2;
+  fill: none;
+  transition: transform 0.2s ease;
+}
+
+.btn-glass-icon-sm:hover:not(:disabled) svg {
+  transform: scale(1.15);
+}
+
+/* btn-glass-primary - 主要玻璃态按钮 (带主题色发光) */
+.btn-glass-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1.125rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: var(--radius);
+  color: var(--foreground);
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  outline: none;
+}
+
+.btn-glass-primary:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.3);
+  transform: scale(1.02);
+  box-shadow: 0 0 20px rgba(255, 255, 255, 0.15);
+}
+
+.btn-glass-primary:active:not(:disabled) {
+  transform: scale(0.96);
+  transition: transform 0.1s ease;
+}
+
+.btn-glass-primary svg {
+  width: 1rem;
+  height: 1rem;
+  stroke: currentColor;
+  stroke-width: 2;
+  fill: none;
+  transition: transform 0.2s ease;
+}
+
+.btn-glass-primary:hover:not(:disabled) svg {
+  transform: scale(1.1);
+}
+
+/* btn-glass-success - 成功玻璃态按钮 */
+.btn-glass-success {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1.125rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  background: var(--success-bg, hsl(142 76% 36% / 0.2));
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid var(--success-border, hsl(142 76% 36% / 0.3));
+  border-radius: var(--radius);
+  color: var(--success-text, hsl(142 76% 60%));
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  outline: none;
+}
+
+.btn-glass-success:hover:not(:disabled) {
+  background: hsl(142 76% 36% / 0.3);
+  border-color: hsl(142 76% 36% / 0.5);
+  transform: scale(1.02);
+  box-shadow: 0 0 20px hsl(142 76% 36% / 0.3);
+}
+
+.btn-glass-success:active:not(:disabled) {
+  transform: scale(0.96);
+  transition: transform 0.1s ease;
+}
+
+/* btn-glass-danger - 危险玻璃态按钮 */
+.btn-glass-danger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1.125rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  background: var(--error-bg, hsl(0 84% 60% / 0.2));
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid var(--error-border, hsl(0 84% 60% / 0.3));
+  border-radius: var(--radius);
+  color: var(--error-text, hsl(0 84% 70%));
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  outline: none;
+}
+
+.btn-glass-danger:hover:not(:disabled) {
+  background: hsl(0 84% 60% / 0.3);
+  border-color: hsl(0 84% 60% / 0.5);
+  transform: scale(1.02);
+  box-shadow: 0 0 20px hsl(0 84% 60% / 0.3);
+}
+
+.btn-glass-danger:active:not(:disabled) {
+  transform: scale(0.96);
+  transition: transform 0.1s ease;
+}

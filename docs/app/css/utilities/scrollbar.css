@@ -1,0 +1,62 @@
+/**
+ * Scrollbar - 玻璃态设计风格
+ * 滚动条样式
+ * 更新: 2026-01-16 - 应用玻璃态设计规范
+ */
+
+/* ===== 浅色主题滚动条 ===== */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--card);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--muted-foreground);
+}
+
+/* ===== 深色主题滚动条 - 玻璃态 ===== */
+.dark::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.dark::-webkit-scrollbar-track {
+  background: #000000;
+}
+
+.dark::-webkit-scrollbar-thumb {
+  background: #333333;
+  border-radius: 3px;
+}
+
+.dark::-webkit-scrollbar-thumb:hover {
+  background: #555555;
+}
+
+/* ===== 滚动条角落 ===== */
+::-webkit-scrollbar-corner {
+  background: var(--background);
+}
+
+.dark::-webkit-scrollbar-corner {
+  background: #000000;
+}
+
+/* ===== Firefox 滚动条 ===== */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) var(--card);
+}
+
+.dark * {
+  scrollbar-color: #333333 #000000;
+}

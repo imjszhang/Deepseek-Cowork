@@ -1,0 +1,119 @@
+/**
+ * Todo Component - Shadcn/UI Style
+ * 待办列表样式
+ */
+
+/* ===== 待办列表容器 ===== */
+.todo-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+  padding: 0.25rem 0;
+}
+
+.todo-items {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+/* ===== 待办项 ===== */
+.todo-item {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0.625rem 0.75rem;
+  background: var(--muted);
+  border-radius: var(--radius);
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  transition: all var(--transition-fast, 150ms);
+  border-left: 3px solid transparent;
+}
+
+.todo-item:hover {
+  background: var(--accent);
+}
+
+/* 待办状态样式 */
+.todo-item.completed {
+  color: var(--success);
+  border-left-color: var(--success);
+  background: hsl(142 76% 36% / 0.1);
+}
+
+.todo-item.completed .todo-content {
+  text-decoration: line-through;
+  opacity: 0.8;
+}
+
+.todo-item.in_progress {
+  color: var(--primary);
+  border-left-color: var(--primary);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.todo-item.in_progress .todo-icon {
+  animation: todoProgress 1.5s ease-in-out infinite;
+}
+
+.todo-item.pending {
+  color: var(--muted-foreground);
+  border-left-color: var(--muted-foreground);
+}
+
+/* 待办图标 */
+.todo-icon {
+  flex-shrink: 0;
+  font-size: 0.875rem;
+  width: 1.125rem;
+  text-align: center;
+  user-select: none;
+}
+
+/* 待办内容 */
+.todo-content {
+  flex: 1;
+  word-break: break-word;
+}
+
+/* 待办统计 */
+.todo-summary {
+  display: flex;
+  gap: 0.75rem;
+  padding: 0.5rem 0.625rem;
+  background: var(--background);
+  border-radius: var(--radius);
+  font-size: 0.6875rem;
+  border-top: 1px solid var(--border);
+}
+
+.todo-stat {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.todo-stat.completed {
+  color: var(--success);
+}
+
+.todo-stat.in_progress {
+  color: var(--primary);
+}
+
+.todo-stat.pending {
+  color: var(--muted-foreground);
+}
+
+/* 进行中状态动画 */
+@keyframes todoProgress {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.6;
+    transform: scale(1.1);
+  }
+}

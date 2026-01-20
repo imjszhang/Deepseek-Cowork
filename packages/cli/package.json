@@ -1,0 +1,52 @@
+{
+  "name": "deepseek-cowork",
+  "version": "0.1.0",
+  "description": "Open-Source Alternative to Claude Cowork - CLI Tool",
+  "author": "imjszhang",
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "deepseek-cowork": "./bin/cli.mjs",
+    "dsc": "./bin/cli.mjs"
+  },
+  "main": "./index.mjs",
+  "files": [
+    "bin",
+    "commands",
+    "index.mjs",
+    "utils"
+  ],
+  "keywords": [
+    "deepseek",
+    "claude-cowork",
+    "open-source",
+    "ai-assistant",
+    "browser-automation",
+    "file-management",
+    "llm",
+    "claude-code",
+    "cli"
+  ],
+  "scripts": {
+    "start": "node bin/cli.mjs start",
+    "dev": "node bin/cli.mjs start --debug",
+    "link": "npm link"
+  },
+  "dependencies": {
+    "chalk": "^5.3.0",
+    "commander": "^12.1.0",
+    "open": "^10.1.0",
+    "ora": "^8.0.1"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/imjszhang/deepseek-cowork.git"
+  },
+  "homepage": "https://deepseek-cowork.com",
+  "bugs": {
+    "url": "https://github.com/imjszhang/deepseek-cowork/issues"
+  }
+}

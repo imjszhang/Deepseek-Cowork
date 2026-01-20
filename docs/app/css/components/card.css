@@ -1,0 +1,1185 @@
+/**
+ * Card Component - 玻璃态设计风格
+ * 卡片、环境项、账户卡片等
+ * 更新: 2026-01-16 - 增强悬停效果和动画
+ */
+
+/* ===== 基础卡片 ===== */
+.card {
+  background: var(--glass-bg, rgba(255, 255, 255, 0.03));
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.1));
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.card:hover {
+  background: var(--glass-bg-hover, rgba(255, 255, 255, 0.08));
+  border-color: var(--glass-border-hover, rgba(255, 255, 255, 0.2));
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3), 0 0 15px rgba(255, 255, 255, 0.05);
+}
+
+/* 带左侧强调边框的卡片 */
+.card-accent {
+  border-left: 4px solid var(--glass-border-hover, rgba(255, 255, 255, 0.2));
+}
+
+.card-accent:hover {
+  border-left-color: rgba(255, 255, 255, 0.4);
+}
+
+.card-header {
+  padding: 1.5rem 1.5rem 0;
+}
+
+.card-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--card-foreground);
+}
+
+.card-description {
+  font-size: 0.875rem;
+  color: var(--muted-foreground);
+  margin-top: 0.25rem;
+}
+
+.card-content {
+  padding: 1.5rem;
+}
+
+.card-footer {
+  padding: 0 1.5rem 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* ===== 环境项卡片 - 玻璃态增强 ===== */
+.env-item {
+  background: var(--glass-bg, rgba(255, 255, 255, 0.03));
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.1));
+  border-radius: var(--radius);
+  padding: 0.75rem;
+  margin-bottom: 0.75rem;
+  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.env-item:hover {
+  background: var(--glass-bg-hover, rgba(255, 255, 255, 0.08));
+  border-color: var(--glass-border-hover, rgba(255, 255, 255, 0.2));
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25), 0 0 10px rgba(255, 255, 255, 0.03);
+}
+
+.env-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+.env-name {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--foreground);
+}
+
+.env-badge {
+  font-size: 0.6875rem;
+  padding: 0.125rem 0.5rem;
+  border-radius: 0.625rem;
+  font-weight: 500;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  transition: all 0.2s ease;
+}
+
+.env-badge.installed {
+  background: var(--success-bg, hsl(142 76% 36% / 0.2));
+  color: var(--success-text, hsl(142 76% 60%));
+  border: 1px solid var(--success-border, hsl(142 76% 36% / 0.3));
+}
+
+.env-badge.warning {
+  background: var(--warning-bg, hsl(38 92% 50% / 0.2));
+  color: var(--warning-text, hsl(38 92% 70%));
+  border: 1px solid var(--warning-border, hsl(38 92% 50% / 0.3));
+}
+
+.env-badge.error {
+  background: var(--error-bg, hsl(0 84% 60% / 0.2));
+  color: var(--error-text, hsl(0 84% 70%));
+  border: 1px solid var(--error-border, hsl(0 84% 60% / 0.3));
+}
+
+.env-details {
+  font-size: 0.75rem;
+}
+
+.env-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 0.25rem;
+}
+
+.env-row:last-child {
+  margin-bottom: 0;
+}
+
+.env-label {
+  color: var(--muted-foreground);
+  width: 6.25rem;
+  flex-shrink: 0;
+}
+
+.env-value {
+  color: var(--muted-foreground);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.env-value.running {
+  color: var(--success);
+}
+
+.env-value.configured {
+  color: var(--primary);
+}
+
+.env-path {
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+  font-size: 0.6875rem;
+  cursor: default;
+}
+
+.env-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--border);
+}
+
+/* ===== 账户卡片 - 玻璃态增强 ===== */
+.account-card {
+  background: var(--glass-bg, rgba(255, 255, 255, 0.03));
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.1));
+  border-radius: 0.625rem;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.account-card:hover {
+  background: var(--glass-bg-hover, rgba(255, 255, 255, 0.08));
+  border-color: var(--glass-border-hover, rgba(255, 255, 255, 0.2));
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25), 0 0 10px rgba(255, 255, 255, 0.03);
+}
+
+/* 已登录状态 */
+.account-logged-in {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.account-status-row {
+  display: flex;
+  gap: 1.5rem;
+}
+
+.account-status-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.account-status-item.full-width {
+  flex: 1;
+}
+
+.account-label {
+  font-size: 0.6875rem;
+  color: var(--muted-foreground);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.account-value {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8125rem;
+  color: var(--foreground);
+}
+
+.account-value code {
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+  font-size: 0.75rem;
+  color: var(--muted-foreground);
+  background: var(--background);
+  padding: 0.125rem 0.375rem;
+  border-radius: var(--radius-sm);
+}
+
+.account-id-value {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+/* 未登录状态 */
+.account-not-logged-in {
+  text-align: center;
+  padding: 0.5rem 0;
+}
+
+.account-empty-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.account-empty-text {
+  font-size: 0.875rem;
+  color: var(--muted-foreground);
+}
+
+.account-empty-hint {
+  font-size: 0.75rem;
+  color: var(--muted-foreground);
+  margin-bottom: 1rem;
+}
+
+.account-empty-actions {
+  display: flex;
+  justify-content: center;
+  gap: 0.75rem;
+}
+
+/* 备份区域 */
+.account-backup-section {
+  margin-bottom: 1rem;
+}
+
+.backup-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.25rem;
+}
+
+.backup-header label {
+  margin-bottom: 0 !important;
+}
+
+/* Secret 显示区域 */
+.secret-display-section {
+  margin-top: 0.75rem;
+}
+
+.secret-display-box {
+  position: relative;
+  background: var(--background);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.875rem;
+  padding-right: 5.625rem;
+}
+
+.secret-display-box code {
+  display: block;
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+  font-size: 0.75rem;
+  color: var(--success);
+  word-break: break-all;
+  line-height: 1.6;
+  user-select: all;
+}
+
+/* 账户操作按钮 */
+.account-actions-section {
+  margin-top: 0.5rem;
+}
+
+.account-action-buttons {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.account-action-buttons button {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+}
+
+.account-action-buttons button svg {
+  width: 1rem;
+  height: 1rem;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  fill: none;
+}
+
+/* ===== 工具卡片 - 玻璃态增强 ===== */
+.tool-card {
+  background: var(--glass-bg, rgba(255, 255, 255, 0.03));
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-radius: var(--radius);
+  margin-bottom: 0.75rem;
+  overflow: hidden;
+  border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.1));
+  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.tool-card:hover {
+  background: var(--glass-bg-hover, rgba(255, 255, 255, 0.08));
+  border-color: var(--glass-border-hover, rgba(255, 255, 255, 0.2));
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25), 0 0 10px rgba(255, 255, 255, 0.03);
+}
+
+.tool-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 0.75rem;
+  background: rgba(255, 255, 255, 0.02);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.tool-header:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.tool-icon {
+  font-size: 1rem;
+  flex-shrink: 0;
+  width: 1.5rem;
+  text-align: center;
+}
+
+.tool-title-group {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.tool-name {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--foreground);
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tool-subtitle {
+  font-size: 0.6875rem;
+  color: var(--muted-foreground);
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 0.125rem;
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+}
+
+.tool-status-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.tool-elapsed {
+  font-size: 0.75rem;
+  color: var(--muted-foreground);
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+}
+
+.tool-status {
+  width: 1.25rem;
+  height: 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.875rem;
+}
+
+.tool-status.completed {
+  color: var(--success);
+}
+
+.tool-status.error {
+  color: var(--destructive);
+}
+
+.tool-status.denied,
+.tool-status.canceled {
+  color: var(--muted-foreground);
+}
+
+/* 工具内容区 */
+.tool-content {
+  padding: 0.75rem;
+  border-top: 1px solid var(--border);
+  max-height: 25rem;
+  overflow-y: auto;
+  transition: max-height var(--transition-normal, 200ms), padding var(--transition-normal, 200ms);
+}
+
+.tool-content.collapsed {
+  max-height: 0;
+  padding: 0 0.75rem;
+  border-top: none;
+  overflow: hidden;
+}
+
+.tool-empty {
+  color: var(--muted-foreground);
+  font-size: 0.75rem;
+  text-align: center;
+  padding: 0.5rem 0;
+}
+
+/* ===== Sidechain 子任务列表 ===== */
+.sidechain-tools {
+  padding: 0.5rem 0;
+}
+
+.sidechain-tool-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.375rem 0.5rem;
+  font-size: 0.8125rem;
+  color: var(--muted-foreground);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.sidechain-tool-item:last-child {
+  border-bottom: none;
+}
+
+.sidechain-tool-title {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+}
+
+.sidechain-tool-status {
+  flex-shrink: 0;
+  margin-left: 0.5rem;
+  font-size: 0.875rem;
+}
+
+.sidechain-more {
+  padding: 0.375rem 0.5rem;
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.4);
+  font-style: italic;
+}
+
+/* 工具内容区块 */
+.tool-section {
+  margin-bottom: 0.75rem;
+}
+
+.tool-section:last-child {
+  margin-bottom: 0;
+}
+
+.tool-section-header {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: var(--muted-foreground);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 0.375rem;
+}
+
+.tool-section-content {
+  background: var(--background);
+  border-radius: var(--radius);
+  padding: 0.5rem 0.625rem;
+}
+
+.tool-code {
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+  font-size: 0.75rem;
+  line-height: 1.5;
+  color: var(--muted-foreground);
+  white-space: pre-wrap;
+  word-break: break-all;
+  margin: 0;
+  background: transparent;
+  padding: 0;
+}
+
+.tool-code code {
+  background: transparent;
+  padding: 0;
+}
+
+.tool-path {
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+  font-size: 0.75rem;
+  color: var(--muted-foreground);
+  word-break: break-all;
+}
+
+.tool-param {
+  font-size: 0.75rem;
+  color: var(--muted-foreground);
+}
+
+.tool-param .param-label {
+  color: var(--muted-foreground);
+  margin-right: 0.25rem;
+}
+
+/* 工具错误 */
+.tool-error .tool-section-content {
+  background: var(--error-bg, hsl(0 84% 60% / 0.2));
+  border: 1px solid var(--error-border, hsl(0 84% 60% / 0.3));
+  color: var(--error-text, hsl(0 84% 70%));
+}
+
+/* ===== 文件项卡片 - 玻璃态增强 ===== */
+.file-item {
+  transition: all 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.file-item:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+/* ===== 标签页项 - 玻璃态增强 ===== */
+.tab-item {
+  transition: all 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.tab-item:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+/* ===== Bash 终端视图 - 玻璃态 ===== */
+.tool-bash {
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+}
+
+.tool-bash-command {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  background: rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius);
+  padding: 0.625rem 0.75rem;
+}
+
+.tool-bash-prompt {
+  color: rgba(34, 197, 94, 0.8);
+  font-weight: 600;
+  flex-shrink: 0;
+  user-select: none;
+}
+
+.tool-bash-cmd {
+  flex: 1;
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  font-size: 0.75rem;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.tool-bash-cmd code {
+  color: rgba(255, 255, 255, 0.85);
+  background: transparent;
+  padding: 0;
+}
+
+.tool-bash-output {
+  margin-top: 0.5rem;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius);
+  padding: 0.5rem 0.75rem;
+  max-height: 15rem;
+  overflow-y: auto;
+}
+
+.tool-bash-stdout,
+.tool-bash-stderr {
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  font-size: 0.6875rem;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.tool-bash-stdout code {
+  color: rgba(255, 255, 255, 0.7);
+  background: transparent;
+  padding: 0;
+}
+
+.tool-bash-stderr {
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.tool-bash-stderr code {
+  color: rgba(239, 68, 68, 0.8);
+  background: transparent;
+  padding: 0;
+}
+
+.tool-bash-error {
+  margin-top: 0.5rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: var(--radius);
+  font-size: 0.75rem;
+  color: rgba(239, 68, 68, 0.9);
+}
+
+.tool-bash-error-icon {
+  flex-shrink: 0;
+}
+
+.tool-bash-error-msg {
+  flex: 1;
+  word-break: break-word;
+}
+
+/* ===== Edit 差异视图 - 玻璃态 ===== */
+.tool-diff {
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+}
+
+.tool-diff-path {
+  font-size: 0.6875rem;
+  color: var(--muted-foreground);
+  margin-bottom: 0.5rem;
+  padding: 0.25rem 0.5rem;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: var(--radius-sm);
+}
+
+.tool-diff-content {
+  background: rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.tool-diff-section {
+  padding: 0.5rem 0;
+}
+
+.tool-diff-section:not(:last-child) {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.tool-diff-line {
+  display: flex;
+  align-items: flex-start;
+  padding: 0.125rem 0.75rem;
+  font-size: 0.6875rem;
+  line-height: 1.5;
+}
+
+.tool-diff-line.removed {
+  background: rgba(239, 68, 68, 0.1);
+}
+
+.tool-diff-line.added {
+  background: rgba(34, 197, 94, 0.1);
+}
+
+.tool-diff-sign {
+  width: 1rem;
+  flex-shrink: 0;
+  font-weight: 600;
+  user-select: none;
+}
+
+.tool-diff-line.removed .tool-diff-sign {
+  color: rgba(239, 68, 68, 0.9);
+}
+
+.tool-diff-line.added .tool-diff-sign {
+  color: rgba(34, 197, 94, 0.9);
+}
+
+.tool-diff-text {
+  flex: 1;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.tool-diff-line.removed .tool-diff-text {
+  color: rgba(239, 68, 68, 0.8);
+}
+
+.tool-diff-line.added .tool-diff-text {
+  color: rgba(34, 197, 94, 0.8);
+}
+
+/* ===== Write 写入文件视图 - 玻璃态 ===== */
+.tool-write {
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+}
+
+.tool-write-path {
+  font-size: 0.6875rem;
+  color: var(--muted-foreground);
+  margin-bottom: 0.5rem;
+  padding: 0.25rem 0.5rem;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: var(--radius-sm);
+}
+
+.tool-write-content {
+  background: rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius);
+  padding: 0.5rem 0;
+  max-height: 20rem;
+  overflow-y: auto;
+}
+
+.tool-write-line {
+  display: flex;
+  align-items: flex-start;
+  padding: 0.0625rem 0.75rem;
+  font-size: 0.6875rem;
+  line-height: 1.5;
+  background: rgba(34, 197, 94, 0.05);
+}
+
+.tool-write-line:hover {
+  background: rgba(34, 197, 94, 0.1);
+}
+
+.tool-write-number {
+  width: 2.5rem;
+  flex-shrink: 0;
+  color: rgba(255, 255, 255, 0.3);
+  text-align: right;
+  padding-right: 0.75rem;
+  user-select: none;
+}
+
+.tool-write-text {
+  flex: 1;
+  color: rgba(34, 197, 94, 0.8);
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.tool-write-more {
+  padding: 0.5rem 0.75rem;
+  font-size: 0.6875rem;
+  color: rgba(255, 255, 255, 0.4);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  font-style: italic;
+}
+
+/* ===== AskUserQuestion 问答视图 - 玻璃态 ===== */
+.tool-question {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.tool-question-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.tool-question-header {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: var(--muted-foreground);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 0.25rem 0.5rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: var(--radius-sm);
+  width: fit-content;
+}
+
+.tool-question-text {
+  font-size: 0.875rem;
+  color: rgba(255, 255, 255, 0.9);
+  line-height: 1.5;
+}
+
+.tool-question-options {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.tool-question-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.625rem;
+  padding: 0.625rem 0.75rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.tool-question-option:hover:not(.disabled) {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.tool-question-option.selected {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.tool-question-option.disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.tool-question-indicator {
+  width: 1.125rem;
+  height: 1.125rem;
+  flex-shrink: 0;
+  margin-top: 0.125rem;
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  transition: all 0.2s ease;
+}
+
+.tool-question-indicator.radio {
+  border-radius: 50%;
+}
+
+.tool-question-indicator.checkbox {
+  border-radius: var(--radius-sm);
+}
+
+.tool-question-option.selected .tool-question-indicator {
+  border-color: rgba(255, 255, 255, 0.8);
+  background: rgba(255, 255, 255, 0.8);
+}
+
+.tool-question-option-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
+.tool-question-option-label {
+  font-size: 0.8125rem;
+  color: rgba(255, 255, 255, 0.9);
+  font-weight: 500;
+}
+
+.tool-question-option-desc {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.5);
+  line-height: 1.4;
+}
+
+.tool-question-actions {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 0.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.tool-question-submit {
+  padding: 0.5rem 1.25rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: white;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.tool-question-submit:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.tool-question-submit:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ===== Read 读取文件视图 - 玻璃态 ===== */
+.tool-read {
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+}
+
+.tool-read-path {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.6);
+  margin-bottom: 0.5rem;
+  word-break: break-all;
+}
+
+.tool-read-content {
+  background: rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius);
+  padding: 0.5rem 0;
+  max-height: 15rem;
+  overflow-y: auto;
+}
+
+.tool-read-line {
+  display: flex;
+  align-items: flex-start;
+  padding: 0.0625rem 0.75rem;
+  font-size: 0.6875rem;
+  line-height: 1.5;
+}
+
+.tool-read-line:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.tool-read-number {
+  width: 2.5rem;
+  flex-shrink: 0;
+  color: rgba(255, 255, 255, 0.3);
+  text-align: right;
+  padding-right: 0.75rem;
+  user-select: none;
+}
+
+.tool-read-text {
+  flex: 1;
+  color: rgba(255, 255, 255, 0.7);
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.tool-read-more {
+  padding: 0.5rem 0.75rem;
+  font-size: 0.6875rem;
+  color: rgba(255, 255, 255, 0.4);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  font-style: italic;
+}
+
+/* ===== Glob/Grep 搜索通用样式 - 玻璃态 ===== */
+.tool-search-query {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius);
+  margin-bottom: 0.5rem;
+}
+
+.tool-search-label {
+  font-size: 0.6875rem;
+  color: rgba(255, 255, 255, 0.5);
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+
+.tool-search-value {
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.8);
+  background: rgba(255, 255, 255, 0.05);
+  padding: 0.125rem 0.375rem;
+  border-radius: var(--radius-sm);
+  word-break: break-all;
+}
+
+/* ===== Glob 文件搜索结果 - 玻璃态 ===== */
+.tool-glob-results {
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius);
+  padding: 0.375rem 0;
+}
+
+.tool-glob-file {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.375rem 0.75rem;
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.7);
+  transition: background 0.15s ease;
+}
+
+.tool-glob-file:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.tool-glob-icon {
+  flex-shrink: 0;
+  font-size: 0.875rem;
+}
+
+.tool-glob-name {
+  flex: 1;
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+  word-break: break-all;
+}
+
+.tool-glob-more {
+  padding: 0.375rem 0.75rem;
+  font-size: 0.6875rem;
+  color: rgba(255, 255, 255, 0.4);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  font-style: italic;
+}
+
+/* ===== Grep 内容搜索结果 - 玻璃态 ===== */
+.tool-grep-results {
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius);
+  padding: 0.5rem 0;
+  max-height: 15rem;
+  overflow-y: auto;
+}
+
+.tool-grep-line {
+  padding: 0.25rem 0.75rem;
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+  font-size: 0.6875rem;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.7);
+  word-break: break-all;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.tool-grep-line:last-child {
+  border-bottom: none;
+}
+
+.tool-grep-line:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.tool-grep-match {
+  background: rgba(250, 204, 21, 0.3);
+  color: rgba(250, 204, 21, 1);
+  padding: 0 0.125rem;
+  border-radius: 2px;
+}
+
+.tool-grep-more {
+  padding: 0.375rem 0.75rem;
+  font-size: 0.6875rem;
+  color: rgba(255, 255, 255, 0.4);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  font-style: italic;
+}
+
+/* ===== WebSearch 网络搜索结果 - 玻璃态 ===== */
+.tool-websearch-results {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.tool-websearch-item {
+  padding: 0.625rem 0.75rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius);
+  transition: all 0.2s ease;
+}
+
+.tool-websearch-item:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+.tool-websearch-title {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.9);
+  margin-bottom: 0.25rem;
+}
+
+.tool-websearch-url {
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+  font-size: 0.6875rem;
+  color: rgba(96, 165, 250, 0.8);
+  word-break: break-all;
+  margin-bottom: 0.25rem;
+}
+
+.tool-websearch-snippet {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.5);
+  line-height: 1.4;
+}
+
+.tool-websearch-summary {
+  padding: 0.5rem 0.75rem;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius);
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.6);
+  line-height: 1.5;
+}
+
+.tool-websearch-more {
+  padding: 0.375rem 0;
+  font-size: 0.6875rem;
+  color: rgba(255, 255, 255, 0.4);
+  font-style: italic;
+  text-align: center;
+}

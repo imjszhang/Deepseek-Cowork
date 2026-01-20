@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deepseek-Cowork 图标生成器</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #e0e0e0;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: #252525;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+        h1 {
+            color: #fff;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            color: #888;
+            margin-bottom: 30px;
+        }
+        .preview-section {
+            display: flex;
+            gap: 30px;
+            margin: 30px 0;
+            flex-wrap: wrap;
+        }
+        .main-preview {
+            background: #333;
+            padding: 30px;
+            border-radius: 12px;
+            text-align: center;
+        }
+        .main-preview img {
+            width: 128px;
+            height: 128px;
+            border-radius: 20px;
+        }
+        .icon-sizes {
+            flex: 1;
+        }
+        .icon-preview {
+            display: flex;
+            gap: 20px;
+            align-items: flex-end;
+            flex-wrap: wrap;
+        }
+        .icon-size {
+            text-align: center;
+            background: #333;
+            padding: 15px;
+            border-radius: 8px;
+        }
+        .icon-size h4 {
+            margin: 0 0 10px 0;
+            color: #888;
+            font-size: 12px;
+        }
+        canvas {
+            border: 1px solid #444;
+            border-radius: 4px;
+            background: #000;
+        }
+        .buttons {
+            margin: 20px 0;
+        }
+        button {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin: 5px;
+            font-size: 14px;
+            transition: background 0.2s;
+        }
+        button:hover:not(:disabled) {
+            background: #2563eb;
+        }
+        button:disabled {
+            background: #555;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+        .download-links {
+            margin-top: 20px;
+            padding: 20px;
+            background: #333;
+            border-radius: 8px;
+        }
+        .download-links h3 {
+            margin-top: 0;
+            color: #888;
+        }
+        .download-links a {
+            display: inline-block;
+            margin: 5px;
+            padding: 10px 18px;
+            background: #22c55e;
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            transition: background 0.2s;
+        }
+        .download-links a:hover {
+            background: #16a34a;
+        }
+        .info-box {
+            margin-top: 30px;
+            padding: 20px;
+            background: #333;
+            border-radius: 8px;
+            border-left: 4px solid #3b82f6;
+        }
+        .info-box h3 {
+            margin-top: 0;
+            color: #fff;
+        }
+        .info-box ol {
+            color: #ccc;
+            line-height: 1.8;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Deepseek-Cowork 图标生成器</h1>
+        <p class="subtitle">全息球体 (Holographic Sphere) 设计风格</p>
+        
+        <div class="preview-section">
+            <div class="main-preview">
+                <h3 style="margin-top:0;color:#888;">SVG 源文件</h3>
+                <img src="icon.svg" alt="Icon Preview" id="svgPreview">
+            </div>
+            
+            <div class="icon-sizes">
+                <h3 style="color:#888;margin-top:0;">PNG 预览</h3>
+                <div class="icon-preview">
+                    <div class="icon-size">
+                        <h4>16x16</h4>
+                        <canvas id="canvas16" width="16" height="16"></canvas>
+                    </div>
+                    <div class="icon-size">
+                        <h4>32x32</h4>
+                        <canvas id="canvas32" width="32" height="32"></canvas>
+                    </div>
+                    <div class="icon-size">
+                        <h4>48x48</h4>
+                        <canvas id="canvas48" width="48" height="48"></canvas>
+                    </div>
+                    <div class="icon-size">
+                        <h4>128x128</h4>
+                        <canvas id="canvas128" width="128" height="128"></canvas>
+                    </div>
+                    <div class="icon-size">
+                        <h4>256x256</h4>
+                        <canvas id="canvas256" width="256" height="256"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="buttons">
+            <button onclick="generateIcons()">生成图标</button>
+            <button onclick="downloadAll()">下载所有 PNG</button>
+        </div>
+        
+        <div class="download-links" id="downloadLinks" style="display: none;">
+            <h3>下载链接:</h3>
+        </div>
+        
+        <div class="info-box">
+            <h3>使用说明</h3>
+            <ol>
+                <li>点击"生成图标"按钮生成不同尺寸的 PNG</li>
+                <li>点击"下载所有 PNG"一次性下载所有尺寸</li>
+                <li>生成的图标可用于：
+                    <ul>
+                        <li>Electron 应用图标 (icon-256.png 或 icon.ico)</li>
+                        <li>任务栏/托盘图标 (icon-16.png, icon-32.png)</li>
+                        <li>桌面快捷方式 (icon-48.png, icon-128.png)</li>
+                    </ul>
+                </li>
+            </ol>
+        </div>
+    </div>
+
+    <script>
+        // SVG图标数据
+        const svgData = `<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Deepseek-Cowork Application Icon
+  Design: Holographic Sphere - High Contrast
+  Created: 2026-01-17
+-->
+<svg width="128" height="128" viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg">
+  
+  <!-- Pure black background -->
+  <rect width="128" height="128" rx="20" ry="20" fill="#000000"/>
+  
+  <!-- Holographic Sphere -->
+  <g transform="translate(64, 64)">
+    
+    <!-- Outer orbit ring 1 -->
+    <ellipse cx="0" cy="0" rx="52" ry="18" 
+      fill="none" stroke="#ffffff" stroke-width="1.2" 
+      opacity="0.6" transform="rotate(-15)"/>
+    
+    <!-- Outer orbit ring 2 -->
+    <ellipse cx="0" cy="0" rx="56" ry="20" 
+      fill="none" stroke="#ffffff" stroke-width="1" 
+      opacity="0.5" transform="rotate(60)"/>
+    
+    <!-- Core wireframe sphere -->
+    <g fill="none" stroke="#ffffff" stroke-width="1.5">
+      <!-- Main circle outline -->
+      <circle cx="0" cy="0" r="36" opacity="0.9"/>
+      
+      <!-- Longitude lines -->
+      <ellipse cx="0" cy="0" rx="36" ry="13" opacity="0.7"/>
+      <ellipse cx="0" cy="0" rx="36" ry="13" opacity="0.7" transform="rotate(60)"/>
+      <ellipse cx="0" cy="0" rx="36" ry="13" opacity="0.7" transform="rotate(120)"/>
+      
+      <!-- Latitude line -->
+      <ellipse cx="0" cy="0" rx="13" ry="36" opacity="0.7"/>
+    </g>
+    
+    <!-- Inner core sphere -->
+    <g fill="none" stroke="#ffffff" stroke-width="1">
+      <circle cx="0" cy="0" r="20" opacity="0.4"/>
+      <ellipse cx="0" cy="0" rx="20" ry="8" opacity="0.35" transform="rotate(30)"/>
+      <ellipse cx="0" cy="0" rx="20" ry="8" opacity="0.35" transform="rotate(-30)"/>
+    </g>
+    
+    <!-- Center point -->
+    <circle cx="0" cy="0" r="4" fill="#ffffff"/>
+    
+    <!-- Outer vertex dots -->
+    <g fill="#ffffff">
+      <!-- Cardinal points -->
+      <circle cx="0" cy="-36" r="2.5"/>
+      <circle cx="0" cy="36" r="2.5"/>
+      <circle cx="-36" cy="0" r="2.5"/>
+      <circle cx="36" cy="0" r="2.5"/>
+      <!-- Diagonal corners -->
+      <circle cx="25" cy="-25" r="1.8"/>
+      <circle cx="-25" cy="-25" r="1.8"/>
+      <circle cx="25" cy="25" r="1.8"/>
+      <circle cx="-25" cy="25" r="1.8"/>
+    </g>
+    
+  </g>
+</svg>`;
+
+        function generateIcons() {
+            const sizes = [16, 32, 48, 128, 256];
+            const downloadLinks = document.getElementById('downloadLinks');
+            downloadLinks.innerHTML = '<h3>下载链接:</h3>';
+            
+            const generateBtn = event?.target;
+            if (generateBtn) {
+                generateBtn.textContent = '生成中...';
+                generateBtn.disabled = true;
+            }
+            
+            sizes.forEach(size => {
+                const canvas = document.getElementById(`canvas${size}`);
+                const ctx = canvas.getContext('2d');
+                
+                const img = new Image();
+                img.onload = function() {
+                    try {
+                        ctx.clearRect(0, 0, size, size);
+                        ctx.drawImage(img, 0, 0, size, size);
+                        
+                        canvas.toBlob(function(blob) {
+                            if (blob) {
+                                const url = URL.createObjectURL(blob);
+                                const link = document.createElement('a');
+                                link.href = url;
+                                link.download = `icon-${size}.png`;
+                                link.textContent = `icon-${size}.png`;
+                                downloadLinks.appendChild(link);
+                            }
+                        }, 'image/png');
+                    } catch (error) {
+                        console.error(`生成 ${size}x${size} 图标时出错:`, error);
+                    }
+                };
+                
+                img.onerror = function() {
+                    console.error(`加载 ${size}x${size} 图标时出错`);
+                };
+                
+                try {
+                    const svgBlob = new Blob([svgData], {type: 'image/svg+xml;charset=utf-8'});
+                    const url = URL.createObjectURL(svgBlob);
+                    img.src = url;
+                } catch (error) {
+                    console.error('创建SVG数据时出错:', error);
+                }
+            });
+            
+            setTimeout(() => {
+                if (generateBtn) {
+                    generateBtn.textContent = '生成图标';
+                    generateBtn.disabled = false;
+                }
+                downloadLinks.style.display = 'block';
+            }, 1000);
+        }
+        
+        function downloadAll() {
+            const links = document.querySelectorAll('#downloadLinks a');
+            if (links.length === 0) {
+                alert('请先生成图标！');
+                return;
+            }
+            
+            const button = event.target;
+            const originalText = button.textContent;
+            button.textContent = '下载中...';
+            button.disabled = true;
+            
+            links.forEach((link, index) => {
+                setTimeout(() => {
+                    link.click();
+                    if (index === links.length - 1) {
+                        setTimeout(() => {
+                            button.textContent = originalText;
+                            button.disabled = false;
+                        }, 500);
+                    }
+                }, index * 500);
+            });
+        }
+        
+        window.addEventListener('load', function() {
+            setTimeout(generateIcons, 500);
+        });
+    </script>
+</body>
+</html>
