@@ -141,14 +141,16 @@ function processHtml(srcPath, destPath) {
         `    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>\n</head>`
     );
     
-    // 添加新的 JS 文件引用
-    content = content.replace(
-        '<script src="js/app.js"></script>',
-        `<script src="js/core/ApiAdapter.js"></script>
+    // 添加新的 JS 文件引用（仅当不存在时）
+    if (!content.includes('js/core/ApiAdapter.js')) {
+        content = content.replace(
+            '<script src="js/app.js"></script>',
+            `<script src="js/core/ApiAdapter.js"></script>
     <script src="js/core/WebSocketClient.js"></script>
     <script src="js/components/ConnectionGuide.js"></script>
     <script src="js/app.js"></script>`
-    );
+        );
+    }
     
     // 添加连接指引样式（仅当不存在时）
     if (!content.includes('connection-guide.css')) {

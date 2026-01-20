@@ -1270,9 +1270,11 @@
   <script src="js/wizards/SetupWizard.js"></script>
   <script src="js/wizards/AccountSetup.js"></script>
   
-  <!-- Initialize ApiAdapter and ConnectionGuide for Web mode -->
+  <script src="js/app.js"></script>
+  
+  <!-- Initialize ApiAdapter and ConnectionGuide for Web mode (after all scripts loaded) -->
   <script>
-    (async function() {
+    document.addEventListener('DOMContentLoaded', async function() {
       // Initialize ApiAdapter
       if (typeof ApiAdapter !== 'undefined' && window.apiAdapter) {
         try {
@@ -1289,9 +1291,7 @@
           console.error('[Init] ApiAdapter initialization failed:', error);
         }
       }
-    })();
+    });
   </script>
-  
-  <script src="js/app.js"></script>
 </body>
 </html>
