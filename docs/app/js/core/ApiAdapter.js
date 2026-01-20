@@ -14,6 +14,11 @@
  * @returns {'electron' | 'web'} 环境类型
  */
 function detectEnvironment() {
+    // 首先检查是否是我们创建的 polyfill（polyfill 会有特殊标记）
+    if (window.browserControlManager?._isPolyfill === true) {
+        return 'web';
+    }
+    
     // 方法1: 检查 Electron 特有的全局对象
     if (typeof process !== 'undefined' && process.versions && process.versions.electron) {
         return 'electron';
@@ -450,6 +455,9 @@ function createBrowserControlManagerPolyfill() {
     }
     
     return {
+        // 标记这是一个 polyfill，用于 detectEnvironment 区分
+        _isPolyfill: true,
+        
         // ========== 服务器状态 ==========
         getServerStatus: createApiMethod('getServerStatus'),
         getDetailedStatus: createApiMethod('getDetailedStatus'),

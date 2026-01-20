@@ -190,6 +190,20 @@ class BrowserControlModule {
       dotEl.className = 'status-dot';
     }
     
+    // 如果 status 为 null 或 undefined，显示停止状态
+    if (!status) {
+      if (valueEl) {
+        valueEl.textContent = t('status.stopped');
+        valueEl.className = 'status-value';
+      }
+      if (dotEl) dotEl.classList.add('state-stopped');
+      if (panelBadge) {
+        panelBadge.textContent = t('settings.stopped');
+        panelBadge.className = 'env-badge error';
+      }
+      return;
+    }
+    
     // 更新底部状态栏 + 设置面板服务器状态
     if (status.restarting) {
       if (valueEl) {
