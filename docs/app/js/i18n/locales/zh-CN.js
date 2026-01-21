@@ -592,6 +592,7 @@
       applyingConfig: '正在应用配置...',
       switchingWorkDir: '正在切换工作目录...',
       resettingToDefault: '正在重置为默认目录...',
+      workspaceDirReset: '已恢复为默认目录',
       initializingAccount: '正在初始化账户...',
       loginSuccess: '登录成功',
       tokenSaved: 'Claude Auth Token 已保存',

@@ -592,6 +592,7 @@
       applyingConfig: 'Applying configuration...',
       switchingWorkDir: 'Switching working directory...',
       resettingToDefault: 'Resetting to default directory...',
+      workspaceDirReset: 'Reset to default directory',
       initializingAccount: 'Initializing account...',
       loginSuccess: 'Login successful',
       tokenSaved: 'Claude Auth Token saved',

@@ -216,12 +216,22 @@ class WorkspaceSettings {
             this.elements.workspaceDirInput.value = result.path;
           }
           
-          this.app?.showNotification?.(t('notifications.workspaceDirSet'), 'success');
+          // 更新状态栏工作目录显示
+          this.app?.updateStatusBarWorkspace?.(result.path);
           
-          // 触发应用重新加载
-          if (this.app?.initFilesPanel) {
-            await this.app.initFilesPanel();
+          // 重置文件面板状态并刷新
+          if (this.app) {
+            this.app.workspaceRoot = null;
+            this.app.currentFilePath = null;
+            this.app.filePathHistory = [];
+            await this.app.initFilesPanel?.();
           }
+          
+          // 清空对话框并重新加载新目录的对话历史
+          this.app?.clearAIMessages?.();
+          await this.app?.loadHappyMessageHistory?.();
+          
+          this.app?.showNotification?.(t('notifications.workspaceDirSet'), 'success');
         } else {
           this.app?.showNotification?.(switchResult?.error || t('notifications.operationFailed'), 'error');
         }
@@ -252,12 +262,22 @@ class WorkspaceSettings {
           this.elements.workspaceDirInput.value = result.path;
         }
         
-        this.app?.showNotification?.(t('notifications.workspaceDirReset'), 'success');
+        // 更新状态栏工作目录显示
+        this.app?.updateStatusBarWorkspace?.(result.path);
         
-        // 触发应用重新加载
-        if (this.app?.initFilesPanel) {
-          await this.app.initFilesPanel();
+        // 重置文件面板状态并刷新
+        if (this.app) {
+          this.app.workspaceRoot = null;
+          this.app.currentFilePath = null;
+          this.app.filePathHistory = [];
+          await this.app.initFilesPanel?.();
         }
+        
+        // 清空对话框并重新加载新目录的对话历史
+        this.app?.clearAIMessages?.();
+        await this.app?.loadHappyMessageHistory?.();
+        
+        this.app?.showNotification?.(t('notifications.workspaceDirReset'), 'success');
       } else {
         this.app?.showNotification?.(result?.error || t('notifications.operationFailed'), 'error');
       }
