@@ -130,8 +130,8 @@ const ThemeManager = {
     const linkId = 'hljs-theme';
     let link = document.getElementById(linkId);
     
-    const darkTheme = 'https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/styles/atom-one-dark.min.css';
-    const lightTheme = 'https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/styles/atom-one-light.min.css';
+    const darkTheme = 'css/highlight-js-atom-one-dark.min.css';
+    const lightTheme = 'css/highlight-js-atom-one-light.min.css';
     
     const targetHref = theme === 'dark' ? darkTheme : lightTheme;
     
