@@ -590,6 +590,20 @@
       readFailed: 'Failed to read file'
     },
     
+    // Daemon startup progress messages
+    daemon: {
+      startProgress: {
+        acquiringLock: 'Preparing to start Daemon...',
+        spawning: 'Starting Daemon process...',
+        waitingState: 'Waiting for Daemon to be ready...',
+        httpCheck: 'Verifying Daemon service...',
+        creatingSession: 'Creating session...',
+        connecting: 'Connecting to Agent...',
+        ready: 'Agent is ready',
+        error: 'Daemon startup failed'
+      }
+    },
+    
     // Notifications
     notifications: {
       // Software update notifications

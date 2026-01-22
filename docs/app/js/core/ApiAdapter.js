@@ -997,6 +997,7 @@ function createBrowserControlManagerPolyfill() {
         onHappyMessagesRestored: createEventListener('happy:messagesRestored'),
         onHappyServiceStatus: createEventListener('happy:serviceStatus'),
         onDaemonStatusChanged: createEventListener('daemon:statusChanged'),
+        onDaemonStartProgress: createEventListener('daemon:startProgress'),
         onHappyInitialized: createEventListener('happy:initialized'),
         onHappyStatus: createEventListener('happy:status'),  // 初始状态事件
         onUpdateChecking: createEventListener('update:checking'),

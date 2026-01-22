@@ -986,11 +986,11 @@ class BrowserControlManagerApp {
       // 加载最新的 usage 数据
       await this.loadLatestUsage();
       
-      // 显示连接成功消息（只显示一次）
+      // 显示 Agent 已就绪消息（与进度消息保持一致，只显示一次）
       if (!this._connectedMessageShown) {
         this._connectedMessageShown = true;
         const t = typeof I18nManager !== 'undefined' ? I18nManager.t.bind(I18nManager) : (k) => k;
-        this.addAIMessage('system', t('chat.agentConnected'));
+        this.addAIMessage('system', t('daemon.startProgress.ready'));
       }
     });
     if (unsubHappyConnected) this.unsubscribers.push(unsubHappyConnected);
@@ -1048,6 +1048,16 @@ class BrowserControlManagerApp {
     });
     if (unsubDaemonStatus) this.unsubscribers.push(unsubDaemonStatus);
     
+    // 监听 daemon 启动进度
+    const unsubDaemonProgress = window.browserControlManager.onDaemonStartProgress?.((data) => {
+      console.log('Daemon start progress:', data);
+      const t = typeof I18nManager !== 'undefined' ? I18nManager.t.bind(I18nManager) : (k) => k;
+      // 将进度消息显示为系统消息
+      const message = t(data.message) || data.message;
+      this.addAIMessage('system', message);
+    });
+    if (unsubDaemonProgress) this.unsubscribers.push(unsubDaemonProgress);
+    
     // 监听 Happy Service 热初始化完成事件（首次登录热初始化）
     const unsubHappyInitialized = window.browserControlManager.onHappyInitialized?.(async (data) => {
       console.log('[HappyInitialized] Hot initialization completed:', data);
@@ -1088,11 +1098,11 @@ class BrowserControlManagerApp {
           }
           await this.loadLatestUsage();
           
-          // 显示连接成功消息（只显示一次）
+          // 显示 Agent 已就绪消息（与进度消息保持一致，只显示一次）
           if (!this._connectedMessageShown) {
             this._connectedMessageShown = true;
             const t = typeof I18nManager !== 'undefined' ? I18nManager.t.bind(I18nManager) : (k) => k;
-            this.addAIMessage('system', t('chat.agentConnected'));
+            this.addAIMessage('system', t('daemon.startProgress.ready'));
           }
         }
       }

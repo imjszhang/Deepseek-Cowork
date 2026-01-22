@@ -120,6 +120,7 @@ class WebSocketClient {
             'happy:workDirSwitched',
             'happy:status',
             'daemon:statusChanged',
+            'daemon:startProgress',
             'memory:saved'
         ];
         

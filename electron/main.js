@@ -2174,7 +2174,10 @@ function setupHappyServiceEventForwarding() {
     'happy:error',
     'happy:eventStatus',
     'happy:usage',
-    'happy:messagesRestored'
+    'happy:messagesRestored',
+    // daemon 相关事件（由 HappyService 转发）
+    'daemon:statusChanged',
+    'daemon:startProgress'
   ];
   
   happyEvents.forEach(eventName => {

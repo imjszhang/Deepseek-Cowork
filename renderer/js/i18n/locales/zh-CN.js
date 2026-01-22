@@ -590,6 +590,20 @@
       readFailed: '读取文件失败'
     },
     
+    // Daemon 启动进度消息
+    daemon: {
+      startProgress: {
+        acquiringLock: '正在准备启动 Daemon...',
+        spawning: '正在启动 Daemon 进程...',
+        waitingState: '正在等待 Daemon 就绪...',
+        httpCheck: '正在验证 Daemon 服务...',
+        creatingSession: '正在创建会话...',
+        connecting: '正在连接 Agent...',
+        ready: 'Agent 已就绪',
+        error: 'Daemon 启动失败'
+      }
+    },
+    
     // 通知消息
     notifications: {
       // 软件更新通知

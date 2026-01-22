@@ -685,6 +685,17 @@ contextBridge.exposeInMainWorld('browserControlManager', {
     ipcRenderer.on('daemon:statusChanged', handler);
     return () => ipcRenderer.removeListener('daemon:statusChanged', handler);
   },
+  
+  /**
+   * 监听 daemon 启动进度
+   * @param {Function} callback - 回调函数 (data: { stage, progress, message })
+   * @returns {Function} 取消监听函数
+   */
+  onDaemonStartProgress: (callback) => {
+    const handler = (event, data) => callback(data);
+    ipcRenderer.on('daemon:startProgress', handler);
+    return () => ipcRenderer.removeListener('daemon:startProgress', handler);
+  },
 
   // ============ Happy AI 设置 API ============
   

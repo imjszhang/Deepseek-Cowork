@@ -478,14 +478,17 @@ class AccountSetup {
       const result = await window.browserControlManager?.logout?.();
       
       if (result?.success) {
-        this.showNotification(t('notifications.loggedOut'), 'success');
-        
         // 更新 UI 状态
         this.renderNotLoggedInState();
         
-        // 如果需要重启
+        // 如果需要重启，显示重启提示（使用专门的退出消息）
         if (result.needsRestart) {
-          this.showRestartPrompt();
+          if (this.elements.restartSection) {
+            this.elements.restartSection.style.display = 'block';
+          }
+          this.showNotification(t('notifications.loggedOutNeedsRestart'), 'success');
+        } else {
+          this.showNotification(t('notifications.loggedOut'), 'success');
         }
       } else {
         this.showNotification(t('notifications.logoutFailed') + ': ' + (result?.error || t('errors.unknownError')), 'error');
