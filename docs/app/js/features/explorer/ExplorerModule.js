@@ -683,6 +683,9 @@ class ExplorerModule {
         }
       }
       
+      // 清理之前的预览内容（防止 PDF/Image 预览残留）
+      this.cleanupPreviewContent();
+      
       // 根据文件类型渲染
       if (pdfExts.includes(ext)) {
         // PDF 文件预览
@@ -966,7 +969,11 @@ class ExplorerModule {
     }
     
     const imageExts = ['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'ico', 'bmp'];
+    const pdfExts = ['pdf'];
     const renderableExts = ['html', 'htm', 'md'];
+    
+    // 清理之前的预览内容（重要：防止 PDF/Image 预览残留）
+    this.cleanupPreviewContent();
     
     if (this.elements.previewViewToggle) {
       this.elements.previewViewToggle.style.display = renderableExts.includes(tab.ext) ? 'inline-flex' : 'none';
@@ -979,10 +986,19 @@ class ExplorerModule {
       this.elements.previewRenderBtn.classList.toggle('active', this.previewViewMode === 'rendered');
     }
     
-    if (imageExts.includes(tab.ext)) {
+    if (pdfExts.includes(tab.ext)) {
+      // PDF 文件
+      if (this.elements.filePreviewCode) this.elements.filePreviewCode.style.display = 'none';
+      if (this.elements.previewEditBtn) this.elements.previewEditBtn.style.display = 'none';
+      if (this.elements.previewViewToggle) this.elements.previewViewToggle.style.display = 'none';
+      await this.renderPdfPreview(tab.path, null);
+    } else if (imageExts.includes(tab.ext)) {
+      // 图片文件
+      if (this.elements.filePreviewCode) this.elements.filePreviewCode.style.display = 'none';
       if (this.elements.previewEditBtn) this.elements.previewEditBtn.style.display = 'none';
       await this.renderImagePreview(tab.path, tab.ext, null);
     } else {
+      // 文本文件
       if (this.elements.previewEditBtn) this.elements.previewEditBtn.style.display = 'inline-block';
       
       if (this.elements.filePreviewIframe) this.elements.filePreviewIframe.style.display = 'none';
@@ -1509,6 +1525,18 @@ class ExplorerModule {
     const t = typeof I18nManager !== 'undefined' ? I18nManager.t.bind(I18nManager) : (k) => k;
     const formatFileSize = this.app?.formatFileSize?.bind(this.app) || ((b) => b + ' bytes');
 
+    // 隐藏其他预览元素
+    if (this.elements.filePreviewCode) this.elements.filePreviewCode.style.display = 'none';
+    if (this.elements.fileEditArea) this.elements.fileEditArea.style.display = 'none';
+    if (this.elements.filePreviewIframe) this.elements.filePreviewIframe.style.display = 'none';
+    if (this.elements.markdownPreview) this.elements.markdownPreview.style.display = 'none';
+    
+    // 移除之前的图片预览容器（如果存在）
+    const existingImageContainer = contentEl.querySelector('.image-preview-container');
+    if (existingImageContainer) {
+      existingImageContainer.remove();
+    }
+
     const container = document.createElement('div');
     container.className = 'image-preview-container';
     container.innerHTML = `
@@ -1532,7 +1560,7 @@ class ExplorerModule {
       </div>
     `;
 
-    contentEl.innerHTML = '';
+    // 插入到容器中（不清空原有元素）
     contentEl.appendChild(container);
 
     const viewer = container.querySelector('.image-viewer');
@@ -1655,6 +1683,18 @@ class ExplorerModule {
     const t = typeof I18nManager !== 'undefined' ? I18nManager.t.bind(I18nManager) : (k) => k;
     const formatFileSize = this.app?.formatFileSize?.bind(this.app) || ((b) => b + ' bytes');
 
+    // 隐藏其他预览元素
+    if (this.elements.filePreviewCode) this.elements.filePreviewCode.style.display = 'none';
+    if (this.elements.fileEditArea) this.elements.fileEditArea.style.display = 'none';
+    if (this.elements.filePreviewIframe) this.elements.filePreviewIframe.style.display = 'none';
+    if (this.elements.markdownPreview) this.elements.markdownPreview.style.display = 'none';
+    
+    // 移除之前的 PDF 预览容器（如果存在）
+    const existingPdfContainer = contentEl.querySelector('.pdf-preview-container');
+    if (existingPdfContainer) {
+      existingPdfContainer.remove();
+    }
+    
     // 创建 PDF 预览容器
     const container = document.createElement('div');
     container.className = 'pdf-preview-container';
@@ -1685,7 +1725,7 @@ class ExplorerModule {
       </div>
     `;
 
-    contentEl.innerHTML = '';
+    // 插入到容器中（不清空原有元素）
     contentEl.appendChild(container);
 
     const viewer = container.querySelector('.pdf-viewer');
@@ -2201,6 +2241,47 @@ class ExplorerModule {
     const notice = document.getElementById('external-change-notice');
     if (notice) {
       notice.style.display = 'none';
+    }
+  }
+
+  /**
+   * 清理预览内容（用于标签页切换时清理之前的内容）
+   */
+  cleanupPreviewContent() {
+    // 清理 PDF 预览资源
+    if (this._pdfCleanup) {
+      this._pdfCleanup();
+      this._pdfCleanup = null;
+    }
+    
+    // 清理 PDF/Image 预览容器
+    const contentEl = this.elements.filePreviewContent;
+    if (contentEl) {
+      const pdfContainer = contentEl.querySelector('.pdf-preview-container');
+      if (pdfContainer) {
+        pdfContainer.remove();
+      }
+      const imageContainer = contentEl.querySelector('.image-preview-container');
+      if (imageContainer) {
+        imageContainer.remove();
+      }
+    }
+    
+    // 清理 Blob URL
+    if (this._previewBlobUrl) {
+      URL.revokeObjectURL(this._previewBlobUrl);
+      this._previewBlobUrl = null;
+    }
+    
+    // 隐藏 iframe
+    if (this.elements.filePreviewIframe) {
+      this.elements.filePreviewIframe.src = 'about:blank';
+      this.elements.filePreviewIframe.style.display = 'none';
+    }
+    
+    // 隐藏 markdown 预览
+    if (this.elements.markdownPreview) {
+      this.elements.markdownPreview.style.display = 'none';
     }
   }
 
