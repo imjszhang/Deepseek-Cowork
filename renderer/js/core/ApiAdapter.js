@@ -685,6 +685,36 @@ function createBrowserControlManagerPolyfill() {
             }
             try {
                 const response = await fetch(`${window.apiAdapter._baseUrl}/api/files/binary?path=${encodeURIComponent(filePath)}`);
+                
+                // 检查响应状态
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    let errorData;
+                    try {
+                        errorData = JSON.parse(errorText);
+                    } catch (e) {
+                        // 如果不是 JSON，使用文本错误
+                        return { 
+                            success: false, 
+                            error: `HTTP ${response.status}: ${errorText || response.statusText}` 
+                        };
+                    }
+                    return { 
+                        success: false, 
+                        error: errorData.error || `HTTP ${response.status}: ${response.statusText}` 
+                    };
+                }
+                
+                // 检查 Content-Type
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    const text = await response.text();
+                    return { 
+                        success: false, 
+                        error: `Unexpected content type: ${contentType}. Response: ${text.substring(0, 100)}` 
+                    };
+                }
+                
                 const result = await response.json();
                 if (result.success && result.data) {
                     // 将 base64 转换为 Uint8Array

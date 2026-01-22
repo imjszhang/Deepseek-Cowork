@@ -94,6 +94,7 @@ const API_MAPPING = {
     'deleteItem': { method: 'DELETE', path: '/api/files/item', queryKey: 'path' },
     'renameItem': { method: 'PUT', path: '/api/files/rename' },
     'readFileContent': { method: 'GET', path: '/api/files/content', queryKey: 'path' },
+    'readFileBinary': { method: 'GET', path: '/api/files/binary', queryKey: 'path' },
     'saveFileContent': { method: 'PUT', path: '/api/files/content' },
     'getItemInfo': { method: 'GET', path: '/api/files/info', queryKey: 'path' },
     'copyItem': { method: 'POST', path: '/api/files/copy' },
@@ -764,6 +765,65 @@ function createBrowserControlManagerPolyfill() {
             }
         },
         readFileContent: createApiMethod('readFileContent'),
+        readFileBinary: async (filePath) => {
+            // 读取二进制文件（用于 PDF 等）
+            if (!window.apiAdapter || !window.apiAdapter.isConnected()) {
+                const connected = await waitForConnection();
+                if (!connected) return { success: false, error: 'Not connected' };
+            }
+            try {
+                const response = await fetch(`${window.apiAdapter._baseUrl}/api/files/binary?path=${encodeURIComponent(filePath)}`);
+                
+                // 检查响应状态
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    let errorData;
+                    try {
+                        errorData = JSON.parse(errorText);
+                    } catch (e) {
+                        // 如果不是 JSON，使用文本错误
+                        return { 
+                            success: false, 
+                            error: `HTTP ${response.status}: ${errorText || response.statusText}` 
+                        };
+                    }
+                    return { 
+                        success: false, 
+                        error: errorData.error || `HTTP ${response.status}: ${response.statusText}` 
+                    };
+                }
+                
+                // 检查 Content-Type
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    const text = await response.text();
+                    return { 
+                        success: false, 
+                        error: `Unexpected content type: ${contentType}. Response: ${text.substring(0, 100)}` 
+                    };
+                }
+                
+                const result = await response.json();
+                if (result.success && result.data) {
+                    // 将 base64 转换为 Uint8Array
+                    const binaryString = atob(result.data);
+                    const bytes = new Uint8Array(binaryString.length);
+                    for (let i = 0; i < binaryString.length; i++) {
+                        bytes[i] = binaryString.charCodeAt(i);
+                    }
+                    return {
+                        success: true,
+                        path: filePath,
+                        data: bytes,
+                        size: result.size
+                    };
+                }
+                return result;
+            } catch (error) {
+                console.error('[Polyfill] readFileBinary failed:', error);
+                return { success: false, error: error.message };
+            }
+        },
         saveFileContent: createApiMethod('saveFileContent'),
         getItemInfo: createApiMethod('getItemInfo'),
         copyItem: async (sourcePath, destPath) => {

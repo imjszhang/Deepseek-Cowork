@@ -1632,11 +1632,27 @@ class ExplorerModule {
       let pdfData;
       if (isWebMode) {
         // Web 版：通过 API 获取
-        const result = await window.browserControlManager?.readFileBinary?.(filePath);
+        console.log('[ExplorerModule] Web mode: Reading PDF binary for:', filePath);
+        console.log('[ExplorerModule] browserControlManager available:', !!window.browserControlManager);
+        console.log('[ExplorerModule] readFileBinary available:', !!window.browserControlManager?.readFileBinary);
+        
+        if (!window.browserControlManager?.readFileBinary) {
+          throw new Error('readFileBinary method not available. Make sure ApiAdapter is loaded.');
+        }
+        
+        const result = await window.browserControlManager.readFileBinary(filePath);
+        console.log('[ExplorerModule] readFileBinary result:', result);
+        
         if (!result?.success) {
           throw new Error(result?.error || 'Failed to read PDF file');
         }
+        
+        if (!result.data || !(result.data instanceof Uint8Array)) {
+          throw new Error(`Invalid data format. Expected Uint8Array, got: ${typeof result.data}`);
+        }
+        
         pdfData = result.data;
+        console.log('[ExplorerModule] PDF data loaded, size:', pdfData.length);
       } else {
         // Electron 版：通过 IPC 获取
         const result = await window.browserControlManager?.readFileBinary?.(filePath);
