@@ -197,33 +197,62 @@ class FilesPanel {
    * @param {string} dirPath 目录路径
    */
   async loadDirectory(dirPath) {
-    console.log('[FilesPanel] Loading:', dirPath);
+    console.log('[FilesPanel] Loading directory:', dirPath);
+    
+    if (!dirPath) {
+      console.warn('[FilesPanel] No directory path provided');
+      this.showError('No directory path provided');
+      return;
+    }
+    
     this.showLoading();
     
     try {
-      const result = await window.browserControlManager?.listDirectory?.(dirPath);
+      if (!window.browserControlManager || !window.browserControlManager.listDirectory) {
+        throw new Error('browserControlManager.listDirectory is not available');
+      }
       
-      if (result?.success) {
-        this.currentPath = result.path;
-        this.workspaceRoot = result.workspaceRoot;
+      const result = await window.browserControlManager.listDirectory(dirPath);
+      
+      if (!result) {
+        throw new Error('No result returned from listDirectory');
+      }
+      
+      if (result.success) {
+        this.currentPath = result.path || dirPath;
+        this.workspaceRoot = result.workspaceRoot || this.workspaceRoot;
+        
+        console.log('[FilesPanel] Directory loaded successfully:', {
+          path: this.currentPath,
+          workspaceRoot: this.workspaceRoot,
+          relativePath: result.relativePath,
+          itemCount: result.items?.length || 0
+        });
         
         // 更新返回按钮状态
         this.updateBackButtonState();
         
-        // 渲染面包屑
-        this.renderBreadcrumb(result.relativePath);
+        // 渲染面包屑（确保传递正确的relativePath）
+        const relativePath = result.relativePath !== undefined ? result.relativePath : 
+                           (this.currentPath && this.workspaceRoot ? 
+                            this.currentPath.replace(this.workspaceRoot, '').replace(/^[\/\\]+/, '') : 
+                            '');
+        this.renderBreadcrumb(relativePath);
         
         // 渲染文件列表
-        this.renderFileList(result.items);
+        this.renderFileList(result.items || []);
         
-        console.log('[FilesPanel] Loaded', result.items.length, 'items');
+        console.log('[FilesPanel] Loaded', result.items?.length || 0, 'items');
       } else {
         const t = typeof I18nManager !== 'undefined' ? I18nManager.t.bind(I18nManager) : (k) => k;
-        this.showError(result?.error || t('errors.loadFailed'));
+        const errorMessage = result?.error || t('errors.loadFailed') || 'Failed to load directory';
+        console.error('[FilesPanel] Failed to load directory:', errorMessage);
+        this.showError(errorMessage);
       }
     } catch (error) {
-      console.error('[FilesPanel] Error:', error);
-      this.showError(error.message);
+      console.error('[FilesPanel] Error loading directory:', error);
+      const t = typeof I18nManager !== 'undefined' ? I18nManager.t.bind(I18nManager) : (k) => k;
+      this.showError(error.message || t('errors.loadFailed') || 'Failed to load directory');
     }
   }
 
@@ -253,22 +282,66 @@ class FilesPanel {
    * @param {string} relativePath 相对于工作目录的路径
    */
   renderBreadcrumb(relativePath) {
-    if (!this.elements.filesBreadcrumb) return;
+    if (!this.elements.filesBreadcrumb) {
+      console.warn('[FilesPanel] Breadcrumb container not found');
+      return;
+    }
     
     const t = typeof I18nManager !== 'undefined' ? I18nManager.t.bind(I18nManager) : (k) => k;
+    
+    // 清空容器，确保没有残留内容
     this.elements.filesBreadcrumb.innerHTML = '';
     
-    // 判断是否在根目录
-    const isAtRoot = !relativePath || relativePath === '.' || relativePath === '';
+    // 改进根目录判断逻辑
+    // 检查 relativePath 是否为空、点号、或只包含空白字符
+    // 同时检查 currentPath 是否等于 workspaceRoot
+    const normalizedRelativePath = (relativePath || '').trim();
+    const isEmptyRelativePath = !normalizedRelativePath || 
+                                normalizedRelativePath === '.' || 
+                                normalizedRelativePath === '';
+    const isAtRootPath = this.currentPath === this.workspaceRoot || 
+                        !this.currentPath ||
+                        (this.workspaceRoot && this.currentPath === this.workspaceRoot);
+    
+    // 综合判断：如果相对路径为空且在根目录，则认为是根目录
+    const isAtRoot = isEmptyRelativePath && (isAtRootPath || !this.currentPath || this.currentPath === this.workspaceRoot);
+    
+    console.log('[FilesPanel] renderBreadcrumb:', {
+      relativePath,
+      normalizedRelativePath,
+      currentPath: this.currentPath,
+      workspaceRoot: this.workspaceRoot,
+      isAtRoot,
+      isEmptyRelativePath,
+      isAtRootPath
+    });
     
     // 1. 返回上级按钮（非根目录时显示）
-    if (!isAtRoot) {
+    // 如果不在根目录，或者有相对路径且不为空，则显示返回按钮
+    if (!isAtRoot && this.currentPath && this.workspaceRoot && this.currentPath !== this.workspaceRoot) {
       const backBtn = document.createElement('button');
       backBtn.className = 'breadcrumb-back-btn';
       backBtn.title = t('files.goUp') || 'Go to parent folder';
+      backBtn.setAttribute('aria-label', t('files.goUp') || 'Go to parent folder');
       backBtn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>';
-      backBtn.addEventListener('click', () => this.navigateUp());
+      
+      // 绑定点击事件，添加错误处理
+      backBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        console.log('[FilesPanel] Back button clicked, navigating up from:', this.currentPath);
+        try {
+          this.navigateUp();
+        } catch (error) {
+          console.error('[FilesPanel] Error navigating up:', error);
+          this.showError(error.message);
+        }
+      });
+      
       this.elements.filesBreadcrumb.appendChild(backBtn);
+      console.log('[FilesPanel] Back button created and added to breadcrumb');
+    } else {
+      console.log('[FilesPanel] At root directory, skipping back button');
     }
     
     // 2. 当前目录显示
@@ -289,38 +362,96 @@ class FilesPanel {
       dirName.textContent = t('common.workDir') || 'Working Directory';
     } else {
       // 获取最后一个目录名
-      const segments = relativePath.split(/[\/\\]/).filter(s => s);
-      dirName.textContent = segments[segments.length - 1] || relativePath;
+      const segments = normalizedRelativePath.split(/[\/\\]/).filter(s => s && s.trim());
+      if (segments.length > 0) {
+        dirName.textContent = segments[segments.length - 1];
+      } else if (this.currentPath && this.workspaceRoot) {
+        // 如果无法从相对路径获取，尝试从绝对路径提取
+        const pathDiff = this.currentPath.replace(this.workspaceRoot, '').replace(/^[\/\\]+/, '');
+        const pathSegments = pathDiff.split(/[\/\\]/).filter(s => s && s.trim());
+        dirName.textContent = pathSegments.length > 0 ? pathSegments[pathSegments.length - 1] : (t('common.workDir') || 'Working Directory');
+      } else {
+        dirName.textContent = normalizedRelativePath || (t('common.workDir') || 'Working Directory');
+      }
     }
     currentDir.appendChild(dirName);
     
     // 完整路径作为 tooltip
     const fullPath = this.currentPath || this.workspaceRoot;
-    currentDir.title = fullPath;
+    if (fullPath) {
+      currentDir.title = fullPath;
+    }
     
-    // 点击返回根目录
-    currentDir.style.cursor = 'pointer';
-    currentDir.addEventListener('click', () => this.navigateTo(this.workspaceRoot));
+    // 点击返回根目录（如果不在根目录）
+    if (!isAtRoot && this.workspaceRoot) {
+      currentDir.style.cursor = 'pointer';
+      currentDir.addEventListener('click', () => {
+        console.log('[FilesPanel] Current dir clicked, navigating to root:', this.workspaceRoot);
+        this.navigateTo(this.workspaceRoot);
+      });
+    } else {
+      currentDir.style.cursor = 'default';
+    }
     
     this.elements.filesBreadcrumb.appendChild(currentDir);
+    console.log('[FilesPanel] Breadcrumb rendered successfully');
   }
   
   /**
    * 导航到上级目录
    */
   navigateUp() {
-    if (!this.currentPath || this.currentPath === this.workspaceRoot) return;
+    console.log('[FilesPanel] navigateUp called:', {
+      currentPath: this.currentPath,
+      workspaceRoot: this.workspaceRoot
+    });
     
-    // 获取上级目录路径
-    const separator = window.platform?.isWindows ? '\\' : '/';
-    const parts = this.currentPath.split(/[\/\\]/);
-    parts.pop();
-    const parentPath = parts.join(separator);
+    if (!this.currentPath) {
+      console.warn('[FilesPanel] No current path, cannot navigate up');
+      return;
+    }
     
-    if (parentPath && parentPath.length >= this.workspaceRoot.length) {
-      this.navigateTo(parentPath);
-    } else {
-      this.navigateTo(this.workspaceRoot);
+    if (this.currentPath === this.workspaceRoot) {
+      console.log('[FilesPanel] Already at root, cannot navigate up');
+      return;
+    }
+    
+    try {
+      // 获取上级目录路径
+      const separator = window.platform?.isWindows ? '\\' : '/';
+      const parts = this.currentPath.split(/[\/\\]/).filter(p => p && p.trim());
+      
+      if (parts.length === 0) {
+        console.warn('[FilesPanel] Invalid path, navigating to root');
+        this.navigateTo(this.workspaceRoot);
+        return;
+      }
+      
+      // 移除最后一个路径段
+      parts.pop();
+      const parentPath = parts.length > 0 ? parts.join(separator) : this.workspaceRoot;
+      
+      console.log('[FilesPanel] Calculated parent path:', parentPath);
+      
+      // 确保父路径不超出工作区根目录
+      if (this.workspaceRoot && parentPath && parentPath.length >= this.workspaceRoot.length) {
+        // 检查父路径是否以工作区根目录开头
+        const normalizedParent = parentPath.replace(/\\/g, '/');
+        const normalizedRoot = this.workspaceRoot.replace(/\\/g, '/');
+        
+        if (normalizedParent.startsWith(normalizedRoot) || normalizedParent === normalizedRoot) {
+          this.navigateTo(parentPath);
+        } else {
+          console.warn('[FilesPanel] Parent path outside workspace, navigating to root');
+          this.navigateTo(this.workspaceRoot);
+        }
+      } else {
+        console.log('[FilesPanel] Parent path shorter than root, navigating to root');
+        this.navigateTo(this.workspaceRoot);
+      }
+    } catch (error) {
+      console.error('[FilesPanel] Error in navigateUp:', error);
+      this.showError(error.message);
     }
   }
 
@@ -691,15 +822,41 @@ class FilesPanel {
 
   /**
    * 更新返回按钮状态
+   * 注意：返回按钮现在是在面包屑中动态创建的，这个方法主要用于兼容性
+   * 实际的状态控制由 renderBreadcrumb 方法处理
    */
   updateBackButtonState() {
-    if (!this.elements.filesBackBtn) return;
+    // 如果存在独立的返回按钮（旧版本），更新其状态
+    if (this.elements.filesBackBtn) {
+      const atRoot = this.currentPath === this.workspaceRoot;
+      const hasHistory = this.pathHistory.length > 0;
+      this.elements.filesBackBtn.disabled = atRoot && !hasHistory;
+    }
     
-    // 如果在工作目录根目录且没有历史，禁用按钮
-    const atRoot = this.currentPath === this.workspaceRoot;
-    const hasHistory = this.pathHistory.length > 0;
+    // 更新面包屑中的返回按钮状态（如果存在）
+    const breadcrumbBackBtn = this.elements.filesBreadcrumb?.querySelector('.breadcrumb-back-btn');
+    if (breadcrumbBackBtn) {
+      const atRoot = this.currentPath === this.workspaceRoot;
+      const hasHistory = this.pathHistory.length > 0;
+      
+      if (atRoot && !hasHistory) {
+        breadcrumbBackBtn.disabled = true;
+        breadcrumbBackBtn.style.opacity = '0.4';
+        breadcrumbBackBtn.style.cursor = 'not-allowed';
+      } else {
+        breadcrumbBackBtn.disabled = false;
+        breadcrumbBackBtn.style.opacity = '1';
+        breadcrumbBackBtn.style.cursor = 'pointer';
+      }
+    }
     
-    this.elements.filesBackBtn.disabled = atRoot && !hasHistory;
+    console.log('[FilesPanel] Back button state updated:', {
+      currentPath: this.currentPath,
+      workspaceRoot: this.workspaceRoot,
+      atRoot: this.currentPath === this.workspaceRoot,
+      hasHistory: this.pathHistory.length > 0,
+      buttonExists: !!breadcrumbBackBtn
+    });
   }
 
   /**

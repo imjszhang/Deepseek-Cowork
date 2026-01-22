@@ -35,8 +35,11 @@
 .breadcrumb-back-btn {
   width: 26px;
   height: 26px;
+  min-width: 26px;
+  min-height: 26px;
   padding: 0;
-  display: flex;
+  margin: 0;
+  display: flex !important;
   align-items: center;
   justify-content: center;
   border: none;
@@ -46,15 +49,31 @@
   cursor: pointer;
   transition: all var(--transition-fast, 150ms);
   flex-shrink: 0;
+  opacity: 1;
+  visibility: visible;
+  position: relative;
+  z-index: 1;
 }
 
 .breadcrumb-back-btn:hover {
   background: var(--accent);
   color: var(--foreground);
+  opacity: 1;
 }
 
 .breadcrumb-back-btn:active {
   transform: scale(0.95);
+  opacity: 0.8;
+}
+
+.breadcrumb-back-btn:focus {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.breadcrumb-back-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }
 
 .breadcrumb-back-btn svg {
@@ -65,6 +84,13 @@
   stroke-linecap: round;
   stroke-linejoin: round;
   fill: none;
+  display: block;
+  pointer-events: none;
+}
+
+/* 确保在紧凑模式下按钮也可见 */
+.breadcrumb-compact .breadcrumb-back-btn {
+  margin-right: 0.25rem;
 }
 
 /* 当前目录显示 */
