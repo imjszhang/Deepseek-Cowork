@@ -690,12 +690,36 @@ class FilesPanel {
     // 更新菜单项显示
     const openItem = this.elements.fileContextMenu.querySelector('[data-action="open"]');
     const openWithItem = this.elements.fileContextMenu.querySelector('[data-action="openWith"]');
+    const showInExplorerItem = this.elements.fileContextMenu.querySelector('[data-action="showInExplorer"]');
     
     if (openItem) {
       openItem.querySelector('span:last-child').textContent = item.isDirectory ? '打开' : '打开文件夹';
     }
     if (openWithItem) {
       openWithItem.style.display = item.isDirectory ? 'none' : 'flex';
+    }
+    
+    // 在web环境下隐藏"在文件管理器中显示"菜单项
+    // 检测环境：检查是否是web模式（polyfill模式）
+    const isWebMode = window.browserControlManager?._isPolyfill === true || 
+                      (typeof process === 'undefined' || !process.versions?.electron);
+    
+    if (showInExplorerItem) {
+      // 找到showInExplorer项后面的分隔线（HTML结构中showInExplorer后面是分隔线）
+      const showInExplorerDivider = showInExplorerItem.nextElementSibling;
+      if (isWebMode) {
+        // Web模式下隐藏菜单项和后面的分隔线
+        showInExplorerItem.style.display = 'none';
+        if (showInExplorerDivider && showInExplorerDivider.classList.contains('context-menu-divider')) {
+          showInExplorerDivider.style.display = 'none';
+        }
+      } else {
+        // Electron模式下显示菜单项和分隔线
+        showInExplorerItem.style.display = 'flex';
+        if (showInExplorerDivider && showInExplorerDivider.classList.contains('context-menu-divider')) {
+          showInExplorerDivider.style.display = 'block';
+        }
+      }
     }
     
     // 定位菜单
