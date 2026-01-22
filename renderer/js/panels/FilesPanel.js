@@ -124,6 +124,8 @@ class FilesPanel {
       filesRefreshBtn: document.getElementById('files-refresh-btn'),
       filesNewFolderBtn: document.getElementById('files-newfolder-btn'),
       fileContextMenu: document.getElementById('file-context-menu'),
+      emptyAreaContextMenu: document.getElementById('empty-area-context-menu'),
+      filesContainer: document.getElementById('files-container'),
       // 新建文件夹对话框
       newFolderDialog: document.getElementById('new-folder-dialog'),
       newFolderNameInput: document.getElementById('new-folder-name'),
@@ -131,6 +133,13 @@ class FilesPanel {
       newFolderCreateBtn: document.getElementById('new-folder-create-btn'),
       newFolderCancelBtn: document.getElementById('new-folder-cancel-btn'),
       newFolderCancelBtn2: document.getElementById('new-folder-cancel-btn2'),
+      // 新建文件对话框
+      newFileDialog: document.getElementById('new-file-dialog'),
+      newFileNameInput: document.getElementById('new-file-name'),
+      newFileError: document.getElementById('new-file-error'),
+      newFileCreateBtn: document.getElementById('new-file-create-btn'),
+      newFileCancelBtn: document.getElementById('new-file-cancel-btn'),
+      newFileCancelBtn2: document.getElementById('new-file-cancel-btn2'),
       // 重命名对话框
       renameDialog: document.getElementById('rename-dialog'),
       renameInput: document.getElementById('rename-input'),
@@ -163,6 +172,19 @@ class FilesPanel {
       }
     });
     
+    // 新建文件对话框
+    this.elements.newFileCreateBtn?.addEventListener('click', () => this.createNewFile());
+    this.elements.newFileCancelBtn?.addEventListener('click', () => this.hideNewFileDialog());
+    this.elements.newFileCancelBtn2?.addEventListener('click', () => this.hideNewFileDialog());
+    this.elements.newFileNameInput?.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        this.createNewFile();
+      } else if (e.key === 'Escape') {
+        this.hideNewFileDialog();
+      }
+    });
+    
     // 重命名对话框
     this.elements.renameConfirmBtn?.addEventListener('click', () => this.confirmRename());
     this.elements.renameCancelBtn?.addEventListener('click', () => this.hideRenameDialog());
@@ -176,7 +198,7 @@ class FilesPanel {
       }
     });
     
-    // 右键菜单
+    // 文件项右键菜单
     this.elements.fileContextMenu?.querySelectorAll('.context-menu-item').forEach(item => {
       item.addEventListener('click', (e) => {
         const action = e.currentTarget.dataset.action;
@@ -184,10 +206,33 @@ class FilesPanel {
       });
     });
     
+    // 空白区域右键菜单
+    this.elements.emptyAreaContextMenu?.querySelectorAll('.context-menu-item').forEach(item => {
+      item.addEventListener('click', (e) => {
+        const action = e.currentTarget.dataset.action;
+        this.handleEmptyAreaContextMenuAction(action);
+      });
+    });
+    
+    // 文件列表容器右键事件（空白区域）
+    this.elements.filesContainer?.addEventListener('contextmenu', (e) => {
+      // 检查是否点击在文件项上
+      const fileItem = e.target.closest('.file-item');
+      if (!fileItem) {
+        // 点击在空白区域
+        e.preventDefault();
+        e.stopPropagation();
+        this.handleEmptyAreaContextMenu(e);
+      }
+    });
+    
     // 点击空白处关闭右键菜单
     document.addEventListener('click', (e) => {
       if (this.elements.fileContextMenu && !this.elements.fileContextMenu.contains(e.target)) {
         this.hideContextMenu();
+      }
+      if (this.elements.emptyAreaContextMenu && !this.elements.emptyAreaContextMenu.contains(e.target)) {
+        this.hideEmptyAreaContextMenu();
       }
     });
   }
@@ -693,16 +738,35 @@ class FilesPanel {
     const showInExplorerItem = this.elements.fileContextMenu.querySelector('[data-action="showInExplorer"]');
     
     if (openItem) {
-      openItem.querySelector('span:last-child').textContent = item.isDirectory ? '打开' : '打开文件夹';
-    }
-    if (openWithItem) {
-      openWithItem.style.display = item.isDirectory ? 'none' : 'flex';
+      const t = typeof I18nManager !== 'undefined' ? I18nManager.t.bind(I18nManager) : (k) => k;
+      // 文件夹显示"打开文件夹"，文件显示"打开"
+      openItem.querySelector('span:last-child').textContent = item.isDirectory 
+        ? (t('common.openFolder') || '打开文件夹') 
+        : (t('files.open') || '打开');
     }
     
-    // 在web环境下隐藏"在文件管理器中显示"菜单项
+    // 在web环境下隐藏"用系统程序打开"和"在文件管理器中显示"菜单项
     // 检测环境：检查是否是web模式（polyfill模式）
     const isWebMode = window.browserControlManager?._isPolyfill === true || 
                       (typeof process === 'undefined' || !process.versions?.electron);
+    
+    if (openWithItem) {
+      // 找到openWith项后面的分隔线
+      const openWithDivider = openWithItem.nextElementSibling;
+      if (isWebMode) {
+        // Web模式下隐藏菜单项和后面的分隔线
+        openWithItem.style.display = 'none';
+        if (openWithDivider && openWithDivider.classList.contains('context-menu-divider')) {
+          openWithDivider.style.display = 'none';
+        }
+      } else {
+        // Electron模式下根据文件类型显示菜单项
+        openWithItem.style.display = item.isDirectory ? 'none' : 'flex';
+        if (openWithDivider && openWithDivider.classList.contains('context-menu-divider')) {
+          openWithDivider.style.display = 'block';
+        }
+      }
+    }
     
     if (showInExplorerItem) {
       // 找到showInExplorer项后面的分隔线（HTML结构中showInExplorer后面是分隔线）
@@ -745,6 +809,67 @@ class FilesPanel {
       this.elements.fileContextMenu.style.display = 'none';
     }
     this.contextMenuTarget = null;
+  }
+
+  /**
+   * 处理空白区域右键菜单
+   * @param {Event} e 事件对象
+   */
+  handleEmptyAreaContextMenu(e) {
+    // 确保隐藏文件项右键菜单
+    this.hideContextMenu();
+    
+    // 显示空白区域右键菜单
+    this.showEmptyAreaContextMenu(e.clientX, e.clientY);
+  }
+
+  /**
+   * 显示空白区域右键菜单
+   * @param {number} x X 坐标
+   * @param {number} y Y 坐标
+   */
+  showEmptyAreaContextMenu(x, y) {
+    if (!this.elements.emptyAreaContextMenu) return;
+    
+    // 定位菜单
+    this.elements.emptyAreaContextMenu.style.left = x + 'px';
+    this.elements.emptyAreaContextMenu.style.top = y + 'px';
+    this.elements.emptyAreaContextMenu.style.display = 'block';
+    
+    // 确保菜单不超出屏幕
+    const rect = this.elements.emptyAreaContextMenu.getBoundingClientRect();
+    if (rect.right > window.innerWidth) {
+      this.elements.emptyAreaContextMenu.style.left = (window.innerWidth - rect.width - 10) + 'px';
+    }
+    if (rect.bottom > window.innerHeight) {
+      this.elements.emptyAreaContextMenu.style.top = (window.innerHeight - rect.height - 10) + 'px';
+    }
+  }
+
+  /**
+   * 隐藏空白区域右键菜单
+   */
+  hideEmptyAreaContextMenu() {
+    if (this.elements.emptyAreaContextMenu) {
+      this.elements.emptyAreaContextMenu.style.display = 'none';
+    }
+  }
+
+  /**
+   * 处理空白区域右键菜单动作
+   * @param {string} action 动作名称
+   */
+  handleEmptyAreaContextMenuAction(action) {
+    this.hideEmptyAreaContextMenu();
+    
+    switch (action) {
+      case 'newFile':
+        this.showNewFileDialog();
+        break;
+      case 'newFolder':
+        this.showNewFolderDialog();
+        break;
+    }
   }
 
   /**
@@ -963,6 +1088,85 @@ class FilesPanel {
       if (this.elements.newFolderError) {
         this.elements.newFolderError.textContent = error.message;
         this.elements.newFolderError.style.display = 'block';
+      }
+    }
+  }
+
+  /**
+   * 显示新建文件对话框
+   */
+  showNewFileDialog() {
+    if (!this.elements.newFileDialog) return;
+    
+    // 清空输入
+    if (this.elements.newFileNameInput) {
+      this.elements.newFileNameInput.value = '';
+    }
+    if (this.elements.newFileError) {
+      this.elements.newFileError.style.display = 'none';
+    }
+    
+    this.elements.newFileDialog.style.display = 'flex';
+    
+    // 聚焦输入框
+    setTimeout(() => {
+      this.elements.newFileNameInput?.focus();
+    }, 100);
+  }
+
+  /**
+   * 隐藏新建文件对话框
+   */
+  hideNewFileDialog() {
+    if (this.elements.newFileDialog) {
+      this.elements.newFileDialog.style.display = 'none';
+    }
+  }
+
+  /**
+   * 创建新文件
+   */
+  async createNewFile() {
+    const name = this.elements.newFileNameInput?.value?.trim();
+    const t = typeof I18nManager !== 'undefined' ? I18nManager.t.bind(I18nManager) : (k) => k;
+    
+    if (!name) {
+      if (this.elements.newFileError) {
+        this.elements.newFileError.textContent = t('notifications.enterFileName') || 'Please enter a file name';
+        this.elements.newFileError.style.display = 'block';
+      }
+      return;
+    }
+    
+    // 验证名称
+    if (/[<>:"/\\|?*]/.test(name)) {
+      if (this.elements.newFileError) {
+        this.elements.newFileError.textContent = t('notifications.invalidFileName') || 'Invalid file name';
+        this.elements.newFileError.style.display = 'block';
+      }
+      return;
+    }
+    
+    try {
+      const filePath = this.joinPath(this.currentPath, name);
+      // 使用 saveFileContent 创建文件，传入空字符串作为初始内容
+      // API期望的参数格式是 { path: filePath, content: content }
+      const result = await window.browserControlManager?.saveFileContent?.({ path: filePath, content: '' });
+      
+      if (result?.success) {
+        this.hideNewFileDialog();
+        this.showNotification(t('notifications.fileCreated') || 'File created successfully', 'success');
+        await this.refresh();
+      } else {
+        if (this.elements.newFileError) {
+          this.elements.newFileError.textContent = result?.error || t('notifications.createFailed') || 'Failed to create file';
+          this.elements.newFileError.style.display = 'block';
+        }
+      }
+    } catch (error) {
+      if (this.elements.newFileError) {
+        this.elements.newFileError.textContent = error.message;
+        this.elements.newFileError.style.display = 'block';
       }
     }
   }

@@ -90,7 +90,7 @@ const API_MAPPING = {
     // 文件系统
     'getWorkspaceRoot': { method: 'GET', path: '/api/files/workspace' },
     'listDirectory': { method: 'GET', path: '/api/files/list', multiQuery: true },
-    'createFolder': { method: 'POST', path: '/api/files/folder' },
+    'createFolder': { method: 'POST', path: '/api/files/folder', bodyKey: 'path' },
     'deleteItem': { method: 'DELETE', path: '/api/files/item', queryKey: 'path' },
     'renameItem': { method: 'PUT', path: '/api/files/rename' },
     'readFileContent': { method: 'GET', path: '/api/files/content', queryKey: 'path' },

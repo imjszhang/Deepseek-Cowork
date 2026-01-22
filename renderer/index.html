@@ -310,6 +310,18 @@
           </div>
         </div>
         
+        <!-- Empty area context menu -->
+        <div id="empty-area-context-menu" class="context-menu" style="display: none;">
+          <div class="context-menu-item" data-action="newFile">
+            <span class="menu-icon"><svg viewBox="0 0 24 24"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="12" x2="12" y1="18" y2="12"/><line x1="9" x2="15" y1="15" y2="15"/></svg></span>
+            <span data-i18n="files.newFile">New File</span>
+          </div>
+          <div class="context-menu-item" data-action="newFolder">
+            <span class="menu-icon"><svg viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><line x1="12" x2="12" y1="11" y2="17"/><line x1="9" x2="15" y1="14" y2="14"/></svg></span>
+            <span data-i18n="files.newFolder">New Folder</span>
+          </div>
+        </div>
+        
         <!-- New folder dialog -->
         <div id="new-folder-dialog" class="modal-overlay" style="display: none;">
           <div class="modal-dialog">
@@ -325,6 +337,25 @@
             <div class="modal-footer">
               <button class="button btn-secondary" data-variant="outline" id="new-folder-cancel-btn2" data-i18n="common.cancel">Cancel</button>
               <button class="button btn-primary" data-variant="default" id="new-folder-create-btn" data-i18n="files.newFolderDialog.create">Create</button>
+            </div>
+          </div>
+        </div>
+        
+        <!-- New file dialog -->
+        <div id="new-file-dialog" class="modal-overlay" style="display: none;">
+          <div class="modal-dialog">
+            <div class="modal-header">
+              <h3 data-i18n="files.newFileDialog.title">New File</h3>
+              <button class="modal-close-btn" id="new-file-cancel-btn">×</button>
+            </div>
+            <div class="modal-body">
+              <label for="new-file-name" data-i18n="files.newFileDialog.label">File Name</label>
+              <input type="text" id="new-file-name" data-i18n-placeholder="files.newFileDialog.placeholder" placeholder="Enter file name..." autofocus>
+              <p id="new-file-error" class="input-error" style="display: none;"></p>
+            </div>
+            <div class="modal-footer">
+              <button class="button btn-secondary" data-variant="outline" id="new-file-cancel-btn2" data-i18n="common.cancel">Cancel</button>
+              <button class="button btn-primary" data-variant="default" id="new-file-create-btn" data-i18n="files.newFileDialog.create">Create</button>
             </div>
           </div>
         </div>
