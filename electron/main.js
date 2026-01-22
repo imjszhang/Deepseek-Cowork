@@ -779,7 +779,7 @@ function setupIpcHandlers() {
     console.log('[syncCredentialsToHappyDir] Credentials synced to:', accessKeyPath);
     
     // 更新 settings.json：写入 serverUrl，可选清理 machineId
-    const DEFAULT_SERVER_URL = 'https://api.deepseek-cowork.com/';
+    const DEFAULT_SERVER_URL = 'https://api.deepseek-cowork.com';
     try {
       let settings = {};
       if (fs.existsSync(settingsPath)) {
@@ -1232,6 +1232,22 @@ function setupIpcHandlers() {
         console.warn('Failed to delete access.key:', e.message);
       }
       
+      // 6.5. 清理 ~/.happy/settings.json 中的 machineId（防止新账号复用旧 machineId）
+      try {
+        const settingsPath = path.join(os.homedir(), '.happy', 'settings.json');
+        if (fs.existsSync(settingsPath)) {
+          const settings = JSON.parse(fs.readFileSync(settingsPath, 'utf8'));
+          if (settings.machineId) {
+            delete settings.machineId;
+            delete settings.machineIdConfirmedByServer;
+            fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2), 'utf8');
+            console.log('[logout] machineId cleared from settings.json');
+          }
+        }
+      } catch (e) {
+        console.warn('Failed to clear machineId:', e.message);
+      }
+      
       // 7. 重置 HappyService 内部状态
       HappyService.reset();
       console.log('[logout] HappyService reset');
@@ -1303,6 +1319,22 @@ function setupIpcHandlers() {
         }
       } catch (e) {
         console.warn('Failed to delete access.key:', e.message);
+      }
+      
+      // 6.5. 清理 ~/.happy/settings.json 中的 machineId（切换服务器后旧 machineId 无效）
+      try {
+        const settingsPath = path.join(os.homedir(), '.happy', 'settings.json');
+        if (fs.existsSync(settingsPath)) {
+          const settings = JSON.parse(fs.readFileSync(settingsPath, 'utf8'));
+          if (settings.machineId) {
+            delete settings.machineId;
+            delete settings.machineIdConfirmedByServer;
+            fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2), 'utf8');
+            console.log('[changeServer] machineId cleared from settings.json');
+          }
+        }
+      } catch (e) {
+        console.warn('Failed to clear machineId:', e.message);
       }
       
       // 7. 重置 HappyService 内部状态
