@@ -198,6 +198,51 @@ class ExplorerClient {
     });
   }
 
+  // ==================== 目录监听 ====================
+
+  /**
+   * 添加临时目录监听
+   * @param {string} path - 目录绝对路径
+   * @returns {Promise<Object>} 添加结果
+   */
+  async watchDirectory(path) {
+    return this.request('/watch', {
+      method: 'POST',
+      body: JSON.stringify({ path })
+    });
+  }
+
+  /**
+   * 移除临时目录监听
+   * @param {string} path - 目录绝对路径
+   * @param {boolean} force - 是否强制移除（忽略引用计数）
+   * @returns {Promise<Object>} 移除结果
+   */
+  async unwatchDirectory(path, force = false) {
+    const encodedPath = encodeURIComponent(path);
+    return this.request(`/watch?path=${encodedPath}&force=${force}`, {
+      method: 'DELETE'
+    });
+  }
+
+  /**
+   * 检查目录是否在监听范围内
+   * @param {string} path - 目录路径
+   * @returns {Promise<Object>} 检查结果
+   */
+  async isDirectoryWatched(path) {
+    const encodedPath = encodeURIComponent(path);
+    return this.request(`/watch/check?path=${encodedPath}`);
+  }
+
+  /**
+   * 获取临时监听器状态
+   * @returns {Promise<Object>} 状态信息
+   */
+  async getWatcherStatus() {
+    return this.request('/watch/status');
+  }
+
   // ==================== 工具方法 ====================
 
   /**

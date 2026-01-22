@@ -59,6 +59,22 @@ class FileSystemManager extends EventEmitter {
     // Store watched directory info
     this.watchedDirs = new Map();
     
+    // Temporary watchers for dynamic directory monitoring
+    // Key: normalized absolute path, Value: { watcher, refCount, lastAccess, timeoutId }
+    this.temporaryWatchers = new Map();
+    
+    // Temporary watcher configuration
+    this.tempWatcherConfig = {
+      maxCount: 10,           // Maximum number of temporary watchers
+      idleTimeout: 5 * 60 * 1000,  // 5 minutes idle timeout
+      cleanupInterval: 60 * 1000   // Cleanup check every 1 minute
+    };
+    
+    // Start cleanup timer
+    this._tempWatcherCleanupTimer = setInterval(() => {
+      this._cleanupIdleTemporaryWatchers();
+    }, this.tempWatcherConfig.cleanupInterval);
+    
     Logger.info(`FileSystemManager initialized, workDir: ${this.workDir}`);
   }
 
@@ -815,10 +831,335 @@ class FileSystemManager extends EventEmitter {
     return null;
   }
 
+  // ==================== Temporary Watcher Functions ====================
+
+  /**
+   * Validate path for temporary watcher (allows paths outside workDir)
+   * @param {string} targetPath - Target path
+   * @returns {string|null} Safe absolute path or null
+   */
+  validateExternalPath(targetPath) {
+    try {
+      // Basic security: prevent path traversal
+      const normalizedPath = path.normalize(targetPath);
+      if (normalizedPath.includes('..')) {
+        Logger.error(`Error: relative path traversal (..) not allowed - ${targetPath}`);
+        return null;
+      }
+
+      // Must be absolute path for external directories
+      if (!path.isAbsolute(normalizedPath)) {
+        Logger.error(`Error: external path must be absolute - ${targetPath}`);
+        return null;
+      }
+
+      // Check if directory exists
+      if (!fs.existsSync(normalizedPath)) {
+        Logger.error(`Error: directory does not exist - ${targetPath}`);
+        return null;
+      }
+
+      // Check if it's a directory
+      const stats = fs.statSync(normalizedPath);
+      if (!stats.isDirectory()) {
+        Logger.error(`Error: path is not a directory - ${targetPath}`);
+        return null;
+      }
+
+      // Exclude sensitive system directories
+      const sensitivePatterns = [
+        /^[A-Za-z]:\\Windows/i,           // Windows system
+        /^[A-Za-z]:\\Program Files/i,     // Program Files
+        /^\/etc\/?$/,                      // Linux /etc
+        /^\/usr\/?$/,                      // Linux /usr
+        /^\/var\/?$/,                      // Linux /var
+        /^\/System/i,                      // macOS system
+        /^\/Library/i                      // macOS Library
+      ];
+
+      for (const pattern of sensitivePatterns) {
+        if (pattern.test(normalizedPath)) {
+          Logger.error(`Error: cannot watch sensitive system directory - ${targetPath}`);
+          return null;
+        }
+      }
+
+      return normalizedPath;
+    } catch (error) {
+      Logger.error(`External path validation failed:`, error);
+      return null;
+    }
+  }
+
+  /**
+   * Get normalized key for temporary watcher
+   * @param {string} dirPath - Directory path
+   * @returns {string} Normalized path key
+   */
+  _getTempWatcherKey(dirPath) {
+    return path.resolve(dirPath).replace(/\\/g, '/').toLowerCase();
+  }
+
+  /**
+   * Check if a path is already being watched (either by permanent or temporary watcher)
+   * @param {string} dirPath - Directory path to check
+   * @returns {boolean} Whether the path is being watched
+   */
+  isPathWatched(dirPath) {
+    const normalizedPath = path.resolve(dirPath).replace(/\\/g, '/');
+    const normalizedPathLower = normalizedPath.toLowerCase();
+
+    // Check permanent watchers
+    for (const [key, dirInfo] of this.watchedDirs.entries()) {
+      const watchedPath = path.resolve(dirInfo.fullPath).replace(/\\/g, '/').toLowerCase();
+      if (normalizedPathLower === watchedPath || normalizedPathLower.startsWith(watchedPath + '/')) {
+        return true;
+      }
+    }
+
+    // Check temporary watchers
+    const tempKey = this._getTempWatcherKey(dirPath);
+    if (this.temporaryWatchers.has(tempKey)) {
+      return true;
+    }
+
+    return false;
+  }
+
+  /**
+   * Add a temporary watcher for a directory
+   * @param {string} dirPath - Absolute path to watch
+   * @returns {Object} Result object { success, message, isNew, refCount }
+   */
+  addTemporaryWatcher(dirPath) {
+    // Validate path
+    const validatedPath = this.validateExternalPath(dirPath);
+    if (!validatedPath) {
+      return { success: false, message: 'Invalid or inaccessible path' };
+    }
+
+    const key = this._getTempWatcherKey(validatedPath);
+
+    // Check if already exists
+    if (this.temporaryWatchers.has(key)) {
+      const existing = this.temporaryWatchers.get(key);
+      existing.refCount++;
+      existing.lastAccess = Date.now();
+      
+      // Clear any pending timeout
+      if (existing.timeoutId) {
+        clearTimeout(existing.timeoutId);
+        existing.timeoutId = null;
+      }
+
+      Logger.debug(`Temporary watcher ref count increased: ${key} (refCount: ${existing.refCount})`);
+      return { success: true, message: 'Watcher already exists, ref count increased', isNew: false, refCount: existing.refCount };
+    }
+
+    // Check if path is under a permanent watcher
+    if (this.isPathWatched(validatedPath)) {
+      Logger.debug(`Path already covered by permanent watcher: ${validatedPath}`);
+      return { success: true, message: 'Path already watched by permanent watcher', isNew: false, refCount: -1 };
+    }
+
+    // Check max count limit
+    if (this.temporaryWatchers.size >= this.tempWatcherConfig.maxCount) {
+      // Try to clean up idle watchers first
+      this._cleanupIdleTemporaryWatchers();
+      
+      if (this.temporaryWatchers.size >= this.tempWatcherConfig.maxCount) {
+        Logger.warn(`Temporary watcher limit reached (${this.tempWatcherConfig.maxCount})`);
+        return { success: false, message: 'Maximum temporary watcher limit reached' };
+      }
+    }
+
+    try {
+      // Create new watcher
+      const watcher = chokidar.watch(validatedPath, {
+        ...this.watchOptions,
+        depth: 1  // Only watch immediate children for temporary watchers
+      });
+
+      // Listen for file change events
+      watcher.on('all', (event, filePath) => {
+        const relativePath = path.relative(validatedPath, filePath).replace(/\\/g, '/');
+        const time = new Date().toLocaleTimeString();
+        
+        Logger.debug(`[Temp watcher] ${event}: ${relativePath} (${time})`);
+        
+        // Emit file change event
+        this.emit('fileChange', {
+          type: event,
+          watcherKey: `temp:${key}`,
+          watcherName: 'Temporary',
+          path: relativePath,
+          fullPath: filePath,
+          watchedDir: validatedPath,
+          time: time,
+          isTemporary: true,
+          shouldDisplay: false
+        });
+      });
+
+      watcher.on('error', (error) => {
+        Logger.error(`Temporary watcher error [${key}]:`, error.message);
+      });
+
+      watcher.on('ready', () => {
+        Logger.info(`Temporary watcher ready: ${validatedPath}`);
+      });
+
+      // Store watcher info
+      this.temporaryWatchers.set(key, {
+        watcher,
+        path: validatedPath,
+        refCount: 1,
+        lastAccess: Date.now(),
+        timeoutId: null,
+        createdAt: Date.now()
+      });
+
+      Logger.info(`Temporary watcher added: ${validatedPath}`);
+      return { success: true, message: 'Temporary watcher created', isNew: true, refCount: 1 };
+    } catch (error) {
+      Logger.error(`Failed to create temporary watcher:`, error);
+      return { success: false, message: error.message };
+    }
+  }
+
+  /**
+   * Remove or decrease ref count for a temporary watcher
+   * @param {string} dirPath - Directory path
+   * @param {boolean} force - Force remove regardless of ref count
+   * @returns {Object} Result object { success, message, refCount }
+   */
+  removeTemporaryWatcher(dirPath, force = false) {
+    const key = this._getTempWatcherKey(dirPath);
+    
+    if (!this.temporaryWatchers.has(key)) {
+      return { success: true, message: 'Watcher does not exist', refCount: 0 };
+    }
+
+    const watcherInfo = this.temporaryWatchers.get(key);
+
+    if (!force && watcherInfo.refCount > 1) {
+      watcherInfo.refCount--;
+      watcherInfo.lastAccess = Date.now();
+      Logger.debug(`Temporary watcher ref count decreased: ${key} (refCount: ${watcherInfo.refCount})`);
+      return { success: true, message: 'Ref count decreased', refCount: watcherInfo.refCount };
+    }
+
+    // Schedule removal with delay (allow for quick re-navigation)
+    if (!force && !watcherInfo.timeoutId) {
+      watcherInfo.timeoutId = setTimeout(() => {
+        this._forceRemoveTemporaryWatcher(key);
+      }, 10000); // 10 second grace period
+      
+      watcherInfo.refCount = 0;
+      Logger.debug(`Temporary watcher scheduled for removal: ${key}`);
+      return { success: true, message: 'Scheduled for removal', refCount: 0 };
+    }
+
+    // Force remove
+    return this._forceRemoveTemporaryWatcher(key);
+  }
+
+  /**
+   * Force remove a temporary watcher
+   * @param {string} key - Watcher key
+   * @returns {Object} Result object
+   */
+  _forceRemoveTemporaryWatcher(key) {
+    const watcherInfo = this.temporaryWatchers.get(key);
+    if (!watcherInfo) {
+      return { success: true, message: 'Already removed', refCount: 0 };
+    }
+
+    try {
+      // Clear timeout if any
+      if (watcherInfo.timeoutId) {
+        clearTimeout(watcherInfo.timeoutId);
+      }
+
+      // Close watcher
+      watcherInfo.watcher.close();
+      this.temporaryWatchers.delete(key);
+      
+      Logger.info(`Temporary watcher removed: ${watcherInfo.path}`);
+      return { success: true, message: 'Watcher removed', refCount: 0 };
+    } catch (error) {
+      Logger.error(`Failed to remove temporary watcher:`, error);
+      return { success: false, message: error.message, refCount: -1 };
+    }
+  }
+
+  /**
+   * Cleanup idle temporary watchers
+   */
+  _cleanupIdleTemporaryWatchers() {
+    const now = Date.now();
+    const timeout = this.tempWatcherConfig.idleTimeout;
+
+    for (const [key, info] of this.temporaryWatchers.entries()) {
+      // Skip if has active references or pending timeout
+      if (info.refCount > 0 || info.timeoutId) {
+        continue;
+      }
+
+      // Remove if idle for too long
+      if (now - info.lastAccess > timeout) {
+        Logger.info(`Cleaning up idle temporary watcher: ${info.path}`);
+        this._forceRemoveTemporaryWatcher(key);
+      }
+    }
+  }
+
+  /**
+   * Get temporary watcher status
+   * @returns {Object} Status info
+   */
+  getTemporaryWatcherStatus() {
+    const status = {
+      count: this.temporaryWatchers.size,
+      maxCount: this.tempWatcherConfig.maxCount,
+      watchers: []
+    };
+
+    for (const [key, info] of this.temporaryWatchers.entries()) {
+      status.watchers.push({
+        path: info.path,
+        refCount: info.refCount,
+        lastAccess: new Date(info.lastAccess).toISOString(),
+        createdAt: new Date(info.createdAt).toISOString(),
+        hasPendingTimeout: !!info.timeoutId
+      });
+    }
+
+    return status;
+  }
+
+  /**
+   * Stop all temporary watchers
+   */
+  stopAllTemporaryWatchers() {
+    const keys = Array.from(this.temporaryWatchers.keys());
+    keys.forEach(key => this._forceRemoveTemporaryWatcher(key));
+    Logger.info(`Stopped all temporary watchers (${keys.length})`);
+  }
+
   /**
    * Destroy file system manager
    */
   destroy() {
+    // Stop cleanup timer
+    if (this._tempWatcherCleanupTimer) {
+      clearInterval(this._tempWatcherCleanupTimer);
+      this._tempWatcherCleanupTimer = null;
+    }
+    
+    // Stop all temporary watchers
+    this.stopAllTemporaryWatchers();
+    
     this.stopAllWatchers();
     this.removeAllListeners();
     Logger.info('FileSystemManager destroyed');

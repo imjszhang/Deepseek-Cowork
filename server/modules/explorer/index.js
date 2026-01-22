@@ -657,6 +657,126 @@ function setupExplorerService(options = {}) {
         });
       });
 
+      // ==================== Temporary Watcher APIs ====================
+
+      // Add temporary watcher for a directory
+      apiRouter.post('/watch', (req, res) => {
+        try {
+          const { path: dirPath } = req.body;
+          
+          if (!dirPath) {
+            return res.status(400).json({
+              status: 'error',
+              message: 'Missing path parameter'
+            });
+          }
+
+          const result = this.fileSystemManager.addTemporaryWatcher(dirPath);
+          
+          if (!result.success) {
+            return res.status(400).json({
+              status: 'error',
+              message: result.message
+            });
+          }
+
+          res.json({
+            status: 'success',
+            message: result.message,
+            data: {
+              path: dirPath,
+              isNew: result.isNew,
+              refCount: result.refCount
+            }
+          });
+        } catch (error) {
+          Logger.error('Error adding temporary watcher:', error);
+          res.status(500).json({
+            status: 'error',
+            message: error.message
+          });
+        }
+      });
+
+      // Remove temporary watcher for a directory
+      apiRouter.delete('/watch', (req, res) => {
+        try {
+          const { path: dirPath, force } = req.query;
+          
+          if (!dirPath) {
+            return res.status(400).json({
+              status: 'error',
+              message: 'Missing path parameter'
+            });
+          }
+
+          const result = this.fileSystemManager.removeTemporaryWatcher(dirPath, force === 'true');
+          
+          res.json({
+            status: 'success',
+            message: result.message,
+            data: {
+              path: dirPath,
+              refCount: result.refCount
+            }
+          });
+        } catch (error) {
+          Logger.error('Error removing temporary watcher:', error);
+          res.status(500).json({
+            status: 'error',
+            message: error.message
+          });
+        }
+      });
+
+      // Check if a path is being watched
+      apiRouter.get('/watch/check', (req, res) => {
+        try {
+          const { path: dirPath } = req.query;
+          
+          if (!dirPath) {
+            return res.status(400).json({
+              status: 'error',
+              message: 'Missing path parameter'
+            });
+          }
+
+          const isWatched = this.fileSystemManager.isPathWatched(dirPath);
+          
+          res.json({
+            status: 'success',
+            data: {
+              path: dirPath,
+              isWatched: isWatched
+            }
+          });
+        } catch (error) {
+          Logger.error('Error checking watch status:', error);
+          res.status(500).json({
+            status: 'error',
+            message: error.message
+          });
+        }
+      });
+
+      // Get temporary watcher status
+      apiRouter.get('/watch/status', (req, res) => {
+        try {
+          const status = this.fileSystemManager.getTemporaryWatcherStatus();
+          
+          res.json({
+            status: 'success',
+            data: status
+          });
+        } catch (error) {
+          Logger.error('Error getting temporary watcher status:', error);
+          res.status(500).json({
+            status: 'error',
+            message: error.message
+          });
+        }
+      });
+
       // ==================== Webhook APIs ====================
 
       // Webhook receiving endpoint
