@@ -11,7 +11,7 @@
     <img src="https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square" alt="License: MIT" />
   </a>
   <a href="https://github.com/imjszhang/deepseek-cowork">
-    <img src="https://img.shields.io/badge/Version-0.1.0-blue.svg?style=flat-square" alt="Version" />
+    <img src="https://img.shields.io/badge/Version-0.1.6-blue.svg?style=flat-square" alt="Version" />
   </a>
   <a href="https://www.electronjs.org/">
     <img src="https://img.shields.io/badge/Electron-28.x-47848F?style=flat-square&logo=electron" alt="Electron" />
@@ -191,7 +191,7 @@ deepseek-cowork open
 
 ### CLI Commands Reference
 
-> **CLI Version**: `deepseek-cowork@0.1.5`
+> **CLI Version**: `deepseek-cowork@0.1.6`
 
 | Command | Description |
 |---------|-------------|
@@ -234,7 +234,7 @@ Built packages will be output to the `dist/` directory.
 
 ### Version Management
 
-The project uses semantic versioning (SemVer). Current version: **V0.1.0**
+The project uses semantic versioning (SemVer). Current version: **V0.1.6**
 
 Update version numbers:
 
