@@ -1150,8 +1150,8 @@ class FilesPanel {
     try {
       const filePath = this.joinPath(this.currentPath, name);
       // 使用 saveFileContent 创建文件，传入空字符串作为初始内容
-      // API期望的参数格式是 { path: filePath, content: content }
-      const result = await window.browserControlManager?.saveFileContent?.({ path: filePath, content: '' });
+      // API期望的参数格式是 (filePath, content) 两个独立参数
+      const result = await window.browserControlManager?.saveFileContent?.(filePath, '');
       
       if (result?.success) {
         this.hideNewFileDialog();

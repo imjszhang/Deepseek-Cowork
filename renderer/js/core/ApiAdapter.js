@@ -676,7 +676,24 @@ function createBrowserControlManagerPolyfill() {
             }
         },
         readFileContent: createApiMethod('readFileContent'),
-        saveFileContent: createApiMethod('saveFileContent'),
+        saveFileContent: async (filePath, content) => {
+            // 自定义实现：需要正确构建 { path, content } 请求体
+            if (!window.apiAdapter || !window.apiAdapter.isConnected()) {
+                const connected = await waitForConnection();
+                if (!connected) return { success: false, error: 'Not connected' };
+            }
+            try {
+                const response = await fetch(`${window.apiAdapter._baseUrl}/api/files/content`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ path: filePath, content: content })
+                });
+                return await response.json();
+            } catch (error) {
+                console.error('[Polyfill] saveFileContent failed:', error);
+                return { success: false, error: error.message };
+            }
+        },
         getItemInfo: createApiMethod('getItemInfo'),
         copyItem: async (sourcePath, destPath) => {
             // 自定义实现：需要正确构建 { sourcePath, destPath } 请求体

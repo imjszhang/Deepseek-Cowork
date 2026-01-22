@@ -159,6 +159,8 @@
       rename: 'Rename',
       showInExplorer: 'Show in File Manager',
       delete: 'Delete',
+      newFile: 'New File',
+      newFolder: 'New Folder',
       newFolderDialog: {
         title: 'New Folder',
         label: 'Folder Name',
@@ -166,6 +168,12 @@
         create: 'Create',
         errorEmpty: 'Please enter a folder name',
         errorInvalid: 'Folder name contains invalid characters'
+      },
+      newFileDialog: {
+        title: 'New File',
+        label: 'File Name',
+        placeholder: 'Enter file name...',
+        create: 'Create'
       },
       renameDialog: {
         title: 'Rename',
@@ -625,11 +633,14 @@
       deleteSuccess: 'Deleted successfully',
       deleteFailed: 'Delete failed',
       folderCreated: 'Folder created successfully',
+      fileCreated: 'File created successfully',
       createFailed: 'Create failed',
       renameSuccess: 'Renamed successfully',
       renameFailed: 'Rename failed',
       enterFolderName: 'Please enter folder name',
+      enterFileName: 'Please enter file name',
       invalidFolderName: 'Folder name contains invalid characters',
+      invalidFileName: 'File name contains invalid characters',
       enterNewName: 'Please enter new name',
       invalidName: 'Name contains invalid characters',
       accountAutoCreated: 'Account created automatically, please backup your Secret Key in settings',

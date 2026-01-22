@@ -159,6 +159,8 @@
       rename: '重命名',
       showInExplorer: '在文件管理器中显示',
       delete: '删除',
+      newFile: '新建文件',
+      newFolder: '新建文件夹',
       newFolderDialog: {
         title: '新建文件夹',
         label: '文件夹名称',
@@ -166,6 +168,12 @@
         create: '创建',
         errorEmpty: '请输入文件夹名称',
         errorInvalid: '文件夹名称包含非法字符'
+      },
+      newFileDialog: {
+        title: '新建文件',
+        label: '文件名称',
+        placeholder: '输入文件名称...',
+        create: '创建'
       },
       renameDialog: {
         title: '重命名',
@@ -625,11 +633,14 @@
       deleteSuccess: '删除成功',
       deleteFailed: '删除失败',
       folderCreated: '文件夹创建成功',
+      fileCreated: '文件创建成功',
       createFailed: '创建失败',
       renameSuccess: '重命名成功',
       renameFailed: '重命名失败',
       enterFolderName: '请输入文件夹名称',
+      enterFileName: '请输入文件名称',
       invalidFolderName: '文件夹名称包含非法字符',
+      invalidFileName: '文件名称包含非法字符',
       enterNewName: '请输入新名称',
       invalidName: '名称包含非法字符',
       accountAutoCreated: '账户已自动创建，建议在设置中备份 Secret Key',
