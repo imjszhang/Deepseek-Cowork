@@ -395,7 +395,10 @@ class BrowserControlManagerApp {
     await this.setupWizard.checkAndShow();
     
     // 加载账户信息（委托给 AccountSetup 模块）
-    await this.accountSetup.loadAccountInfo();
+    // 只有在本地服务已连接时才检查账户状态
+    if (window.apiAdapter?.isConnected()) {
+      await this.accountSetup.loadAccountInfo();
+    }
     
     // 初始化默认面板（文件面板）
     await this.initFilesPanel();

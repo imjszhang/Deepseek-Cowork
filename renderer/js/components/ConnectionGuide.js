@@ -275,9 +275,9 @@ class ConnectionGuide {
             }
         }
         
-        // 刷新应用状态
-        if (window.app && typeof window.app.refreshStatus === 'function') {
-            window.app.refreshStatus();
+        // 刷新应用状态 - 触发账户登录检查
+        if (window.app && window.app.accountSetup) {
+            await window.app.accountSetup.loadAccountInfo();
         }
     }
 

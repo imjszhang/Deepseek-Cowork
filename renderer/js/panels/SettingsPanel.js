@@ -104,7 +104,10 @@ class SettingsPanel {
         this.app.loadClaudeCodeSettings();
         break;
       case 'account':
-        this.app.loadAccountInfo();
+        // 只有在本地服务已连接时才加载账户信息
+        if (window.apiAdapter?.isConnected()) {
+          this.app.loadAccountInfo();
+        }
         break;
       case 'appearance':
         // 外观设置在 ThemeManager 中管理
