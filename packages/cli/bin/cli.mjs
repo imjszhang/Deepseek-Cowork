@@ -44,6 +44,7 @@ import { configCommand } from '../commands/config.mjs';
 import { openCommand } from '../commands/open.mjs';
 import { loginCommand } from '../commands/login.mjs';
 import { logoutCommand } from '../commands/logout.mjs';
+import { cleanupCommand } from '../commands/cleanup.mjs';
 
 // 配置程序
 program
@@ -97,6 +98,13 @@ program
     .command('logout')
     .description('Logout from your account')
     .action(logoutCommand);
+
+program
+    .command('cleanup')
+    .description('Clean up orphaned daemon and session processes')
+    .option('-a, --all', 'Also clean up session state files')
+    .option('--debug', 'Show debug information')
+    .action(cleanupCommand);
 
 // 默认命令：显示帮助
 program

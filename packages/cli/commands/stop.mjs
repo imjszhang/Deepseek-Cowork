@@ -32,25 +32,26 @@ export async function stopCommand(options) {
             return;
         }
         
-        // 首先尝试通过 API 优雅关闭
+        // 首先尝试通过 API 优雅关闭 daemon 和 sessions
+        const port = config.DEFAULT_HTTP_PORT;
         try {
-            spinner.text = 'Requesting graceful shutdown...';
+            spinner.text = 'Stopping daemon and sessions...';
             
-            // 获取端口配置
-            const port = config.DEFAULT_HTTP_PORT;
-            
-            const response = await fetch(`http://localhost:${port}/api/status`, {
-                method: 'GET',
-                signal: AbortSignal.timeout(3000)
+            const daemonStopResponse = await fetch(`http://localhost:${port}/api/daemon/stop`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                signal: AbortSignal.timeout(15000)  // daemon 停止可能需要较长时间
             });
             
-            if (response.ok) {
-                // 服务正在运行，尝试优雅关闭
-                // 注意：实际的停止 API 需要在服务端实现
-                // 这里先直接发送 SIGTERM
+            if (daemonStopResponse.ok) {
+                const result = await daemonStopResponse.json();
+                if (result.success) {
+                    spinner.text = 'Daemon stopped, shutting down service...';
+                }
             }
         } catch (e) {
-            // 服务可能已经不响应，直接终止进程
+            // 服务可能已经不响应，继续终止主进程
+            // daemon 清理会在下面的 SIGTERM 处理中完成（如果服务还在运行）
         }
         
         // 发送 SIGTERM 信号
