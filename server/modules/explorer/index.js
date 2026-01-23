@@ -189,6 +189,87 @@ function setupExplorerService(options = {}) {
     }
 
     /**
+     * Switch watch directory (hot reload)
+     * @param {string} newPath New directory path to watch
+     * @param {Object} options Options
+     * @param {string} options.name Watch directory name
+     * @param {string} options.description Watch directory description
+     * @returns {Object} Result { success, path, watchDirs }
+     */
+    async switchWatchDir(newPath, options = {}) {
+      const name = options.name || 'Workspace';
+      const description = options.description || 'AI workspace';
+      
+      try {
+        Logger.info(`Switching watch directory to: ${newPath}`);
+        
+        // 1. Stop all existing watchers
+        if (this.fileSystemManager) {
+          this.fileSystemManager.stopAllWatchers();
+          Logger.info('Stopped all existing watchers');
+        }
+        
+        // 2. Ensure new directory exists
+        if (!fs.existsSync(newPath)) {
+          fs.mkdirSync(newPath, { recursive: true });
+          Logger.info(`Created directory: ${newPath}`);
+        }
+        
+        // 3. Update watchDirs configuration
+        this.watchDirs = [{
+          path: newPath,
+          name: name,
+          description: description,
+          fullPath: newPath
+        }];
+        
+        // 4. Update FileSystemManager workDir
+        if (this.fileSystemManager) {
+          this.fileSystemManager.workDir = newPath;
+        }
+        
+        // 5. Update EventHandler watchDirs reference
+        if (this.eventHandler) {
+          this.eventHandler.watchDirs = this.watchDirs;
+        }
+        
+        // 6. If internal monitoring enabled, setup new watchers
+        if (explorerServerConfig.isInternalMonitoringEnabled()) {
+          Logger.info('Setting up new file watchers...');
+          this.watchDirs.forEach(dir => {
+            this.fileSystemManager.setupFileWatcher({
+              path: dir.path,
+              key: dir.name || dir.path,
+              name: dir.name,
+              description: dir.description
+            });
+          });
+        }
+        
+        // 7. Broadcast watch directory changed event
+        this.broadcastSSE('watch_dir_changed', {
+          path: newPath,
+          name: name,
+          timestamp: new Date().toISOString()
+        });
+        
+        Logger.info(`Watch directory switched successfully to: ${newPath}`);
+        
+        return { 
+          success: true, 
+          path: newPath, 
+          watchDirs: this.watchDirs 
+        };
+      } catch (error) {
+        Logger.error(`Failed to switch watch directory: ${error.message}`);
+        return { 
+          success: false, 
+          error: error.message 
+        };
+      }
+    }
+
+    /**
      * Broadcast SSE event
      * @param {string} eventType Event type
      * @param {Object} data Event data
@@ -658,6 +739,41 @@ function setupExplorerService(options = {}) {
       });
 
       // ==================== Temporary Watcher APIs ====================
+
+      // Switch primary watch directory (hot reload)
+      apiRouter.put('/watch/switch', async (req, res) => {
+        try {
+          const { path: newPath, name, description } = req.body;
+          
+          if (!newPath) {
+            return res.status(400).json({
+              status: 'error',
+              message: 'Missing path parameter'
+            });
+          }
+
+          const result = await this.switchWatchDir(newPath, { name, description });
+          
+          if (!result.success) {
+            return res.status(500).json({
+              status: 'error',
+              message: result.error || 'Failed to switch watch directory'
+            });
+          }
+
+          res.json({
+            status: 'success',
+            message: 'Watch directory switched',
+            data: result
+          });
+        } catch (error) {
+          Logger.error('Error switching watch directory:', error);
+          res.status(500).json({
+            status: 'error',
+            message: error.message
+          });
+        }
+      });
 
       // Add temporary watcher for a directory
       apiRouter.post('/watch', (req, res) => {
