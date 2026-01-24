@@ -75,12 +75,11 @@ program
     .action(statusCommand);
 
 program
-    .command('config')
+    .command('config [action] [key] [value]')
     .description('Manage configuration')
-    .argument('[action]', 'Action: list, get, set', 'list')
-    .argument('[key]', 'Configuration key')
-    .argument('[value]', 'Configuration value')
-    .action(configCommand);
+    .action((action, key, value) => {
+        configCommand(action || 'list', key, value);
+    });
 
 program
     .command('open')

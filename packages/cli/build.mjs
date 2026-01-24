@@ -192,8 +192,77 @@ try {
     // 5. 创建 dist/package.json
     console.log('\n📄 Creating package.json...');
     
-    // 读取当前版本
+    // 读取当前版本和根目录的 overrides 配置
     const currentPkg = JSON.parse(readFileSync(join(__dirname, 'package.json'), 'utf8'));
+    const rootPkg = JSON.parse(readFileSync(join(PROJECT_ROOT, 'package.json'), 'utf8'));
+    
+    const dependencies = {
+        // CLI 依赖
+        "chalk": "^5.3.0",
+        "commander": "^12.1.0",
+        "open": "^10.1.0",
+        "ora": "^8.0.1",
+        
+        // 服务依赖
+        "express": "^4.18.2",
+        "cors": "^2.8.5",
+        "socket.io": "^4.7.0",
+        "socket.io-client": "^4.7.0",
+        "chokidar": "^3.6.0",
+        "ws": "^8.14.0",
+        "uuid": "^9.0.0",
+        "sql.js": "^1.11.0",
+        "axios": "^1.6.0",
+        "libsodium-wrappers": "^0.7.13",
+        
+        // happy-cli 工具解压依赖
+        "tar": "^7.5.2",
+        
+        // happy-cli 运行时依赖（daemon 启动所需）
+        "@agentclientprotocol/sdk": "^0.8.0",
+        "@modelcontextprotocol/sdk": "^1.22.0",
+        "@stablelib/base64": "^2.0.1",
+        "@stablelib/hex": "^2.0.1",
+        "ai": "^5.0.107",
+        "cross-spawn": "^7.0.6",
+        "expo-server-sdk": "^3.15.0",
+        "fastify": "^5.6.2",
+        "fastify-type-provider-zod": "4.0.2",
+        "http-proxy": "^1.18.1",
+        "http-proxy-middleware": "^3.0.5",
+        "ink": "^6.5.1",
+        "ps-list": "^8.1.1",
+        "qrcode-terminal": "^0.12.0",
+        "react": "^19.2.0",
+        "tmp": "^0.2.5",
+        "tweetnacl": "^1.0.3",
+        "zod": "^3.23.8"
+    };
+    
+    // 处理 overrides：如果某个包在 dependencies 中已存在，则从 overrides 中移除以避免冲突
+    const processOverrides = () => {
+        const overrides = rootPkg.overrides ? JSON.parse(JSON.stringify(rootPkg.overrides)) : {};
+        
+        // 移除在 dependencies 中已存在的包的 override
+        const removeOverride = (obj, key) => {
+            if (typeof obj === 'object' && obj !== null) {
+                if (key in obj) {
+                    delete obj[key];
+                }
+                for (const k in obj) {
+                    if (typeof obj[k] === 'object') {
+                        removeOverride(obj[k], key);
+                    }
+                }
+            }
+        };
+        
+        Object.keys(dependencies).forEach(depName => {
+            removeOverride(overrides, depName);
+        });
+        
+        return overrides;
+    };
     
     const distPackageJson = {
         name: "deepseek-cowork",
@@ -228,48 +297,10 @@ try {
             "claude-code",
             "cli"
         ],
-        dependencies: {
-            // CLI 依赖
-            "chalk": "^5.3.0",
-            "commander": "^12.1.0",
-            "open": "^10.1.0",
-            "ora": "^8.0.1",
-            
-            // 服务依赖
-            "express": "^4.18.2",
-            "cors": "^2.8.5",
-            "socket.io": "^4.7.0",
-            "socket.io-client": "^4.7.0",
-            "chokidar": "^3.6.0",
-            "ws": "^8.14.0",
-            "uuid": "^9.0.0",
-            "sql.js": "^1.11.0",
-            "axios": "^1.6.0",
-            "libsodium-wrappers": "^0.7.13",
-            
-            // happy-cli 工具解压依赖
-            "tar": "^7.5.2",
-            
-            // happy-cli 运行时依赖（daemon 启动所需）
-            "@agentclientprotocol/sdk": "^0.8.0",
-            "@modelcontextprotocol/sdk": "^1.22.0",
-            "@stablelib/base64": "^2.0.1",
-            "@stablelib/hex": "^2.0.1",
-            "ai": "^5.0.107",
-            "cross-spawn": "^7.0.6",
-            "expo-server-sdk": "^3.15.0",
-            "fastify": "^5.6.2",
-            "fastify-type-provider-zod": "4.0.2",
-            "http-proxy": "^1.18.1",
-            "http-proxy-middleware": "^3.0.5",
-            "ink": "^6.5.1",
-            "ps-list": "^8.1.1",
-            "qrcode-terminal": "^0.12.0",
-            "react": "^19.2.0",
-            "tmp": "^0.2.5",
-            "tweetnacl": "^1.0.3",
-            "zod": "^3.23.8"
-        },
+        dependencies: dependencies,
+        // 继承根目录的 overrides 配置，确保依赖版本统一
+        // 如果某个包在 dependencies 中已存在，则从 overrides 中移除以避免冲突
+        overrides: processOverrides(),
         engines: {
             node: ">=18.0.0"
         },
