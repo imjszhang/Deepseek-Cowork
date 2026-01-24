@@ -67,10 +67,19 @@ class DaemonManager {
   async loadStatus() {
     try {
       console.log('[DaemonManager] Loading status...');
-      const status = await window.browserControlManager?.getDaemonStatus?.();
+      const result = await window.browserControlManager?.getDaemonStatus?.();
       
-      if (status) {
-        this.updateUI(status);
+      console.log('[DaemonManager] getDaemonStatus result:', result);
+      
+      // 处理两种格式：直接的 status 对象或 { success, status } 包装
+      if (result) {
+        if (result.success !== undefined && result.status) {
+          // 包装格式: { success: true, status: {...} }
+          this.updateUI(result.status);
+        } else if (result.running !== undefined) {
+          // 直接格式: { running: true, pid: ..., ... }
+          this.updateUI(result);
+        }
       }
     } catch (error) {
       console.error('[DaemonManager] Load status error:', error);
@@ -82,6 +91,7 @@ class DaemonManager {
    * @param {Object} status 状态对象
    */
   updateUI(status) {
+    console.log('[DaemonManager] updateUI with status:', status);
     this.status = status;
     
     const t = typeof I18nManager !== 'undefined' ? I18nManager.t.bind(I18nManager) : (k) => k;
@@ -102,13 +112,29 @@ class DaemonManager {
       this.elements.pid.textContent = status.pid || '-';
     }
     
+    // 支持 port 或 httpPort 字段
     if (this.elements.port) {
-      this.elements.port.textContent = status.port || '-';
+      this.elements.port.textContent = status.port || status.httpPort || '-';
     }
     
     if (this.elements.startTime && status.startTime) {
-      const date = new Date(status.startTime);
-      this.elements.startTime.textContent = date.toLocaleString('zh-CN');
+      // 处理多种日期格式
+      let date;
+      if (typeof status.startTime === 'string') {
+        // 尝试解析 "2026/1/20 23:47:31" 格式
+        date = new Date(status.startTime.replace(/\//g, '-'));
+        if (isNaN(date.getTime())) {
+          date = new Date(status.startTime);
+        }
+      } else {
+        date = new Date(status.startTime);
+      }
+      
+      if (!isNaN(date.getTime())) {
+        this.elements.startTime.textContent = date.toLocaleString('zh-CN');
+      } else {
+        this.elements.startTime.textContent = status.startTime;
+      }
     } else if (this.elements.startTime) {
       this.elements.startTime.textContent = '-';
     }

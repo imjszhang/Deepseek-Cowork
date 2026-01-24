@@ -138,7 +138,7 @@ class ChatPanel {
   }
 
   /**
-   * 检查 AI 状态
+   * 检查 AI 状态，如果未连接则自动尝试连接
    */
   async checkAIStatus() {
     try {
@@ -148,12 +148,22 @@ class ChatPanel {
       }
       
       const status = await window.browserControlManager?.getAIStatus?.();
+      console.log('[ChatPanel] AI status:', status);
+      
       if (status) {
         this.updateAIStatus(status);
         
-        // 如果已连接，加载历史消息
+        // 如果已连接，加载历史消息（如果尚未加载）
         if (status.isConnected) {
-          await this.loadHappyMessageHistory();
+          // 检查是否已经通过 WebSocket 事件加载了历史（避免重复加载清空消息）
+          if (!this.app?._historyLoaded) {
+            await this.loadHappyMessageHistory();
+            if (this.app) this.app._historyLoaded = true;
+          }
+        } else {
+          // 如果未连接，自动尝试连接
+          console.log('[ChatPanel] AI not connected, attempting auto-connect...');
+          await this.autoConnectAI();
         }
       }
     } catch (error) {
@@ -162,17 +172,43 @@ class ChatPanel {
   }
   
   /**
+   * 自动连接 AI
+   */
+  async autoConnectAI() {
+    try {
+      const result = await window.browserControlManager?.connectAI?.();
+      console.log('[ChatPanel] Auto-connect result:', result);
+      
+      if (result?.success) {
+        // 重新获取状态并更新 UI
+        const status = await window.browserControlManager?.getAIStatus?.();
+        if (status) {
+          this.updateAIStatus(status);
+          if (status.isConnected) {
+            await this.loadHappyMessageHistory();
+          }
+        }
+      }
+    } catch (error) {
+      console.error('[ChatPanel] Auto-connect failed:', error);
+    }
+  }
+  
+  /**
    * 加载 Happy AI 历史消息
    */
   async loadHappyMessageHistory() {
     try {
-      const messages = await window.browserControlManager?.getHappyMessages?.(100);
+      const result = await window.browserControlManager?.getHappyMessages?.(100);
       
       // 先清空显示
       this.renderedMessageIds.clear();
       if (this.elements.aiMessages) {
         this.elements.aiMessages.innerHTML = '';
       }
+      
+      // 解析返回值：可能是 { success, messages } 对象或直接是数组
+      const messages = Array.isArray(result) ? result : (result?.messages || []);
       
       // 使用 HappyMessageHandler 处理历史消息
       if (messages && messages.length > 0 && this.app?.happyMessageHandler) {
@@ -250,6 +286,16 @@ class ChatPanel {
       this.elements.aiStatusText.textContent = statusValue;
     }
     
+    // 更新事件状态（idle/processing/ready）
+    if (status.eventStatus) {
+      this.updateHappyEventStatus(status.eventStatus);
+    } else if (this.aiConnected) {
+      // 如果已连接但没有 eventStatus，默认设为 ready
+      this.updateHappyEventStatus('ready');
+    } else {
+      this.updateHappyEventStatus('disconnected');
+    }
+    
     this.updateAISendButton();
     
     // 更新上下文使用量显示
@@ -270,8 +316,10 @@ class ChatPanel {
    */
   async loadLatestUsage() {
     try {
-      const usage = await window.browserControlManager?.getLatestUsage?.();
-      if (usage) {
+      const result = await window.browserControlManager?.getLatestUsage?.();
+      // 解析返回值：可能是 { success, usage } 对象或直接是 usage 数据
+      const usage = result?.usage || result;
+      if (usage && typeof usage === 'object') {
         this.usageData = usage;
         if (this.app?.updateUsageDisplay) {
           this.app.updateUsageDisplay(usage);

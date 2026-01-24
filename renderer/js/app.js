@@ -111,6 +111,8 @@ class BrowserControlManagerApp {
     this.aiConnected = false;
     this.aiMessages = [];
     this.currentSessionId = null;
+    this._connectedMessageShown = false;  // 防止重复显示"已连接"消息
+    this._historyLoaded = false;  // 防止重复加载历史消息
     
     // Happy AI 消息去重
     this.displayedMessageIds = new Set();
@@ -364,11 +366,20 @@ class BrowserControlManagerApp {
     // 检查初始状态（委托给 BrowserControlModule）
     const status = await this.browserControlModule.checkInitialStatus();
     
+    // 在 Web 模式下初始化 WebSocket 连接
+    await this.initWebSocket();
+    
     // 检查 AI 状态
     await this.checkAIStatus();
     
     // 加载工作目录设置
     await this.loadWorkspaceSettings();
+    
+    // 加载 Daemon 状态
+    await this.loadDaemonStatus();
+    
+    // 加载依赖状态（Node.js、Claude Code 等）
+    await this.loadDependencyStatus();
     
     // 加载标签页列表 - 只有在服务器运行时才加载
     if (status && status.running) {
@@ -854,6 +865,93 @@ class BrowserControlManagerApp {
   }
 
   /**
+   * 初始化 WebSocket 连接（Web 模式）
+   * 用于接收实时消息和事件
+   */
+  async initWebSocket() {
+    // 检查是否是 Web 模式
+    if (window.apiAdapter?.getMode?.() !== 'web') {
+      console.log('[App] Not in web mode, skipping WebSocket init');
+      return;
+    }
+    
+    // 检查 WebSocketClient 是否可用
+    if (typeof WebSocketClient === 'undefined') {
+      console.warn('[App] WebSocketClient not available');
+      return;
+    }
+    
+    try {
+      // 使用 Socket.IO 的 URL（与后端的 WebSocket 端口一致）
+      const wsUrl = 'ws://localhost:3333';
+      console.log('[App] Initializing WebSocket connection to', wsUrl);
+      
+      this.wsClient = new WebSocketClient({ url: wsUrl });
+      
+      // 设置事件转发到 apiAdapter
+      this.wsClient.on('happy:message', (data) => {
+        console.log('[App] WS happy:message', data);
+        window.apiAdapter?.emit?.('happy:message', data);
+      });
+      
+      this.wsClient.on('happy:connected', (data) => {
+        console.log('[App] WS happy:connected', data);
+        window.apiAdapter?.emit?.('happy:connected', data);
+      });
+      
+      this.wsClient.on('happy:disconnected', (data) => {
+        console.log('[App] WS happy:disconnected', data);
+        window.apiAdapter?.emit?.('happy:disconnected', data);
+      });
+      
+      this.wsClient.on('happy:eventStatus', (data) => {
+        console.log('[App] WS happy:eventStatus', data);
+        window.apiAdapter?.emit?.('happy:eventStatus', data);
+      });
+      
+      this.wsClient.on('happy:error', (data) => {
+        console.log('[App] WS happy:error', data);
+        window.apiAdapter?.emit?.('happy:error', data);
+      });
+      
+      this.wsClient.on('happy:usage', (data) => {
+        console.log('[App] WS happy:usage', data);
+        window.apiAdapter?.emit?.('happy:usage', data);
+      });
+      
+      this.wsClient.on('happy:messagesRestored', (data) => {
+        console.log('[App] WS happy:messagesRestored', data);
+        window.apiAdapter?.emit?.('happy:messagesRestored', data);
+      });
+      
+      this.wsClient.on('daemon:statusChanged', (data) => {
+        console.log('[App] WS daemon:statusChanged', data);
+        window.apiAdapter?.emit?.('daemon:statusChanged', data);
+      });
+      
+      this.wsClient.on('happy:initialized', (data) => {
+        console.log('[App] WS happy:initialized', data);
+        window.apiAdapter?.emit?.('happy:initialized', data);
+      });
+      
+      this.wsClient.on('happy:status', (data) => {
+        console.log('[App] WS happy:status', data);
+        window.apiAdapter?.emit?.('happy:status', data);
+      });
+      
+      // 连接 WebSocket
+      await this.wsClient.connect();
+      
+      // 设置到 apiAdapter
+      window.apiAdapter?.setWebSocketClient?.(this.wsClient);
+      
+      console.log('[App] WebSocket connected');
+    } catch (error) {
+      console.error('[App] WebSocket connection failed:', error);
+    }
+  }
+
+  /**
    * 设置事件监听器
    * 注意：服务器状态、日志、视图加载相关事件已迁移到 BrowserControlModule
    */
@@ -880,14 +978,20 @@ class BrowserControlManagerApp {
       this.updateAIStatus({ isConnected: true });
       
       // 连接成功后加载历史消息
-      await this.loadHappyMessageHistory();
+      if (!this._historyLoaded) {
+        await this.loadHappyMessageHistory();
+        this._historyLoaded = true;
+      }
       
       // 加载最新的 usage 数据
       await this.loadLatestUsage();
       
-      // 显示 Agent 已就绪消息（与进度消息保持一致）
-      const t = typeof I18nManager !== 'undefined' ? I18nManager.t.bind(I18nManager) : (k) => k;
-      this.addAIMessage('system', t('daemon.startProgress.ready'));
+      // 显示 Agent 已就绪消息（与进度消息保持一致，只显示一次）
+      if (!this._connectedMessageShown) {
+        this._connectedMessageShown = true;
+        const t = typeof I18nManager !== 'undefined' ? I18nManager.t.bind(I18nManager) : (k) => k;
+        this.addAIMessage('system', t('daemon.startProgress.ready'));
+      }
     });
     if (unsubHappyConnected) this.unsubscribers.push(unsubHappyConnected);
     
@@ -895,6 +999,8 @@ class BrowserControlManagerApp {
     const unsubHappyDisconnected = window.browserControlManager.onHappyDisconnected?.((data) => {
       console.log('Happy AI disconnected:', data);
       this.aiConnected = false;
+      this._connectedMessageShown = false;  // 重置标志，以便重新连接时再次显示消息
+      this._historyLoaded = false;  // 重置历史加载标志
       this.updateAIStatus({ isConnected: false });
       const t = typeof I18nManager !== 'undefined' ? I18nManager.t.bind(I18nManager) : (k) => k;
       this.addAIMessage('system', `${t('chat.agentDisconnected')}: ${data.reason || t('chat.unknownReason')}`);
@@ -970,6 +1076,38 @@ class BrowserControlManagerApp {
       }
     });
     if (unsubHappyInitialized) this.unsubscribers.push(unsubHappyInitialized);
+    
+    // 监听 Happy 初始状态事件（WebSocket 连接时发送）
+    // 此事件在 WebSocket 连接建立时由后端发送，包含当前 AI 连接状态
+    const unsubHappyStatus = window.browserControlManager.onHappyStatus?.(async (data) => {
+      console.log('[HappyStatus] Initial status received:', data);
+      // 更新 AI 连接状态
+      if (data.clientConnected !== undefined) {
+        this.aiConnected = data.clientConnected;
+        this.currentSessionId = data.sessionId || this.currentSessionId;
+        this.updateAIStatus({ 
+          isConnected: data.clientConnected,
+          eventStatus: data.eventStatus
+        });
+        
+        // 如果已连接，加载历史消息并显示连接提示
+        if (data.clientConnected) {
+          if (!this._historyLoaded) {
+            await this.loadHappyMessageHistory();
+            this._historyLoaded = true;
+          }
+          await this.loadLatestUsage();
+          
+          // 显示 Agent 已就绪消息（与进度消息保持一致，只显示一次）
+          if (!this._connectedMessageShown) {
+            this._connectedMessageShown = true;
+            const t = typeof I18nManager !== 'undefined' ? I18nManager.t.bind(I18nManager) : (k) => k;
+            this.addAIMessage('system', t('daemon.startProgress.ready'));
+          }
+        }
+      }
+    });
+    if (unsubHappyStatus) this.unsubscribers.push(unsubHappyStatus);
     
     // ============ 软件更新事件监听 ============
     

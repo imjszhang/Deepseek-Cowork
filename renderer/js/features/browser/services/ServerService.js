@@ -24,7 +24,19 @@ class ServerService {
    */
   async getStatus() {
     try {
-      const status = await window.browserControlManager.getServerStatus();
+      const result = await window.browserControlManager.getServerStatus();
+      console.log('[ServerService] getServerStatus result:', result);
+      
+      // 处理 API 响应格式：{ success: true, status: {...} }
+      let status;
+      if (result?.success !== undefined && result?.status) {
+        status = result.status;
+      } else if (result?.running !== undefined) {
+        status = result;
+      } else {
+        status = { running: false };
+      }
+      
       this.status = status;
       return status;
     } catch (error) {

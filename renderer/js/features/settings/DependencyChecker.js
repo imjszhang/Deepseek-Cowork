@@ -72,16 +72,21 @@ class DependencyChecker {
   async load() {
     try {
       console.log('[DependencyChecker] Loading...');
-      const status = await window.browserControlManager.getDependencyStatus();
-      console.log('[DependencyChecker] Status:', status);
+      const result = await window.browserControlManager.getDependencyStatus();
+      console.log('[DependencyChecker] Result:', result);
       
-      this.nodejs = status.nodejs;
-      this.happyCoder = status.happyCoder;
-      this.claudeCode = status.claudeCode;
+      // 处理两种可能的响应格式
+      // 格式1: { success, nodejs, happyCoder, claudeCode } - 直接字段
+      // 格式2: { success, status: { nodejs, happyCoder, claudeCode } } - 包装格式
+      const status = result?.status || result;
       
-      this.updateNodeJsUI(status.nodejs);
-      this.updateHappyCoderUI(status.happyCoder);
-      this.updateClaudeCodeUI(status.claudeCode);
+      this.nodejs = status?.nodejs;
+      this.happyCoder = status?.happyCoder;
+      this.claudeCode = status?.claudeCode;
+      
+      this.updateNodeJsUI(this.nodejs);
+      this.updateHappyCoderUI(this.happyCoder);
+      this.updateClaudeCodeUI(this.claudeCode);
     } catch (error) {
       console.error('[DependencyChecker] Load error:', error);
     }
@@ -99,15 +104,19 @@ class DependencyChecker {
         this.elements.refreshBtn.disabled = true;
       }
       
-      const status = await window.browserControlManager.checkAllDependencies();
+      const result = await window.browserControlManager.checkAllDependencies();
+      console.log('[DependencyChecker] Refresh result:', result);
       
-      this.nodejs = status.nodejs;
-      this.happyCoder = status.happyCoder;
-      this.claudeCode = status.claudeCode;
+      // 处理两种可能的响应格式
+      const status = result?.status || result;
       
-      this.updateNodeJsUI(status.nodejs);
-      this.updateHappyCoderUI(status.happyCoder);
-      this.updateClaudeCodeUI(status.claudeCode);
+      this.nodejs = status?.nodejs;
+      this.happyCoder = status?.happyCoder;
+      this.claudeCode = status?.claudeCode;
+      
+      this.updateNodeJsUI(this.nodejs);
+      this.updateHappyCoderUI(this.happyCoder);
+      this.updateClaudeCodeUI(this.claudeCode);
       
       this.app?.showNotification?.(t('notifications.dependencyRefreshed'), 'success');
     } catch (error) {

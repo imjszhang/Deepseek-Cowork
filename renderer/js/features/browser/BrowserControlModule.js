@@ -143,14 +143,20 @@ class BrowserControlModule {
     }
     
     try {
-      const status = await window.apiAdapter.call('getServerStatus');
-      console.log('[BrowserControlModule] Web mode status:', status);
-      this.handleServerStatusChanged({
-        running: true,
-        httpPort: status.httpPort || 3333,
-        wsPort: status.wsPort || 8080,
-        extensionConnections: status.extensionConnections || 0
-      });
+      const result = await window.apiAdapter.call('getServerStatus');
+      console.log('[BrowserControlModule] Web mode status result:', result);
+      
+      // 处理 API 响应格式：{ success: true, status: {...} }
+      const status = result?.status || result;
+      
+      if (status) {
+        this.handleServerStatusChanged({
+          running: status.running !== undefined ? status.running : true,
+          httpPort: status.httpPort || 3333,
+          wsPort: status.wsPort || 8080,
+          extensionConnections: status.extensionConnections || 0
+        });
+      }
     } catch (error) {
       console.warn('[BrowserControlModule] Failed to fetch status:', error);
       this.updateServerStatusDisplay({ running: false, error: true });

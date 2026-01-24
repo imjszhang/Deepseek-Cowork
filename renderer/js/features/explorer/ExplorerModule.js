@@ -201,10 +201,14 @@ class ExplorerModule {
     }
 
     // 监听服务器状态变化
-    this.serverStatusUnsubscribe = window.browserControlManager.onServerStatusChanged(async (status) => {
-      console.log('[ExplorerModule] Server status changed:', status);
+    this.serverStatusUnsubscribe = window.browserControlManager.onServerStatusChanged(async (response) => {
+      console.log('[ExplorerModule] Server status changed:', response);
       
-      if (status && status.running) {
+      // 兼容两种返回格式
+      const status = response?.status || response;
+      const isRunning = status?.running === true;
+      
+      if (isRunning) {
         // 服务器已启动，尝试连接 SSE
         console.log('[ExplorerModule] Server is running, connecting SSE...');
         await this.checkAndConnectSSE();
@@ -228,10 +232,18 @@ class ExplorerModule {
 
     try {
       // 检查服务器状态
-      const status = await window.browserControlManager.getServerStatus();
-      console.log('[ExplorerModule] Current server status:', status);
+      const response = await window.browserControlManager.getServerStatus();
+      console.log('[ExplorerModule] Current server status response:', response);
       
-      if (status && status.running) {
+      // 兼容两种返回格式：
+      // 1. Electron IPC 返回: { running: true, ... }
+      // 2. HTTP API 返回: { success: true, status: { running: true, ... } }
+      const status = response?.status || response;
+      const isRunning = status?.running === true;
+      
+      console.log('[ExplorerModule] Server running:', isRunning);
+      
+      if (isRunning) {
         // 服务器正在运行，连接 SSE
         console.log('[ExplorerModule] Server is running, connecting SSE...');
         await this.connectSSE();
@@ -360,6 +372,8 @@ class ExplorerModule {
   handleFileChangeEvent(data) {
     const { type, path, fullPath } = data;
     
+    console.log('[ExplorerModule] File change event:', type, path, fullPath);
+    
     // 高亮变化的文件
     this.highlightChangedFile(path, type);
     
@@ -369,8 +383,35 @@ class ExplorerModule {
     }
     
     this.fileRefreshDebounceTimer = setTimeout(() => {
-      const currentPath = this.app?.currentFilePath;
-      if (currentPath && path.startsWith(currentPath)) {
+      // 获取当前浏览的目录路径
+      const currentPath = this.app?.filesPanel?.currentPath || this.app?.currentFilePath;
+      
+      // 对于新增文件/文件夹，总是刷新列表
+      if (type === 'add' || type === 'addDir') {
+        console.log('[ExplorerModule] New file/folder detected, refreshing list');
+        this.app?.refreshFileList?.();
+        return;
+      }
+      
+      // 对于其他类型的变化，检查路径是否匹配
+      if (currentPath) {
+        // 标准化路径分隔符
+        const normalizedCurrentPath = currentPath.replace(/\\/g, '/');
+        const normalizedFullPath = (fullPath || '').replace(/\\/g, '/');
+        const normalizedPath = (path || '').replace(/\\/g, '/');
+        
+        // 检查完整路径是否在当前目录内，或相对路径是否匹配
+        const isInCurrentDir = normalizedFullPath.startsWith(normalizedCurrentPath) ||
+                               normalizedCurrentPath.includes(normalizedPath) ||
+                               normalizedCurrentPath.endsWith(normalizedPath);
+        
+        if (isInCurrentDir) {
+          console.log('[ExplorerModule] File in current directory changed, refreshing list');
+          this.app?.refreshFileList?.();
+        }
+      } else {
+        // 没有当前路径，也刷新（可能是初始状态）
+        console.log('[ExplorerModule] No current path, refreshing list anyway');
         this.app?.refreshFileList?.();
       }
     }, 500);
@@ -1375,7 +1416,10 @@ class ExplorerModule {
 
   renderHtmlPreview(htmlContent) {
     const iframe = this.elements.filePreviewIframe;
-    if (!iframe) return;
+    if (!iframe) {
+      console.warn('[ExplorerModule] renderHtmlPreview: iframe element not found');
+      return;
+    }
 
     if (this._previewBlobUrl) {
       URL.revokeObjectURL(this._previewBlobUrl);
@@ -1383,17 +1427,47 @@ class ExplorerModule {
     }
 
     if (this.filePreviewPath) {
-      const filePath = this.filePreviewPath.replace(/\\/g, '/');
-      const fileUrl = filePath.match(/^[a-zA-Z]:/) 
-        ? `file:///${filePath}` 
-        : `file://${filePath}`;
+      // 检测运行环境：优先检查 apiAdapter 是否存在且连接（更可靠）
+      const hasApiAdapter = window.apiAdapter && typeof window.apiAdapter.isConnected === 'function';
+      const isWebMode = hasApiAdapter || 
+                        (typeof window.browserControlManager?._isPolyfill === 'boolean' && 
+                         window.browserControlManager._isPolyfill === true);
       
-      iframe.src = fileUrl;
-      iframe.style.display = 'block';
-      return;
+      console.log('[ExplorerModule] renderHtmlPreview:', {
+        filePath: this.filePreviewPath,
+        isWebMode,
+        hasApiAdapter,
+        baseUrl: window.apiAdapter?._baseUrl
+      });
+      
+      if (isWebMode) {
+        // Web 模式：使用 HTTP 代理服务文件
+        // 这样可以正确加载相对路径的 CSS、JS、图片等资源
+        const baseUrl = window.apiAdapter?._baseUrl || 'http://localhost:3333';
+        const filePath = this.filePreviewPath.replace(/\\/g, '/');
+        const serveUrl = `${baseUrl}/api/files/serve?path=${encodeURIComponent(filePath)}`;
+        
+        console.log('[ExplorerModule] Using serve URL:', serveUrl);
+        iframe.src = serveUrl;
+        iframe.style.display = 'block';
+        return;
+      } else {
+        // Electron 模式：使用 file:// 协议
+        const filePath = this.filePreviewPath.replace(/\\/g, '/');
+        const fileUrl = filePath.match(/^[a-zA-Z]:/) 
+          ? `file:///${filePath}` 
+          : `file://${filePath}`;
+        
+        console.log('[ExplorerModule] Using file:// URL:', fileUrl);
+        iframe.src = fileUrl;
+        iframe.style.display = 'block';
+        return;
+      }
     }
 
+    // 如果只有内容没有文件路径，使用 srcdoc
     if (htmlContent) {
+      console.log('[ExplorerModule] Using srcdoc for preview');
       iframe.srcdoc = htmlContent;
       iframe.style.display = 'block';
     }
@@ -1500,9 +1574,22 @@ class ExplorerModule {
 
     const img = document.createElement('img');
     const normalizedPath = filePath.replace(/\\/g, '/');
-    const fileUrl = normalizedPath.match(/^[a-zA-Z]:/) 
-      ? `file:///${normalizedPath}` 
-      : `file://${normalizedPath}`;
+    
+    // 检测运行环境
+    const isWebMode = typeof window.browserControlManager?._isPolyfill === 'boolean' && 
+                      window.browserControlManager._isPolyfill === true;
+    
+    let fileUrl;
+    if (isWebMode) {
+      // Web 模式：使用 HTTP 代理服务文件
+      const baseUrl = window.apiAdapter?._baseUrl || 'http://localhost:3333';
+      fileUrl = `${baseUrl}/api/files/serve?path=${encodeURIComponent(filePath)}`;
+    } else {
+      // Electron 模式：使用 file:// 协议
+      fileUrl = normalizedPath.match(/^[a-zA-Z]:/) 
+        ? `file:///${normalizedPath}` 
+        : `file://${normalizedPath}`;
+    }
     
     img.onload = () => {
       loadingEl.remove();
@@ -2008,12 +2095,25 @@ class ExplorerModule {
     
     const img = contentEl.querySelector('.image-viewer img');
     if (img) {
+      // 检测运行环境
+      const isWebMode = typeof window.browserControlManager?._isPolyfill === 'boolean' && 
+                        window.browserControlManager._isPolyfill === true;
+      
+      let fileUrl;
+      if (isWebMode) {
+        // Web 模式：使用 HTTP 代理服务文件
+        const baseUrl = window.apiAdapter?._baseUrl || 'http://localhost:3333';
+        fileUrl = `${baseUrl}/api/files/serve?path=${encodeURIComponent(this.filePreviewPath)}`;
+      } else {
+        // Electron 模式：使用 file:// 协议
+        const normalizedPath = this.filePreviewPath.replace(/\\/g, '/');
+        fileUrl = normalizedPath.match(/^[a-zA-Z]:/) 
+          ? `file:///${normalizedPath}` 
+          : `file://${normalizedPath}`;
+      }
+      
       // 追加时间戳强制刷新图片
-      const normalizedPath = this.filePreviewPath.replace(/\\/g, '/');
-      const fileUrl = normalizedPath.match(/^[a-zA-Z]:/) 
-        ? `file:///${normalizedPath}` 
-        : `file://${normalizedPath}`;
-      img.src = `${fileUrl}?t=${Date.now()}`;
+      img.src = `${fileUrl}${fileUrl.includes('?') ? '&' : '?'}t=${Date.now()}`;
       console.log('[ExplorerModule] Image reloaded:', this.filePreviewPath);
     }
   }

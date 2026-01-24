@@ -72,8 +72,8 @@ class WorkspaceSettings {
       const settings = await window.browserControlManager.getAllHappySettings();
       console.log('[WorkspaceSettings] Settings:', settings);
 
-      // 工作目录
-      this.workspaceDir = settings.workspaceDir || settings.defaultWorkspaceDir || null;
+      // 工作目录（优先使用当前 session 实际的目录，而不是用户设置）
+      this.workspaceDir = settings.currentWorkDir || settings.workspaceDir || settings.defaultWorkspaceDir || null;
       this.defaultWorkspaceDir = settings.defaultWorkspaceDir || null;
       
       if (this.elements.workspaceDirInput) {

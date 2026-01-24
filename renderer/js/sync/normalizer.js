@@ -152,9 +152,8 @@ function normalizeRawMessage(id, localId, createdAt, raw) {
       
       // 处理 assistant 消息
       if (data?.type === 'assistant') {
-        if (!data.uuid) {
-          return null;
-        }
+        // 使用 uuid，或回退到 messageId/id，或生成一个
+        const uuid = data.uuid || id || `assistant-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
         
         const normalizedContent = [];
         const messageContent = data.message?.content || [];
@@ -164,7 +163,7 @@ function normalizeRawMessage(id, localId, createdAt, raw) {
             normalizedContent.push({
               type: 'text',
               text: c.text,
-              uuid: data.uuid,
+              uuid: uuid,
               parentUUID: data.parentUuid || null
             });
           } else if (c.type === 'tool_use') {
@@ -179,7 +178,7 @@ function normalizeRawMessage(id, localId, createdAt, raw) {
               name: c.name,
               input: c.input,
               description,
-              uuid: data.uuid,
+              uuid: uuid,
               parentUUID: data.parentUuid || null
             });
           }

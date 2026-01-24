@@ -60,6 +60,7 @@ const JS_FILES = [
     'js/utils/optionsParser.js',
     'js/wizards/AccountSetup.js',
     'js/wizards/SetupWizard.js',
+    'js/marked.min.js',
     'js/app.js'
 ];
 
@@ -116,6 +117,9 @@ function processJsFile(srcPath, destPath) {
     // 确保目标目录存在
     ensureDir(path.dirname(destPath));
     
+    // 规范化行尾符为 CRLF（与原始文件保持一致）
+    content = content.replace(/\r?\n/g, '\r\n');
+    
     // 写入处理后的文件
     fs.writeFileSync(destPath, content, 'utf8');
 }
@@ -126,19 +130,39 @@ function processJsFile(srcPath, destPath) {
 function processHtml(srcPath, destPath) {
     let content = fs.readFileSync(srcPath, 'utf8');
     
-    // 移除 Electron 专用的 CSP 元标签（或修改为 Web 版本）
+    // Google Analytics 代码（格式与 docs/app 完全一致）
+    const GA_CODE = `  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-P4QSHKNJFM"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', 'G-P4QSHKNJFM');
+  </script>`;
+    
+    // 正确的 Web 模式 CSP（与 docs/app/index.html 完全一致）
+    const WEB_CSP = `default-src 'self' blob: https: data:; script-src 'self' 'unsafe-inline' 'unsafe-eval' https: blob:; style-src 'self' 'unsafe-inline' https: blob:; worker-src 'self' blob: https:; connect-src 'self' http://localhost:3333 ws://localhost:3333 https:; img-src 'self' data: blob: https: http://localhost:3333; font-src 'self' data:; frame-src 'self' blob: http://localhost:3333;`;
+    
+    // 1. 修改 CSP 为 Web 版本（移除 file: 协议，使用正确的端口）
     content = content.replace(
-        /(<meta\s+http-equiv="Content-Security-Policy"[^>]*>)/,
-        `<meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' https:; connect-src 'self' http://localhost:3333 ws://localhost:3333 https:; img-src 'self' data: blob: https:; font-src 'self' data:;">`
+        /(<meta\s+http-equiv="Content-Security-Policy"\s+content=")[^"]*(")/,
+        `$1${WEB_CSP}$2`
     );
     
-    // 添加 Socket.IO 客户端库
+    // 2. 在 </title> 后注入 Google Analytics 代码
     content = content.replace(
-        '</head>',
-        `    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>\n</head>`
+        '</title>',
+        `</title>\n${GA_CODE}`
     );
     
-    // 添加新的 JS 文件引用（仅当不存在时）
+    // 3. 在 Three.js 脚本后添加 Socket.IO 客户端库
+    content = content.replace(
+        /(<script src="https:\/\/cdnjs\.cloudflare\.com\/ajax\/libs\/three\.js\/[^"]+"><\/script>)/,
+        `$1\n  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>`
+    );
+    
+    // 4. 添加新的 JS 文件引用（仅当不存在时）
     if (!content.includes('js/core/ApiAdapter.js')) {
         content = content.replace(
             '<script src="js/app.js"></script>',
@@ -149,7 +173,7 @@ function processHtml(srcPath, destPath) {
         );
     }
     
-    // 添加连接指引样式（仅当不存在时）
+    // 5. 添加连接指引样式（仅当不存在时）
     if (!content.includes('connection-guide.css')) {
         content = content.replace(
             '<link rel="stylesheet" href="css/main.css">',
@@ -157,6 +181,9 @@ function processHtml(srcPath, destPath) {
     <link rel="stylesheet" href="css/components/connection-guide.css">`
         );
     }
+    
+    // 6. 规范化行尾符为 CRLF（与原始文件保持一致）
+    content = content.replace(/\r?\n/g, '\r\n');
     
     fs.writeFileSync(destPath, content, 'utf8');
 }

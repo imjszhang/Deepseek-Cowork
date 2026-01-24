@@ -115,7 +115,7 @@ class SetupWizard {
     this.elements.skip4?.addEventListener('click', () => this.goToStep(5));
     this.elements.next4?.addEventListener('click', () => this.goToStep(5));
     this.elements.openJsEyesBtn?.addEventListener('click', () => {
-      window.browserControlManager?.openExternalUrl?.('https://github.com/anthropics/anthropic-quickstarts/tree/main/computer-use-demo/js-eyes');
+      window.browserControlManager?.openExternalUrl?.('https://github.com/imjszhang/js-eyes');
     });
     
     // Step 5 事件 (完成)

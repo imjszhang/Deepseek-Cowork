@@ -110,18 +110,6 @@ class ConnectionGuide {
                             </div>
                         </div>
                     </div>
-                    
-                    <div class="installation-step">
-                        <div class="step-number">3</div>
-                        <div class="step-content">
-                            <h4>登录账户</h4>
-                            <p>使用您的 Happy AI Secret 登录（可选，用于 AI 对话功能）：</p>
-                            <div class="code-block">
-                                <code>deepseek-cowork login</code>
-                                <button class="copy-btn" data-copy="deepseek-cowork login">复制</button>
-                            </div>
-                        </div>
-                    </div>
                 </div>
                 
                 <div class="connection-guide-actions">
@@ -134,7 +122,7 @@ class ConnectionGuide {
                 </div>
                 
                 <div class="help-links">
-                    <a href="https://github.com/user/deepseek-cowork#installation" target="_blank">
+                    <a href="https://github.com/imjszhang/deepseek-cowork#installation" target="_blank">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/>
                         </svg>

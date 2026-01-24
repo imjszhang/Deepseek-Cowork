@@ -23,10 +23,6 @@ class FilesPanel {
     this.selectedItem = null;
     this.contextMenuTarget = null;
     
-    // 目录监听状态（用于 Web 版动态监听外部目录）
-    this._watchedPath = null;  // 当前监听的目录路径
-    this._isWebMode = false;   // 是否为 Web 模式
-    
     // DOM 元素
     this.elements = {};
     
@@ -254,9 +250,6 @@ class FilesPanel {
       return;
     }
     
-    // 记录之前的路径，用于离开时取消监听
-    const previousPath = this.currentPath;
-    
     this.showLoading();
     
     try {
@@ -295,9 +288,6 @@ class FilesPanel {
         this.renderFileList(result.items || []);
         
         console.log('[FilesPanel] Loaded', result.items?.length || 0, 'items');
-        
-        // Web 模式下处理动态目录监听
-        await this._handleDirectoryWatching(previousPath, this.currentPath);
       } else {
         const t = typeof I18nManager !== 'undefined' ? I18nManager.t.bind(I18nManager) : (k) => k;
         const errorMessage = result?.error || t('errors.loadFailed') || 'Failed to load directory';
@@ -309,88 +299,6 @@ class FilesPanel {
       const t = typeof I18nManager !== 'undefined' ? I18nManager.t.bind(I18nManager) : (k) => k;
       this.showError(error.message || t('errors.loadFailed') || 'Failed to load directory');
     }
-  }
-
-  /**
-   * 处理目录监听（Web 模式专用）
-   * 当导航到新目录时，添加临时监听；离开目录时，移除监听
-   * @param {string} previousPath 之前的目录路径
-   * @param {string} currentPath 当前目录路径
-   */
-  async _handleDirectoryWatching(previousPath, currentPath) {
-    // 检测是否为 Web 模式
-    this._isWebMode = window.browserControlManager?._isPolyfill === true || 
-                      (typeof process === 'undefined' || !process.versions?.electron);
-    
-    if (!this._isWebMode) {
-      // Electron 模式不需要动态监听
-      return;
-    }
-    
-    // 获取 ExplorerManager 实例
-    const explorerModule = this.app?.explorerModule;
-    const explorerManager = explorerModule?.explorerManager;
-    
-    if (!explorerManager || !explorerModule?.explorerConnected) {
-      console.log('[FilesPanel] ExplorerManager not available or not connected, skipping directory watching');
-      return;
-    }
-    
-    try {
-      // 移除之前目录的监听（如果有）
-      if (previousPath && previousPath !== currentPath && this._watchedPath === previousPath) {
-        try {
-          console.log('[FilesPanel] Removing watcher for previous directory:', previousPath);
-          await explorerManager.getClient()?.unwatchDirectory(previousPath);
-          this._watchedPath = null;
-        } catch (e) {
-          console.warn('[FilesPanel] Failed to remove previous watcher:', e.message);
-        }
-      }
-      
-      // 检查当前目录是否需要添加监听
-      // 只对工作目录之外的目录添加临时监听
-      const isOutsideWorkspace = !this._isPathInsideWorkspace(currentPath);
-      
-      if (isOutsideWorkspace) {
-        console.log('[FilesPanel] Current directory is outside workspace, adding temporary watcher:', currentPath);
-        
-        try {
-          const result = await explorerManager.getClient()?.watchDirectory(currentPath);
-          if (result?.status === 'success') {
-            this._watchedPath = currentPath;
-            console.log('[FilesPanel] Temporary watcher added successfully:', result.data);
-          } else {
-            console.warn('[FilesPanel] Failed to add temporary watcher:', result?.message);
-          }
-        } catch (e) {
-          console.warn('[FilesPanel] Error adding temporary watcher:', e.message);
-        }
-      } else {
-        console.log('[FilesPanel] Directory is inside workspace, using default watcher');
-        this._watchedPath = null;
-      }
-    } catch (error) {
-      console.error('[FilesPanel] Error handling directory watching:', error);
-    }
-  }
-
-  /**
-   * 检查路径是否在工作目录内
-   * @param {string} targetPath 目标路径
-   * @returns {boolean} 是否在工作目录内
-   */
-  _isPathInsideWorkspace(targetPath) {
-    if (!this.workspaceRoot || !targetPath) {
-      return false;
-    }
-    
-    // 规范化路径进行比较
-    const normalizedTarget = targetPath.replace(/\\/g, '/').toLowerCase();
-    const normalizedWorkspace = this.workspaceRoot.replace(/\\/g, '/').toLowerCase();
-    
-    return normalizedTarget === normalizedWorkspace || 
-           normalizedTarget.startsWith(normalizedWorkspace + '/');
   }
 
   /**
@@ -1243,8 +1151,8 @@ class FilesPanel {
     try {
       const filePath = this.joinPath(this.currentPath, name);
       // 使用 saveFileContent 创建文件，传入空字符串作为初始内容
-      // API期望的参数格式是 (filePath, content) 两个独立参数
-      const result = await window.browserControlManager?.saveFileContent?.(filePath, '');
+      // API期望的参数格式是 { path: filePath, content: content }
+      const result = await window.browserControlManager?.saveFileContent?.({ path: filePath, content: '' });
       
       if (result?.success) {
         this.hideNewFileDialog();
@@ -1390,33 +1298,7 @@ class FilesPanel {
   /**
    * 销毁面板
    */
-  /**
-   * 清理临时目录监听
-   */
-  async _cleanupDirectoryWatching() {
-    if (!this._isWebMode || !this._watchedPath) {
-      return;
-    }
-    
-    try {
-      const explorerModule = this.app?.explorerModule;
-      const explorerManager = explorerModule?.explorerManager;
-      
-      if (explorerManager && explorerModule?.explorerConnected) {
-        console.log('[FilesPanel] Cleaning up temporary watcher:', this._watchedPath);
-        await explorerManager.getClient()?.unwatchDirectory(this._watchedPath);
-      }
-    } catch (e) {
-      console.warn('[FilesPanel] Error cleaning up directory watcher:', e.message);
-    }
-    
-    this._watchedPath = null;
-  }
-
   destroy() {
-    // 清理临时目录监听
-    this._cleanupDirectoryWatching();
-    
     // 清理事件监听器
     console.log('[FilesPanel] Destroyed');
   }

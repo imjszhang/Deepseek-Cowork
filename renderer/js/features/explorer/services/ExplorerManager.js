@@ -223,36 +223,6 @@ class ExplorerManager {
   async getFileInfo(path) {
     return this.client?.getFileInfo(path);
   }
-
-  // ==================== 目录监听便捷方法 ====================
-
-  /**
-   * 添加临时目录监听
-   */
-  async watchDirectory(path) {
-    return this.client?.watchDirectory(path);
-  }
-
-  /**
-   * 移除临时目录监听
-   */
-  async unwatchDirectory(path, force = false) {
-    return this.client?.unwatchDirectory(path, force);
-  }
-
-  /**
-   * 检查目录是否在监听范围内
-   */
-  async isDirectoryWatched(path) {
-    return this.client?.isDirectoryWatched(path);
-  }
-
-  /**
-   * 获取临时监听器状态
-   */
-  async getWatcherStatus() {
-    return this.client?.getWatcherStatus();
-  }
 }
 
 // 导出到全局

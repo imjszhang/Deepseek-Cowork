@@ -89,8 +89,8 @@ const API_MAPPING = {
     
     // 文件系统
     'getWorkspaceRoot': { method: 'GET', path: '/api/files/workspace' },
-    'listDirectory': { method: 'GET', path: '/api/files/list', queryKey: 'path' },
-    'createFolder': { method: 'POST', path: '/api/files/folder' },
+    'listDirectory': { method: 'GET', path: '/api/files/list', multiQuery: true },
+    'createFolder': { method: 'POST', path: '/api/files/folder', bodyKey: 'path' },
     'deleteItem': { method: 'DELETE', path: '/api/files/item', queryKey: 'path' },
     'renameItem': { method: 'PUT', path: '/api/files/rename' },
     'readFileContent': { method: 'GET', path: '/api/files/content', queryKey: 'path' },
@@ -126,7 +126,7 @@ const API_MAPPING = {
     'saveClaudeCodeSettings': { method: 'PUT', path: '/api/settings/claude' },
     'getClaudePresets': { method: 'GET', path: '/api/settings/claude/presets' },
     'getClaudeCodePresets': { method: 'GET', path: '/api/settings/claude/presets' },
-    'setClaudeAuthToken': { method: 'PUT', path: '/api/settings/claude' },
+    'setClaudeAuthToken': { method: 'PUT', path: '/api/settings/claude', bodyKey: 'authToken' },
     'deleteClaudeAuthToken': { method: 'PUT', path: '/api/settings/claude' },
     'getDependencyStatus': { method: 'GET', path: '/api/deps/status' },
     'checkAllDependencies': { method: 'GET', path: '/api/deps/check' },
@@ -296,7 +296,7 @@ class ApiAdapter {
             throw new Error(`No HTTP mapping for method "${method}"`);
         }
         
-        let { method: httpMethod, path, queryKey, bodyKey } = mapping;
+        let { method: httpMethod, path, queryKey, bodyKey, multiQuery } = mapping;
         
         // 处理路径参数
         if (path.includes('{')) {
@@ -320,7 +320,18 @@ class ApiAdapter {
         let url = `${this._baseUrl}${path}`;
         
         // 处理查询参数
-        if (queryKey && args[0] !== undefined) {
+        if (multiQuery && args[0] !== undefined && typeof args[0] === 'object') {
+            // 支持多个查询参数（对象形式）
+            const params = new URLSearchParams();
+            for (const [key, value] of Object.entries(args[0])) {
+                if (value !== undefined && value !== null) {
+                    params.set(key, String(value));
+                }
+            }
+            if (params.toString()) {
+                url += `?${params.toString()}`;
+            }
+        } else if (queryKey && args[0] !== undefined) {
             const params = new URLSearchParams();
             params.set(queryKey, args[0]);
             url += `?${params.toString()}`;
@@ -537,6 +548,66 @@ function createBrowserControlManagerPolyfill() {
         };
     }
     
+    // 将依赖检测结果转换为设置向导格式
+    function convertDepsToSetupFormat(deps) {
+        const critical = [];
+        const recommended = [];
+        
+        // Claude Code 是关键依赖
+        if (deps?.claudeCode) {
+            critical.push({
+                id: 'claudeCode',
+                name: 'Claude Code',
+                status: deps.claudeCode.installed ? 'installed' : 'missing',
+                version: deps.claudeCode.version || null,
+                path: deps.claudeCode.path || null,
+                source: deps.claudeCode.source || null,
+                description: deps.claudeCode.installed 
+                    ? `已安装 v${deps.claudeCode.version || 'unknown'}`
+                    : '未安装',
+                guide: {
+                    methods: [
+                        { type: 'npm', command: 'npm install -g @anthropic-ai/claude-code' },
+                        { type: 'docs', url: 'https://docs.anthropic.com/claude-code' }
+                    ]
+                }
+            });
+        }
+        
+        // API Key 配置状态（从 deps 无法获取，设为未配置）
+        critical.push({
+            id: 'apiKey',
+            name: 'API Key',
+            status: 'configured',  // Web 模式下假设已配置
+            description: 'API 密钥配置'
+        });
+        
+        // Node.js 是推荐依赖
+        if (deps?.nodejs) {
+            recommended.push({
+                id: 'nodejs',
+                name: 'Node.js',
+                status: deps.nodejs.installed ? 'installed' : 'missing',
+                version: deps.nodejs.version || null,
+                description: deps.nodejs.installed 
+                    ? `已安装 v${deps.nodejs.version}`
+                    : '未安装（可选）'
+            });
+        }
+        
+        // 检查是否所有关键依赖都已就绪
+        const ready = critical.every(item => 
+            item.status === 'installed' || item.status === 'configured'
+        );
+        
+        return {
+            ready,
+            critical,
+            recommended,
+            platform: 'web'
+        };
+    }
+    
     return {
         // 标记这是一个 polyfill，用于 detectEnvironment 区分
         _isPolyfill: true,
@@ -569,10 +640,22 @@ function createBrowserControlManagerPolyfill() {
         getLatestUsage: createApiMethod('getLatestUsage'),  // 直接名称
         allowAiPermission: createApiMethod('allowPermission'),
         allowPermission: createApiMethod('allowPermission'),  // 直接名称
-        denyAiPermission: createApiMethod('denyPermission'),
-        denyPermission: createApiMethod('denyPermission'),  // 直接名称
-        abortAi: createApiMethod('abortSession'),
-        abortSession: createApiMethod('abortSession'),  // 直接名称
+        denyAiPermission: async (sessionId, permissionId) => {
+            if (!window.apiAdapter?.isConnected()) await waitForConnection();
+            return await window.apiAdapter.call('denyPermission', { sessionId, permissionId });
+        },
+        denyPermission: async (sessionId, permissionId) => {
+            if (!window.apiAdapter?.isConnected()) await waitForConnection();
+            return await window.apiAdapter.call('denyPermission', { sessionId, permissionId });
+        },
+        abortAi: async (sessionId) => {
+            if (!window.apiAdapter?.isConnected()) await waitForConnection();
+            return await window.apiAdapter.call('abortSession', { sessionId });
+        },
+        abortSession: async (sessionId) => {
+            if (!window.apiAdapter?.isConnected()) await waitForConnection();
+            return await window.apiAdapter.call('abortSession', { sessionId });
+        },
         getAllSessions: createApiMethod('getAllSessions'),
         getSessionId: createApiMethod('getSessionId'),
         reconnectSession: createApiMethod('reconnectSession'),
@@ -655,7 +738,12 @@ function createBrowserControlManagerPolyfill() {
         
         // ========== 文件系统 ==========
         getWorkspaceRoot: createApiMethod('getWorkspaceRoot'),
-        listDirectory: createApiMethod('listDirectory'),
+        listDirectory: async (dirPath, options = {}) => {
+            // 默认显示隐藏文件
+            const showHidden = options.showHidden !== undefined ? options.showHidden : true;
+            if (!window.apiAdapter?.isConnected()) await waitForConnection();
+            return await window.apiAdapter.call('listDirectory', { path: dirPath, showHidden: String(showHidden) });
+        },
         createFolder: createApiMethod('createFolder'),
         deleteItem: createApiMethod('deleteItem'),
         renameItem: async (oldPath, newPath) => {
@@ -736,24 +824,7 @@ function createBrowserControlManagerPolyfill() {
                 return { success: false, error: error.message };
             }
         },
-        saveFileContent: async (filePath, content) => {
-            // 自定义实现：需要正确构建 { path, content } 请求体
-            if (!window.apiAdapter || !window.apiAdapter.isConnected()) {
-                const connected = await waitForConnection();
-                if (!connected) return { success: false, error: 'Not connected' };
-            }
-            try {
-                const response = await fetch(`${window.apiAdapter._baseUrl}/api/files/content`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ path: filePath, content: content })
-                });
-                return await response.json();
-            } catch (error) {
-                console.error('[Polyfill] saveFileContent failed:', error);
-                return { success: false, error: error.message };
-            }
-        },
+        saveFileContent: createApiMethod('saveFileContent'),
         getItemInfo: createApiMethod('getItemInfo'),
         copyItem: async (sourcePath, destPath) => {
             // 自定义实现：需要正确构建 { sourcePath, destPath } 请求体
@@ -868,8 +939,28 @@ function createBrowserControlManagerPolyfill() {
         getExtensionConnections: createApiMethod('getExtensionConnections'),
         
         // ========== 设置向导 ==========
-        getSetupRequirements: async () => ({ ready: true, critical: [], recommended: [], platform: 'web' }),
-        recheckSetup: async () => ({ ready: true, critical: [], recommended: [], platform: 'web' }),
+        getSetupRequirements: async () => {
+          // 调用依赖检测 API 并转换为设置向导格式
+          try {
+            const result = await window.apiAdapter.call('getDependencyStatus');
+            const deps = result?.status || result;
+            return convertDepsToSetupFormat(deps);
+          } catch (error) {
+            console.error('[getSetupRequirements] Error:', error);
+            return { ready: true, critical: [], recommended: [], platform: 'web' };
+          }
+        },
+        recheckSetup: async () => {
+          // 调用依赖检测 API 并转换为设置向导格式
+          try {
+            const result = await window.apiAdapter.call('checkAllDependencies');
+            const deps = result?.status || result;
+            return convertDepsToSetupFormat(deps);
+          } catch (error) {
+            console.error('[recheckSetup] Error:', error);
+            return { ready: true, critical: [], recommended: [], platform: 'web' };
+          }
+        },
         completeSetup: async () => ({ success: true }),
         skipSetup: async () => ({ success: true }),
         shouldShowSetup: async () => ({ shouldShow: false, reason: 'web_mode' }),
@@ -902,12 +993,13 @@ function createBrowserControlManagerPolyfill() {
         onHappyDisconnected: createEventListener('happy:disconnected'),
         onHappyEventStatus: createEventListener('happy:eventStatus'),
         onHappyError: createEventListener('happy:error'),
-        onUsageUpdate: createEventListener('happy:usageUpdate'),
+        onUsageUpdate: createEventListener('happy:usage'),
         onHappyMessagesRestored: createEventListener('happy:messagesRestored'),
         onHappyServiceStatus: createEventListener('happy:serviceStatus'),
         onDaemonStatusChanged: createEventListener('daemon:statusChanged'),
         onDaemonStartProgress: createEventListener('daemon:startProgress'),
         onHappyInitialized: createEventListener('happy:initialized'),
+        onHappyStatus: createEventListener('happy:status'),  // 初始状态事件
         onUpdateChecking: createEventListener('update:checking'),
         onUpdateAvailable: createEventListener('update:available'),
         onUpdateNotAvailable: createEventListener('update:notAvailable'),
