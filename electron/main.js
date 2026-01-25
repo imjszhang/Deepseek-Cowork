@@ -48,32 +48,16 @@ let happyServiceInitialized = false;
 let dependencyStatus = null;
 
 /**
- * 获取应用数据目录（兼容开发环境和打包环境）
- * 打包后 ASAR 包是只读的，所以需要使用 userData 目录
+ * 获取应用数据目录（与 CLI 保持一致）
+ * 使用系统标准的用户数据目录，确保 Electron 和 CLI 共享同一数据
  * @returns {string} 数据目录路径
  */
 function getAppDataDir() {
-  const config = require('../config');
-  const configDataDir = config.database?.directory;
-  
-  // 检查配置的目录是否在 ASAR 包内（打包环境）
-  if (configDataDir && configDataDir.includes('app.asar')) {
-    // 打包环境：使用 userData 目录
-    return path.join(app.getPath('userData'), 'data');
-  }
-  
-  // 开发环境或配置了外部路径：使用配置的目录
-  if (configDataDir) {
-    return configDataDir;
-  }
-  
-  // 备用方案：检查 __dirname 是否在 ASAR 包内
-  if (__dirname.includes('app.asar')) {
-    return path.join(app.getPath('userData'), 'data');
-  }
-  
-  // 开发环境默认值
-  return path.join(__dirname, '../data');
+  // 统一使用 userData 目录，与 CLI 的 lib/local-service/config.js 保持一致
+  // Windows: %APPDATA%\deepseek-cowork
+  // macOS: ~/Library/Application Support/deepseek-cowork
+  // Linux: ~/.config/deepseek-cowork
+  return app.getPath('userData');
 }
 
 // ============================================================================
@@ -2384,14 +2368,49 @@ async function bootstrap() {
     await initializeServerManager();
     console.log('Server manager initialized');
 
-    // 2. Start server (embedded mode)
-    const serverStarted = await serverManager.start();
-    if (!serverStarted) {
-      console.error('Server startup failed');
+    // 2. Start server (embedded mode) - with port conflict detection
+    let serverStarted = false;
+    try {
+      serverStarted = await serverManager.start();
+      if (!serverStarted) {
+        console.error('Server startup failed');
+      }
+    } catch (error) {
+      // Check if this is a port conflict error
+      if (error.portConflict) {
+        const conflict = error.portConflict;
+        console.error('Port conflict detected:', conflict);
+        
+        let title, message;
+        if (conflict.conflict === 'cli') {
+          title = 'Service Conflict / 服务冲突';
+          message = `CLI service is running on port ${serverManager.config.port}.\n\nPlease run "dsc stop" in terminal to stop CLI service first.\n\nCLI 服务正在运行，请先在终端执行 "dsc stop" 停止 CLI 服务。`;
+        } else if (conflict.conflict === 'electron') {
+          title = 'Service Conflict / 服务冲突';
+          message = `Another DeepSeek Cowork client is already running.\n\n另一个客户端已在运行。`;
+        } else {
+          title = 'Port In Use / 端口被占用';
+          message = `Port ${serverManager.config.port} is already in use by another program.\n\nPlease close that program before starting.\n\n端口被其他程序占用，请先关闭占用该端口的程序。`;
+        }
+        
+        await dialog.showMessageBox({
+          type: 'error',
+          title: title,
+          message: message,
+          buttons: ['OK / 确定']
+        });
+        
+        // Exit the application
+        app.quit();
+        return;
+      }
+      
+      // Other errors, log and continue
+      console.error('Server start error:', error.message);
     }
 
     // 3. Wait for server ready
-    const serverReady = await serverManager.waitForReady(15000);
+    const serverReady = serverStarted ? await serverManager.waitForReady(15000) : false;
     if (!serverReady) {
       console.warn('Server ready check timeout, but continuing to start UI');
     }

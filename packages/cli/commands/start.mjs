@@ -14,6 +14,66 @@ import { getLocalService, getConfig, PROJECT_ROOT } from '../index.mjs';
 import { checkPort, writePidFile, readPidFile, isProcessRunning } from '../utils/process.mjs';
 
 /**
+ * 检测端口冲突类型
+ * @param {number} port 端口号
+ * @returns {Promise<Object>} 冲突信息 { available, conflict, message }
+ */
+async function checkPortConflict(port) {
+    // 先检查端口是否可用
+    const available = await checkPort(port);
+    if (available) {
+        return { available: true };
+    }
+    
+    // 端口被占用，尝试请求 /api/ping 检测服务类型
+    try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 2000);
+        
+        const response = await fetch(`http://localhost:${port}/api/ping`, {
+            signal: controller.signal
+        });
+        clearTimeout(timeoutId);
+        
+        if (response.ok) {
+            const data = await response.json();
+            
+            // 检查是否是自家服务
+            if (data.app === 'deepseek-cowork') {
+                if (data.mode === 'electron') {
+                    return {
+                        available: false,
+                        conflict: 'electron',
+                        message: 'DeepSeek Cowork client is already running'
+                    };
+                } else if (data.mode === 'cli') {
+                    return {
+                        available: false,
+                        conflict: 'cli',
+                        message: 'CLI service is already running'
+                    };
+                }
+            }
+        }
+        
+        // 响应成功但不是自家服务
+        return {
+            available: false,
+            conflict: 'other',
+            message: 'Port is occupied by another program'
+        };
+        
+    } catch (error) {
+        // 请求失败（超时、连接拒绝等），说明是其他程序占用
+        return {
+            available: false,
+            conflict: 'other',
+            message: 'Port is occupied by another program'
+        };
+    }
+}
+
+/**
  * 启动服务命令
  */
 export async function startCommand(options) {
@@ -36,11 +96,24 @@ export async function startCommand(options) {
             process.exit(1);
         }
         
-        // 检查端口是否可用
-        const httpPortAvailable = await checkPort(httpPort);
-        if (!httpPortAvailable) {
-            spinner.fail(`Port ${httpPort} is already in use`);
-            console.log(chalk.yellow(`\nTry using a different port with --port <port>`));
+        // 检查端口冲突
+        spinner.text = 'Checking port availability...';
+        const portStatus = await checkPortConflict(httpPort);
+        if (!portStatus.available) {
+            if (portStatus.conflict === 'electron') {
+                spinner.fail(`${portStatus.message} (port ${httpPort})`);
+                console.log('');
+                console.log(chalk.yellow('Please close the Electron client before starting CLI service.'));
+            } else if (portStatus.conflict === 'cli') {
+                spinner.fail(`${portStatus.message} (port ${httpPort})`);
+                console.log('');
+                console.log(chalk.yellow('Use `dsc stop` to stop the existing service first.'));
+            } else {
+                spinner.fail(`Port ${httpPort} is already in use by another program`);
+                console.log('');
+                console.log(chalk.yellow('Please close the program using this port before starting CLI service.'));
+                console.log(chalk.yellow(`Or try using a different port with --port <port>`));
+            }
             process.exit(1);
         }
         
@@ -109,7 +182,8 @@ export async function startCommand(options) {
                 httpPort,
                 wsPort,
                 workDir,
-                debug
+                debug,
+                mode: 'cli'
             });
             
             if (!initResult.success) {
@@ -210,6 +284,7 @@ for (let i = 0; i < args.length; i++) {
 
 async function main() {
     try {
+        options.mode = 'cli';
         await localService.initialize(options);
         await localService.start();
         console.log('DeepSeek Cowork daemon started');

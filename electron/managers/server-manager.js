@@ -190,6 +190,7 @@ class ServerManager {
 
   /**
    * 确保端口可用（检查并清理）
+   * @deprecated 使用 checkPortConflict 代替，不再强制释放端口
    * @param {number} port - 端口号
    * @returns {Promise<boolean>} 是否可用
    */
@@ -199,16 +200,75 @@ class ServerManager {
       return true;
     }
     
-    this.addLog('warn', `Port ${port} is in use, attempting to release...`);
-    const killed = await this.killProcessOnPort(port);
-    
-    if (killed) {
-      // 等待端口释放
-      await sleep(1000);
-      return await this.checkPortAvailable(port);
+    // 不再强制释放端口，直接返回 false
+    this.addLog('warn', `Port ${port} is in use`);
+    return false;
+  }
+
+  /**
+   * 检测端口冲突类型
+   * @param {number} port - 端口号
+   * @returns {Promise<Object>} 冲突信息 { available, conflict, message }
+   */
+  async checkPortConflict(port) {
+    // 先检查端口是否可用
+    const available = await this.checkPortAvailable(port);
+    if (available) {
+      return { available: true };
     }
     
-    return false;
+    this.addLog('info', `Port ${port} is in use, checking service type...`);
+    
+    // 端口被占用，尝试请求 /api/ping 检测服务类型
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 2000);
+      
+      const response = await fetch(`http://localhost:${port}/api/ping`, {
+        signal: controller.signal
+      });
+      clearTimeout(timeoutId);
+      
+      if (response.ok) {
+        const data = await response.json();
+        
+        // 检查是否是自家服务
+        if (data.app === 'deepseek-cowork') {
+          if (data.mode === 'cli') {
+            this.addLog('info', `Port ${port} is used by CLI service`);
+            return {
+              available: false,
+              conflict: 'cli',
+              message: 'CLI service is running'
+            };
+          } else if (data.mode === 'electron') {
+            this.addLog('info', `Port ${port} is used by another Electron client`);
+            return {
+              available: false,
+              conflict: 'electron',
+              message: 'Another Electron client is running'
+            };
+          }
+        }
+      }
+      
+      // 响应成功但不是自家服务
+      this.addLog('info', `Port ${port} is used by another program`);
+      return {
+        available: false,
+        conflict: 'other',
+        message: 'Port is occupied by another program'
+      };
+      
+    } catch (error) {
+      // 请求失败（超时、连接拒绝等），说明是其他程序占用
+      this.addLog('info', `Port ${port} is used by another program (ping failed)`);
+      return {
+        available: false,
+        conflict: 'other',
+        message: 'Port is occupied by another program'
+      };
+    }
   }
 
   /**
@@ -354,15 +414,19 @@ class ServerManager {
         this.addLog('info', `Created data directory: ${dataDir}`);
       }
       
-      // 3. Check and ensure ports are available
-      const httpPortAvailable = await this.ensurePortAvailable(this.config.port);
-      if (!httpPortAvailable) {
-        throw new Error(`HTTP port ${this.config.port} is not available`);
+      // 3. Check port conflicts (no longer force-killing processes)
+      const httpPortStatus = await this.checkPortConflict(this.config.port);
+      if (!httpPortStatus.available) {
+        const error = new Error(`HTTP port ${this.config.port}: ${httpPortStatus.message}`);
+        error.portConflict = httpPortStatus;
+        throw error;
       }
       
-      const wsPortAvailable = await this.ensurePortAvailable(this.config.wsPort);
-      if (!wsPortAvailable) {
-        throw new Error(`WebSocket port ${this.config.wsPort} is not available`);
+      const wsPortStatus = await this.checkPortConflict(this.config.wsPort);
+      if (!wsPortStatus.available) {
+        const error = new Error(`WebSocket port ${this.config.wsPort}: ${wsPortStatus.message}`);
+        error.portConflict = wsPortStatus;
+        throw error;
       }
       
       // 4. 创建 Express 应用
