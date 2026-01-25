@@ -69,6 +69,7 @@
     
     // 侧边栏导航
     sidebar: {
+      chat: '对话',
       files: '文件',
       browser: '浏览器',
       settings: '设置',
@@ -107,6 +108,9 @@
       abort: '中止 (Esc)',
       welcomeTitle: '欢迎使用 DeepSeek Cowork',
       welcomeDesc: '连接后，您可以与 DeepSeek Cowork 对话来执行任务',
+      homeWelcome: '欢迎使用 DeepSeek Cowork',
+      homeTitle: '有什么可以帮您的？',
+      homeInputPlaceholder: '描述您想要做什么...',
       contextInput: 'Input:',
       contextOutput: 'Output:',
       idle: 'idle',

@@ -370,9 +370,10 @@
 }
 
 /* ===== Responsive ===== */
-@media (max-width: 768px) {
+@media (max-width: 899px) {
   .session-hub-panel {
     left: 0;
+    bottom: var(--bottom-nav-height, 64px);
     border-left: none;
   }
   

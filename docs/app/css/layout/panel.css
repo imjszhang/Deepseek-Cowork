@@ -601,3 +601,104 @@
   color: var(--muted-foreground);
   word-break: break-all;
 }
+
+/* ===== 对话全宽模式 ===== */
+#main-container.chat-fullwidth #chat-panel {
+  flex: 1;
+  width: auto;
+  min-width: 0;
+  max-width: none;
+  border-right: none;
+}
+
+#main-container.chat-fullwidth #display-panel {
+  display: none;
+}
+
+/* ===== 移动版展示面板顶部导航栏 ===== */
+.display-panel-header {
+  display: none; /* 桌面版默认隐藏，移动版显示 */
+  align-items: center;
+  justify-content: space-between;
+  height: 44px;
+  min-height: 44px;
+  padding: 0 0.75rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.2);
+  flex-shrink: 0;
+}
+
+.display-header-left {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.display-header-title {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--foreground);
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.display-header-right {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.display-header-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius, 6px);
+  background: transparent;
+  color: var(--muted-foreground);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.display-header-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--foreground);
+}
+
+.display-header-btn:active {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.display-header-btn.active {
+  background: var(--primary);
+  color: var(--primary-foreground);
+}
+
+.display-header-btn svg {
+  width: 18px;
+  height: 18px;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  fill: none;
+}
+
+/* 设置面板桌面版 header - 移动版隐藏 */
+.settings-desktop-header {
+  display: flex;
+}
+
+@media (max-width: 899px) {
+  .settings-desktop-header {
+    display: none;
+  }
+}

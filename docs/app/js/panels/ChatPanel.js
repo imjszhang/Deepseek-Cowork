@@ -43,6 +43,17 @@ class ChatPanel {
     // 不展示的工具调用列表
     this.hiddenTools = ['mcp__happy__change_title'];
     
+    // Three.js 背景实例
+    this.chatBackground = null;
+    
+    // 是否处于对话模式（只有对话模式下才显示独立层）
+    this.isChatMode = false;
+    
+    // 打字机效果相关
+    this.typewriterTimer = null;
+    this.typewriterText = '';  // 原始文本（从 i18n 获取）
+    this.typewriterPlayed = false;  // 是否已播放过打字机效果
+    
     // DOM 元素
     this.elements = {};
   }
@@ -53,6 +64,240 @@ class ChatPanel {
   init() {
     this.bindElements();
     this.bindEvents();
+    
+    // 初始状态：如果没有消息，准备显示背景（但不启动动画，等待面板激活）
+    this._setInitialBackgroundState();
+  }
+
+  /**
+   * 设置初始背景状态
+   */
+  _setInitialBackgroundState() {
+    // 检查是否有消息
+    const hasMessages = this.renderedMessageIds.size > 0;
+    const hasWelcome = this.elements.aiMessages?.querySelector('.ai-welcome');
+    
+    // 如果只有欢迎消息或没有消息，准备显示背景
+    if (!hasMessages && hasWelcome) {
+      // 背景容器存在但先不添加 visible 类，等面板激活时再添加
+      if (this.elements.chatHome) {
+        this.elements.chatHome.style.display = 'block';
+      }
+    }
+  }
+
+  /**
+   * 面板激活时调用（由 app.js 在切换到聊天面板时调用）
+   * 只有在对话模式下才会显示独立层
+   */
+  onPanelActivate() {
+    // 标记为对话模式
+    this.isChatMode = true;
+    
+    // 首次激活时初始化 Three.js 背景
+    if (!this.chatBackground) {
+      this.initChatBackground();
+    }
+    
+    // 检查是否应该显示背景（只在对话模式且无消息时显示）
+    const hasMessages = this.renderedMessageIds.size > 0;
+    const hasWelcome = this.elements.aiMessages?.querySelector('.ai-welcome');
+    
+    if (!hasMessages && hasWelcome) {
+      this.showChatBackground();
+    } else {
+      this.hideChatBackground();
+    }
+    
+    // 更新尺寸并启动动画（如果背景可见）
+    if (this.chatBackground && this.elements.chatHome?.classList.contains('visible')) {
+      this.chatBackground.onResize();
+      this.chatBackground.start();
+    }
+  }
+
+  /**
+   * 面板取消激活时调用（切换到其他模式）
+   */
+  onPanelDeactivate() {
+    // 标记为非对话模式
+    this.isChatMode = false;
+    
+    // 隐藏独立层（非对话模式下不显示）
+    this.hideChatBackground();
+  }
+
+  /**
+   * 初始化 Three.js 背景
+   */
+  initChatBackground() {
+    const container = this.elements.chatHome;
+    if (!container) {
+      console.warn('[ChatPanel] Chat home container not found');
+      return;
+    }
+    
+    if (typeof PreviewBackground !== 'undefined') {
+      this.chatBackground = new PreviewBackground({ container });
+      this.chatBackground.init();
+      console.log('[ChatPanel] Chat background initialized');
+    } else {
+      console.warn('[ChatPanel] PreviewBackground class not available');
+    }
+  }
+
+  /**
+   * 显示对话首页（只在对话模式下有效）
+   */
+  showChatBackground() {
+    // 只在对话模式下显示独立层
+    if (!this.isChatMode) {
+      return;
+    }
+    
+    if (this.elements.chatHome) {
+      this.elements.chatHome.classList.add('visible');
+      
+      // 如果背景已初始化，启动动画
+      if (this.chatBackground) {
+        this.chatBackground.onResize();
+        this.chatBackground.start();
+      }
+      
+      // 启动打字机效果（每次显示都播放）
+      this.startTypewriter();
+    }
+  }
+
+  /**
+   * 隐藏对话首页
+   */
+  hideChatBackground() {
+    if (this.elements.chatHome) {
+      this.elements.chatHome.classList.remove('visible');
+      
+      // 停止动画以节省资源
+      if (this.chatBackground) {
+        this.chatBackground.stop();
+      }
+      
+      // 停止打字机效果
+      this.stopTypewriter();
+    }
+  }
+
+  /**
+   * 启动打字机效果
+   */
+  startTypewriter() {
+    const titleEl = this.elements.chatHomeTitle;
+    if (!titleEl) return;
+    
+    // 停止之前的打字机效果
+    this.stopTypewriter();
+    
+    // 获取原始文本（从 i18n key 获取或使用默认文本）
+    if (!this.typewriterText) {
+      // 尝试从 i18n 获取文本
+      const i18nKey = titleEl.getAttribute('data-i18n');
+      if (i18nKey && window.i18n?.t) {
+        this.typewriterText = window.i18n.t(i18nKey);
+      } else {
+        // 使用默认文本
+        this.typewriterText = titleEl.textContent || 'What can I help you with?';
+      }
+    }
+    
+    // 清空标题并添加光标
+    titleEl.innerHTML = '<span class="typewriter-cursor"></span>';
+    
+    // 逐字显示
+    let charIndex = 0;
+    const text = this.typewriterText;
+    const speed = 60; // 每个字符的打字速度（毫秒）
+    
+    const type = () => {
+      if (charIndex < text.length) {
+        // 获取光标元素
+        const cursor = titleEl.querySelector('.typewriter-cursor');
+        // 在光标前插入字符
+        if (cursor) {
+          cursor.insertAdjacentText('beforebegin', text.charAt(charIndex));
+        } else {
+          titleEl.textContent += text.charAt(charIndex);
+        }
+        charIndex++;
+        this.typewriterTimer = setTimeout(type, speed);
+      } else {
+        // 打字完成，保留光标继续闪烁
+        this.typewriterPlayed = true;
+      }
+    };
+    
+    // 延迟开始打字，让背景动画先出现
+    this.typewriterTimer = setTimeout(type, 300);
+  }
+
+  /**
+   * 停止打字机效果
+   */
+  stopTypewriter() {
+    if (this.typewriterTimer) {
+      clearTimeout(this.typewriterTimer);
+      this.typewriterTimer = null;
+    }
+  }
+
+  /**
+   * 重置打字机效果（重新显示首页时调用）
+   */
+  resetTypewriter() {
+    this.typewriterPlayed = false;
+    const titleEl = this.elements.chatHomeTitle;
+    if (titleEl && this.typewriterText) {
+      titleEl.textContent = this.typewriterText;
+    }
+  }
+
+  /**
+   * 更新首页发送按钮状态
+   */
+  updateHomeSendButton() {
+    const hasText = this.elements.chatHomeInput?.value?.trim().length > 0;
+    if (this.elements.chatHomeSendBtn) {
+      this.elements.chatHomeSendBtn.disabled = !hasText;
+    }
+  }
+
+  /**
+   * 从首页发送消息
+   */
+  async sendFromHomePage() {
+    const text = this.elements.chatHomeInput?.value?.trim();
+    if (!text) return;
+
+    // 清空首页输入框
+    if (this.elements.chatHomeInput) {
+      this.elements.chatHomeInput.value = '';
+    }
+    this.updateHomeSendButton();
+
+    // 隐藏首页独立层
+    this.hideChatBackground();
+
+    // 如果尚未连接 AI，先尝试连接
+    if (!this.aiConnected) {
+      await this.autoConnectAI();
+    }
+
+    // 将文本复制到主输入框并发送
+    if (this.elements.aiInput) {
+      this.elements.aiInput.value = text;
+    }
+    this.updateAISendButton();
+    
+    // 发送消息
+    await this.sendAIMessage();
   }
 
   /**
@@ -72,7 +317,13 @@ class ChatPanel {
       // 状态栏 - Agent 事件状态
       agentStatusItem: document.getElementById('agent-status'),
       happyEventDot: document.getElementById('happy-event-dot'),
-      happyEventText: document.getElementById('happy-event-text')
+      happyEventText: document.getElementById('happy-event-text'),
+      // 对话首页独立层
+      chatHome: document.getElementById('chat-home'),
+      // 对话首页元素
+      chatHomeTitle: document.querySelector('.chat-home-title'),
+      chatHomeInput: document.getElementById('chat-home-input'),
+      chatHomeSendBtn: document.getElementById('chat-home-send-btn')
     };
   }
 
@@ -85,6 +336,21 @@ class ChatPanel {
     
     // 中止按钮
     this.elements.aiAbortBtn?.addEventListener('click', () => this.abortAISession());
+    
+    // 首页发送按钮
+    this.elements.chatHomeSendBtn?.addEventListener('click', () => this.sendFromHomePage());
+    
+    // 首页输入框事件
+    this.elements.chatHomeInput?.addEventListener('keydown', (e) => {
+      // Ctrl+Enter 或 Cmd+Enter 发送
+      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+        e.preventDefault();
+        this.sendFromHomePage();
+      }
+    });
+    this.elements.chatHomeInput?.addEventListener('input', () => {
+      this.updateHomeSendButton();
+    });
     
     // 输入框事件
     this.elements.aiInput?.addEventListener('keydown', (e) => {
@@ -252,19 +518,25 @@ class ChatPanel {
     if (!container) return;
     
     // 如果已有欢迎信息，不重复添加
-    if (container.querySelector('.ai-welcome')) return;
+    if (container.querySelector('.ai-welcome')) {
+      // 但仍然显示背景
+      this.showChatBackground();
+      return;
+    }
     
     const t = typeof I18nManager !== 'undefined' ? I18nManager.t.bind(I18nManager) : (k) => k;
     
     const welcomeDiv = document.createElement('div');
     welcomeDiv.className = 'ai-welcome';
     welcomeDiv.innerHTML = `
-      <span class="welcome-icon"><svg viewBox="0 0 24 24"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg></span>
       <h3>${t('chat.welcomeTitle')}</h3>
       <p>${t('chat.welcomeDesc')}</p>
     `;
     
     container.appendChild(welcomeDiv);
+    
+    // 显示 Three.js 背景
+    this.showChatBackground();
   }
 
   /**
@@ -506,6 +778,9 @@ class ChatPanel {
     if (isHistoryMessage) {
       const welcome = container.querySelector('.ai-welcome');
       if (welcome) welcome.remove();
+      
+      // 隐藏 Three.js 背景（有消息时不显示背景）
+      this.hideChatBackground();
     }
     
     switch (message.kind) {

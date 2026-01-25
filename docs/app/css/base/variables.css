@@ -114,6 +114,10 @@
   --breakpoint-compact: 900px;
   --sidebar-height-top: 48px;
   
+  /* ===== 底部导航栏（移动端） ===== */
+  --bottom-nav-height: 64px;
+  --bottom-nav-icon-size: 24px;
+  
   /* ===== 遮罩 ===== */
   --overlay: hsl(0 0% 0% / 0.5);
   --overlay-blur: 4px;

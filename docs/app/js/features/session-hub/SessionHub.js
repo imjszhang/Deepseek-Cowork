@@ -453,6 +453,9 @@ class SessionHub {
         
         this.app?.showNotification?.(t('notifications.workspaceDirSet'), 'success');
         
+        // 展开展示区（保持对话模式）
+        this.app?.expandDisplayPanel?.();
+        
         // 关闭面板
         this.hide();
       } else {
@@ -509,6 +512,9 @@ class SessionHub {
             await this.app?.loadHappyMessageHistory?.();
             
             this.app?.showNotification?.(t('notifications.workspaceDirSet'), 'success');
+            
+            // 展开展示区（保持对话模式）
+            this.app?.expandDisplayPanel?.();
             
             // 关闭面板
             this.hide();
