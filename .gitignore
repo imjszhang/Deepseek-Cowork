@@ -5,6 +5,7 @@ node_modules/
 dist/
 !lib/happy-cli/dist/
 out/
+work_dir/
 
 # Data files
 data/
