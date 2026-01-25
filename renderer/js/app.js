@@ -89,6 +89,9 @@ class BrowserControlManagerApp {
     // AccountSetup 实例
     this.accountSetup = new AccountSetup({ app: this });
     
+    // SessionHub 实例
+    this.sessionHub = new SessionHub({ app: this });
+    
     // BrowserPanel 实例
     this.browserPanel = new BrowserPanel(this);
     
@@ -356,6 +359,9 @@ class BrowserControlManagerApp {
     // 初始化 SetupWizard 和 AccountSetup 模块
     this.setupWizard.init();
     this.accountSetup.init();
+    
+    // 初始化 SessionHub
+    this.sessionHub.init();
     
     // 初始化 BrowserControlModule（服务器状态、扩展连接管理）
     await this.browserControlModule.init();

@@ -46,6 +46,7 @@ const JS_FILES = [
     'js/features/settings/DaemonManager.js',
     'js/features/settings/DependencyChecker.js',
     'js/features/settings/WorkspaceSettings.js',
+    'js/features/session-hub/SessionHub.js',
     'js/features/command-suggestions/index.js',
     'js/i18n/index.js',
     'js/i18n/locales/en-US.js',

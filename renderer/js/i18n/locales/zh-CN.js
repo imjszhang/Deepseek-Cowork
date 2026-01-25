@@ -76,6 +76,23 @@
       browserManagement: '浏览器管理'
     },
     
+    // 会话中心
+    sessionHub: {
+      title: '会话中心',
+      switchDir: '切换到新工作目录',
+      currentSession: '当前会话',
+      noSessions: '暂无其他活动会话',
+      loading: '加载中...',
+      status: {
+        idle: '空闲',
+        processing: '处理中',
+        connected: '已连接',
+        disconnected: '未连接',
+        thinking: '思考中',
+        waiting: '等待中'
+      }
+    },
+    
     // 对话面板
     chat: {
       title: '对话',

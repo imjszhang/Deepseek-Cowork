@@ -34,6 +34,7 @@
   <link rel="stylesheet" href="css/components/wizard.css">
   <link rel="stylesheet" href="css/components/dropdown.css">
   <link rel="stylesheet" href="css/components/connection-guide.css">
+  <link rel="stylesheet" href="css/components/session-hub.css">
   <!-- 工具类样式 -->
   <link rel="stylesheet" href="css/utilities/animations.css">
   <link rel="stylesheet" href="css/utilities/scrollbar.css">
@@ -129,6 +130,17 @@
       
       <!-- Chat panel -->
       <section id="chat-panel">
+        <!-- Chat panel header with Session Hub button -->
+        <div class="chat-panel-header">
+          <div class="chat-header-left">
+            <!-- Reserved for future use -->
+          </div>
+          <div class="chat-header-right">
+            <button id="session-hub-btn" class="chat-header-btn" data-i18n-title="sessionHub.title" title="Session Hub">
+              <svg viewBox="0 0 24 24"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></svg>
+            </button>
+          </div>
+        </div>
         <div id="ai-chat-container">
           <div id="ai-messages">
             <div class="ai-welcome">
@@ -1017,6 +1029,22 @@
         </div>
       </main>
       
+      <!-- Session Hub Panel (floating overlay) -->
+      <aside id="session-hub-panel" class="session-hub-panel" style="display: none;">
+        <div class="session-hub-header">
+          <h3 data-i18n="sessionHub.title">Session Hub</h3>
+          <button id="session-hub-close-btn" class="session-hub-close" data-i18n-title="common.close" title="Close">&times;</button>
+        </div>
+        <div class="session-hub-actions">
+          <button id="session-hub-new-dir-btn" class="session-hub-new-dir-btn" data-i18n-title="sessionHub.switchDir" title="Switch to new working directory">
+            <svg viewBox="0 0 24 24"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/><line x1="12" x2="12" y1="10" y2="16"/><line x1="9" x2="15" y1="13" y2="13"/></svg>
+            <span data-i18n="sessionHub.switchDir">Switch to new directory</span>
+          </button>
+        </div>
+        <div class="session-hub-list" id="session-hub-list">
+          <!-- Session cards will be rendered dynamically -->
+        </div>
+      </aside>
     </div>
     
     <!-- Status bar (simplified) -->
@@ -1305,6 +1333,9 @@
   <script src="js/features/settings/WorkspaceSettings.js"></script>
   <script src="js/features/settings/ClaudeCodeSettings.js"></script>
   <script src="js/features/settings/DependencyChecker.js"></script>
+  
+  <!-- Features - SessionHub -->
+  <script src="js/features/session-hub/SessionHub.js"></script>
   
   <!-- Features - BrowserControl -->
   <script src="js/features/browser/services/ExtensionService.js"></script>

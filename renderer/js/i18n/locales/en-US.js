@@ -76,6 +76,23 @@
       browserManagement: 'Browser Management'
     },
     
+    // Session Hub
+    sessionHub: {
+      title: 'Session Hub',
+      switchDir: 'Switch to new directory',
+      currentSession: 'Current',
+      noSessions: 'No other active sessions',
+      loading: 'Loading...',
+      status: {
+        idle: 'Idle',
+        processing: 'Processing',
+        connected: 'Connected',
+        disconnected: 'Disconnected',
+        thinking: 'Thinking',
+        waiting: 'Waiting'
+      }
+    },
+    
     // Chat panel
     chat: {
       title: 'Chat',
