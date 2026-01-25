@@ -134,8 +134,21 @@
       
       <!-- Chat panel -->
       <section id="chat-panel">
-        <!-- Three.js 动态背景容器（无消息时显示） -->
-        <div id="chat-threejs-bg" class="chat-threejs-bg"></div>
+        <!-- Three.js 动态背景独立层（无消息时显示，作为AI对话首页） -->
+        <div id="chat-threejs-bg" class="chat-threejs-bg">
+          <!-- 首页内容容器 -->
+          <div class="chat-home-content">
+            <div class="chat-home-header">
+              <h2 class="chat-home-title" data-i18n="chat.homeTitle">What can I help you with?</h2>
+            </div>
+            <div class="chat-home-input-container">
+              <textarea id="chat-home-input" class="chat-home-input" data-i18n-placeholder="chat.homeInputPlaceholder" placeholder="Describe what you want to do..." rows="4"></textarea>
+              <button id="chat-home-send-btn" class="chat-home-send-btn" data-i18n-title="chat.send" title="Send" disabled>
+                <svg viewBox="0 0 24 24"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
+              </button>
+            </div>
+          </div>
+        </div>
         <!-- Chat panel header with Session Hub button -->
         <div class="chat-panel-header">
           <div class="chat-header-left">
@@ -150,7 +163,6 @@
         <div id="ai-chat-container">
           <div id="ai-messages">
             <div class="ai-welcome">
-              <span class="welcome-icon"><svg viewBox="0 0 24 24"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg></span>
               <h3 data-i18n="chat.welcomeTitle">Welcome to DeepSeek Cowork</h3>
               <p data-i18n="chat.welcomeDesc">After connecting, you can chat with DeepSeek Cowork to perform tasks</p>
             </div>

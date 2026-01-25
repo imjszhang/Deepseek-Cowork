@@ -46,6 +46,9 @@ class ChatPanel {
     // Three.js 背景实例
     this.chatBackground = null;
     
+    // 是否处于对话模式（只有对话模式下才显示独立层）
+    this.isChatMode = false;
+    
     // DOM 元素
     this.elements = {};
   }
@@ -80,14 +83,18 @@ class ChatPanel {
 
   /**
    * 面板激活时调用（由 app.js 在切换到聊天面板时调用）
+   * 只有在对话模式下才会显示独立层
    */
   onPanelActivate() {
+    // 标记为对话模式
+    this.isChatMode = true;
+    
     // 首次激活时初始化 Three.js 背景
     if (!this.chatBackground) {
       this.initChatBackground();
     }
     
-    // 检查是否应该显示背景
+    // 检查是否应该显示背景（只在对话模式且无消息时显示）
     const hasMessages = this.renderedMessageIds.size > 0;
     const hasWelcome = this.elements.aiMessages?.querySelector('.ai-welcome');
     
@@ -105,13 +112,14 @@ class ChatPanel {
   }
 
   /**
-   * 面板取消激活时调用
+   * 面板取消激活时调用（切换到其他模式）
    */
   onPanelDeactivate() {
-    // 停止动画以节省资源
-    if (this.chatBackground) {
-      this.chatBackground.stop();
-    }
+    // 标记为非对话模式
+    this.isChatMode = false;
+    
+    // 隐藏独立层（非对话模式下不显示）
+    this.hideChatBackground();
   }
 
   /**
@@ -134,9 +142,14 @@ class ChatPanel {
   }
 
   /**
-   * 显示聊天背景
+   * 显示聊天背景（只在对话模式下有效）
    */
   showChatBackground() {
+    // 只在对话模式下显示独立层
+    if (!this.isChatMode) {
+      return;
+    }
+    
     if (this.elements.chatThreejsBg) {
       this.elements.chatThreejsBg.classList.add('visible');
       
@@ -163,6 +176,47 @@ class ChatPanel {
   }
 
   /**
+   * 更新首页发送按钮状态
+   */
+  updateHomeSendButton() {
+    const hasText = this.elements.chatHomeInput?.value?.trim().length > 0;
+    if (this.elements.chatHomeSendBtn) {
+      this.elements.chatHomeSendBtn.disabled = !hasText;
+    }
+  }
+
+  /**
+   * 从首页发送消息
+   */
+  async sendFromHomePage() {
+    const text = this.elements.chatHomeInput?.value?.trim();
+    if (!text) return;
+
+    // 清空首页输入框
+    if (this.elements.chatHomeInput) {
+      this.elements.chatHomeInput.value = '';
+    }
+    this.updateHomeSendButton();
+
+    // 隐藏首页独立层
+    this.hideChatBackground();
+
+    // 如果尚未连接 AI，先尝试连接
+    if (!this.aiConnected) {
+      await this.autoConnectAI();
+    }
+
+    // 将文本复制到主输入框并发送
+    if (this.elements.aiInput) {
+      this.elements.aiInput.value = text;
+    }
+    this.updateAISendButton();
+    
+    // 发送消息
+    await this.sendAIMessage();
+  }
+
+  /**
    * 绑定 DOM 元素
    */
   bindElements() {
@@ -180,8 +234,11 @@ class ChatPanel {
       agentStatusItem: document.getElementById('agent-status'),
       happyEventDot: document.getElementById('happy-event-dot'),
       happyEventText: document.getElementById('happy-event-text'),
-      // Three.js 背景
-      chatThreejsBg: document.getElementById('chat-threejs-bg')
+      // Three.js 背景独立层
+      chatThreejsBg: document.getElementById('chat-threejs-bg'),
+      // 对话首页元素
+      chatHomeInput: document.getElementById('chat-home-input'),
+      chatHomeSendBtn: document.getElementById('chat-home-send-btn')
     };
   }
 
@@ -194,6 +251,21 @@ class ChatPanel {
     
     // 中止按钮
     this.elements.aiAbortBtn?.addEventListener('click', () => this.abortAISession());
+    
+    // 首页发送按钮
+    this.elements.chatHomeSendBtn?.addEventListener('click', () => this.sendFromHomePage());
+    
+    // 首页输入框事件
+    this.elements.chatHomeInput?.addEventListener('keydown', (e) => {
+      // Ctrl+Enter 或 Cmd+Enter 发送
+      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+        e.preventDefault();
+        this.sendFromHomePage();
+      }
+    });
+    this.elements.chatHomeInput?.addEventListener('input', () => {
+      this.updateHomeSendButton();
+    });
     
     // 输入框事件
     this.elements.aiInput?.addEventListener('keydown', (e) => {
@@ -372,7 +444,6 @@ class ChatPanel {
     const welcomeDiv = document.createElement('div');
     welcomeDiv.className = 'ai-welcome';
     welcomeDiv.innerHTML = `
-      <span class="welcome-icon"><svg viewBox="0 0 24 24"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg></span>
       <h3>${t('chat.welcomeTitle')}</h3>
       <p>${t('chat.welcomeDesc')}</p>
     `;

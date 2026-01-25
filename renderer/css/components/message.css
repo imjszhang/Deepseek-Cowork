@@ -51,22 +51,6 @@
   color: rgba(255, 255, 255, 0.5);
 }
 
-.welcome-icon {
-  font-size: 3rem;
-  margin-bottom: 1rem;
-  opacity: 0.5;
-}
-
-.welcome-icon svg {
-  width: 3rem;
-  height: 3rem;
-  stroke: currentColor;
-  stroke-width: 1.5;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  fill: none;
-}
-
 .ai-welcome h3 {
   font-size: 1.125rem;
   background: linear-gradient(135deg, #ffffff 0%, #a3a3a3 100%);
@@ -719,8 +703,8 @@ pre:hover .code-copy-btn {
   opacity: 0.8;
 }
 
-/* ===== 聊天面板 Three.js 动态背景 ===== */
-/* 仅在没有消息时显示，提供视觉吸引力 */
+/* ===== 聊天面板 Three.js 动态背景独立层 ===== */
+/* 作为 AI 对话首页，遮蔽消息层和输入层 */
 
 .chat-threejs-bg {
   position: absolute;
@@ -728,7 +712,7 @@ pre:hover .code-copy-btn {
   left: 0;
   right: 0;
   bottom: 0;
-  z-index: 0;
+  z-index: 10; /* 高于消息容器，遮蔽所有内容 */
   background: #000;
   overflow: hidden;
   opacity: 0;
@@ -738,12 +722,16 @@ pre:hover .code-copy-btn {
 
 .chat-threejs-bg.visible {
   opacity: 1;
+  pointer-events: auto; /* 可见时允许交互 */
 }
 
 .chat-threejs-bg canvas {
-  display: block;
+  position: absolute;
+  top: 0;
+  left: 0;
   width: 100% !important;
   height: 100% !important;
+  z-index: 0;
 }
 
 /* 确保聊天面板是相对定位的容器 */
@@ -751,27 +739,155 @@ pre:hover .code-copy-btn {
   position: relative;
 }
 
-/* 欢迎信息在 three.js 背景上方 */
-.ai-welcome {
-  position: relative;
+/* ===== 对话首页内容 ===== */
+.chat-home-content {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  text-align: center;
 }
 
-/* 消息容器在背景上方 */
-#ai-chat-container {
+.chat-home-content > * {
+  max-width: 600px;
+  width: 100%;
+}
+
+/* 首页头部 */
+.chat-home-header {
+  margin-bottom: 2rem;
+}
+
+.chat-home-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  background: linear-gradient(135deg, #ffffff 0%, #a3a3a3 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-shadow: 0 0 40px rgba(255, 255, 255, 0.2);
+  margin: 0;
+}
+
+/* 首页输入框容器 */
+.chat-home-input-container {
   position: relative;
-  z-index: 1;
+  width: 100%;
 }
 
-/* 当有 three.js 背景时，欢迎信息略微调整样式使其更突出 */
-.chat-threejs-bg.visible ~ #ai-chat-container .ai-welcome {
-  background: transparent;
+/* 首页多行输入框 */
+.chat-home-input {
+  width: 100%;
+  min-height: 120px;
+  max-height: 300px;
+  padding: 1rem 3.5rem 1rem 1rem;
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 1rem;
+  color: white;
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  resize: vertical;
+  outline: none;
+  transition: all 0.3s ease;
+  font-family: inherit;
 }
 
-.chat-threejs-bg.visible ~ #ai-chat-container .ai-welcome h3 {
-  text-shadow: 0 0 30px rgba(255, 255, 255, 0.3);
+.chat-home-input::placeholder {
+  color: rgba(255, 255, 255, 0.4);
 }
 
-.chat-threejs-bg.visible ~ #ai-chat-container .ai-welcome p {
-  text-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
+.chat-home-input:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.chat-home-input:focus {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.3);
+  box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.05),
+              0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+/* 首页发送按钮 */
+.chat-home-send-btn {
+  position: absolute;
+  right: 0.75rem;
+  bottom: 0.75rem;
+  width: 2.5rem;
+  height: 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 0.625rem;
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  outline: none;
+}
+
+.chat-home-send-btn svg {
+  width: 1.125rem;
+  height: 1.125rem;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  fill: none;
+}
+
+.chat-home-send-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.3);
+  transform: scale(1.05);
+}
+
+.chat-home-send-btn:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+.chat-home-send-btn:disabled {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.25);
+  cursor: not-allowed;
+}
+
+/* ===== 响应式适配 ===== */
+@media (max-width: 640px) {
+  .chat-home-content {
+    padding: 1.5rem 1rem;
+    max-width: 100%;
+  }
+  
+  .chat-home-title {
+    font-size: 1.25rem;
+  }
+  
+  .chat-home-icon {
+    width: 3rem;
+    height: 3rem;
+  }
+  
+  .chat-home-icon svg {
+    width: 2.5rem;
+    height: 2.5rem;
+  }
+  
+  .chat-home-input {
+    min-height: 100px;
+    font-size: 0.875rem;
+    padding: 0.875rem 3rem 0.875rem 0.875rem;
+  }
 }
