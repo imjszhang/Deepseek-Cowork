@@ -196,16 +196,13 @@ class ChatPanel {
     // 停止之前的打字机效果
     this.stopTypewriter();
     
-    // 获取原始文本（从 i18n key 获取或使用默认文本）
-    if (!this.typewriterText) {
-      // 尝试从 i18n 获取文本
-      const i18nKey = titleEl.getAttribute('data-i18n');
-      if (i18nKey && window.i18n?.t) {
-        this.typewriterText = window.i18n.t(i18nKey);
-      } else {
-        // 使用默认文本
-        this.typewriterText = titleEl.textContent || 'What can I help you with?';
-      }
+    // 每次都从 i18n 获取最新文本（支持语言切换）
+    const i18nKey = titleEl.getAttribute('data-i18n');
+    if (i18nKey && window.i18n?.t) {
+      this.typewriterText = window.i18n.t(i18nKey);
+    } else {
+      // 使用默认文本
+      this.typewriterText = titleEl.textContent || 'What can I help you with?';
     }
     
     // 清空标题并添加光标

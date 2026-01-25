@@ -250,3 +250,5 @@ const I18nManager = {
 // Make available globally
 window.I18nManager = I18nManager;
 window.I18nLocales = I18nLocales;
+// Alias for convenient access (used by ChatPanel.js typewriter effect, etc.)
+window.i18n = I18nManager;
