@@ -93,6 +93,36 @@ class BrowserControlServerConfig {
         securityLogging: {
           logRejectedConnections: true,  // 是否记录被拒绝的连接
           logLevel: 'WARN'               // 安全日志级别
+        },
+
+        // 认证配置（Challenge-Response 机制）
+        auth: {
+          enabled: true,              // 是否启用认证（开发环境可设为 false）
+          secretKey: null,            // 密钥（首次启动自动生成，或从环境变量读取）
+          secretKeyFile: 'data/auth_secret.key',  // 密钥文件路径
+          sessionTTL: 3600,           // 会话有效期（秒）
+          lockoutDuration: 60,        // 认证失败锁定时间（秒）
+          maxFailedAttempts: 5,       // 连续失败多少次触发锁定
+          challengeTimeout: 30        // Challenge 超时时间（秒）
+        },
+
+        // 速率限制配置
+        rateLimit: {
+          enabled: true,              // 是否启用速率限制
+          globalLimit: 300,           // 全局请求限制（每分钟）
+          sensitiveLimit: 30,         // 敏感操作限制（每分钟）
+          windowMs: 60000,            // 时间窗口（毫秒）
+          sensitiveActions: ['execute_script', 'get_cookies']  // 敏感操作列表
+        },
+
+        // 审计日志配置
+        audit: {
+          enabled: true,              // 是否启用审计日志
+          storage: 'both',            // 存储方式：file | database | both
+          logPath: 'logs/audit.log',  // 日志文件路径
+          retentionDays: 30,          // 日志保留天数
+          logActions: ['execute_script', 'get_cookies', 'open_url', 'close_tab'],  // 需要记录的操作
+          logPayload: false           // 是否记录请求详情（可能包含敏感数据）
         }
       },
 

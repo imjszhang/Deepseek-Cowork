@@ -139,7 +139,8 @@ const API_MAPPING = {
     'closeTab': { method: 'POST', path: '/api/browser/tab/close' },
     'openUrl': { method: 'POST', path: '/api/browser/tab/open' },
     'getExtensionStatus': { method: 'GET', path: '/api/browser/extension/status' },
-    'getExtensionConnections': { method: 'GET', path: '/api/browser/extension/connections' }
+    'getExtensionConnections': { method: 'GET', path: '/api/browser/extension/connections' },
+    'getAuthSecret': { method: 'GET', path: '/api/browser/auth/secret' }
 };
 
 /**
@@ -938,6 +939,7 @@ function createBrowserControlManagerPolyfill() {
         openUrl: createApiMethod('openUrl'),
         getExtensionStatus: createApiMethod('getExtensionStatus'),
         getExtensionConnections: createApiMethod('getExtensionConnections'),
+        getAuthSecret: createApiMethod('getAuthSecret'),
         
         // ========== 设置向导 ==========
         getSetupRequirements: async () => {

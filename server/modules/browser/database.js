@@ -225,12 +225,34 @@ class Database {
         disconnected_at TIMESTAMP
       )`,
 
+      // Create audit logs table (for security audit trail)
+      `CREATE TABLE IF NOT EXISTS audit_logs (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        event_type TEXT NOT NULL,
+        session_id TEXT,
+        client_id TEXT,
+        client_type TEXT,
+        client_address TEXT,
+        action TEXT,
+        target_tab_id INTEGER,
+        target_url TEXT,
+        status TEXT,
+        duration INTEGER,
+        request_id TEXT,
+        details TEXT
+      )`,
+
       // Create indexes to improve query performance
       `CREATE INDEX IF NOT EXISTS idx_tabs_window ON tabs(window_id)`,
       `CREATE INDEX IF NOT EXISTS idx_tabs_active ON tabs(is_active)`,
       `CREATE INDEX IF NOT EXISTS idx_callbacks_expires ON callbacks(expires_at)`,
       `CREATE INDEX IF NOT EXISTS idx_cookies_domain ON cookies(domain)`,
-      `CREATE INDEX IF NOT EXISTS idx_cookies_name ON cookies(name)`
+      `CREATE INDEX IF NOT EXISTS idx_cookies_name ON cookies(name)`,
+      `CREATE INDEX IF NOT EXISTS idx_audit_timestamp ON audit_logs(timestamp)`,
+      `CREATE INDEX IF NOT EXISTS idx_audit_session ON audit_logs(session_id)`,
+      `CREATE INDEX IF NOT EXISTS idx_audit_action ON audit_logs(action)`,
+      `CREATE INDEX IF NOT EXISTS idx_audit_event_type ON audit_logs(event_type)`
     ];
 
     // Triggers for sql.js

@@ -26,6 +26,15 @@ class ExtensionWebSocketServer {
         this.pendingResponses = new Map();
         this.isShuttingDown = false;  // 关闭标志，防止关闭过程中写入数据库
         this.securityConfig = null;   // 安全配置
+        
+        // 安全模块
+        this.authManager = null;      // 认证管理器
+        this.auditLogger = null;      // 审计日志
+        this.rateLimiter = null;      // 速率限制器
+        
+        // 认证相关
+        this.pendingAuth = new Map(); // 等待认证的连接：Map<socketId, { socket, request, challenge, timeout }>
+        this.authenticatedSockets = new Map(); // 已认证的连接：Map<socketId, { sessionId, clientId, clientType }>
     }
 
     /**
@@ -59,6 +68,41 @@ class ExtensionWebSocketServer {
     setSecurityConfig(securityConfig) {
         this.securityConfig = securityConfig;
         Logger.info('Security config set for WebSocket server');
+    }
+
+    /**
+     * 设置认证管理器
+     * @param {Object} authManager 认证管理器
+     */
+    setAuthManager(authManager) {
+        this.authManager = authManager;
+        Logger.info('AuthManager set for WebSocket server');
+    }
+
+    /**
+     * 设置审计日志
+     * @param {Object} auditLogger 审计日志
+     */
+    setAuditLogger(auditLogger) {
+        this.auditLogger = auditLogger;
+        Logger.info('AuditLogger set for WebSocket server');
+    }
+
+    /**
+     * 设置速率限制器
+     * @param {Object} rateLimiter 速率限制器
+     */
+    setRateLimiter(rateLimiter) {
+        this.rateLimiter = rateLimiter;
+        Logger.info('RateLimiter set for WebSocket server');
+    }
+
+    /**
+     * 检查认证是否启用
+     * @returns {boolean} 是否启用认证
+     */
+    isAuthEnabled() {
+        return this.authManager && this.securityConfig?.auth?.enabled !== false;
     }
 
     /**
@@ -166,13 +210,31 @@ class ExtensionWebSocketServer {
      * @param {Object} request HTTP请求
      */
     async handleConnection(socket, request) {
+        const clientAddress = `${request.socket.remoteAddress}:${request.socket.remotePort}`;
+        
         try {
             // 安全检查：验证 Origin
             const origin = request.headers.origin;
             if (!this.validateOrigin(origin)) {
                 this.logRejectedConnection(request, 'Origin not allowed');
+                if (this.auditLogger) {
+                    await this.auditLogger.logConnection('rejected', clientAddress, { reason: 'Origin not allowed', origin });
+                }
                 socket.close(1008, 'Origin not allowed');
                 return;
+            }
+            
+            // 检查是否被速率限制锁定
+            if (this.rateLimiter) {
+                const lockStatus = this.rateLimiter.isLocked(clientAddress);
+                if (lockStatus.locked) {
+                    Logger.warn(`[Auth] Connection rejected - client locked: ${clientAddress}`);
+                    if (this.auditLogger) {
+                        await this.auditLogger.logConnection('rejected', clientAddress, { reason: 'Client locked', unlockAt: lockStatus.unlockAt });
+                    }
+                    socket.close(1008, `Too many failed attempts. Retry after ${lockStatus.retryAfter} seconds`);
+                    return;
+                }
             }
             
             await this.cleanupDisconnectedClients();
@@ -181,20 +243,246 @@ class ExtensionWebSocketServer {
             const url = new URL(request.url, `ws://${request.headers.host}`);
             const clientType = url.searchParams.get('type') || 'extension';
             
-            if (clientType === 'automation') {
-                await this.handleAutomationClient(socket, request);
+            // 如果启用认证，进入认证流程
+            if (this.isAuthEnabled()) {
+                await this.initiateAuthHandshake(socket, request, clientType, clientAddress);
             } else {
-                await this.handleExtensionClient(socket, request);
+                // 未启用认证，直接处理连接（向后兼容）
+                if (clientType === 'automation') {
+                    await this.handleAutomationClient(socket, request, null);
+                } else {
+                    await this.handleExtensionClient(socket, request, null);
+                }
             }
         } catch (err) {
             Logger.error(`Error handling WebSocket connection: ${err.message}`);
+            if (this.auditLogger) {
+                await this.auditLogger.logConnection('error', clientAddress, { error: err.message });
+            }
         }
     }
 
     /**
-     * 处理浏览器扩展客户端连接
+     * 发起认证握手
+     * @param {WebSocket} socket WebSocket连接
+     * @param {Object} request HTTP请求
+     * @param {string} clientType 客户端类型
+     * @param {string} clientAddress 客户端地址
      */
-    async handleExtensionClient(socket, request) {
+    async initiateAuthHandshake(socket, request, clientType, clientAddress) {
+        const socketId = uuidv4();
+        
+        // 生成 challenge
+        const { challenge, expiresAt } = this.authManager.generateChallenge();
+        
+        // 存储待认证连接
+        const authTimeout = setTimeout(() => {
+            // 认证超时
+            const pending = this.pendingAuth.get(socketId);
+            if (pending) {
+                Logger.warn(`[Auth] Authentication timeout for ${clientAddress}`);
+                if (this.auditLogger) {
+                    this.auditLogger.logAuthFailure('Authentication timeout', clientAddress);
+                }
+                pending.socket.close(1008, 'Authentication timeout');
+                this.pendingAuth.delete(socketId);
+            }
+        }, (this.securityConfig?.auth?.challengeTimeout || 30) * 1000);
+        
+        this.pendingAuth.set(socketId, {
+            socket,
+            request,
+            challenge,
+            clientType,
+            clientAddress,
+            timeout: authTimeout,
+            createdAt: new Date()
+        });
+        
+        // 添加 socket 属性用于识别
+        socket._authSocketId = socketId;
+        
+        // 监听认证响应
+        socket.on('message', async (message) => {
+            const pending = this.pendingAuth.get(socketId);
+            if (pending) {
+                // 仍在认证阶段
+                await this.handleAuthMessage(socketId, message);
+            }
+        });
+        
+        socket.on('close', () => {
+            const pending = this.pendingAuth.get(socketId);
+            if (pending) {
+                clearTimeout(pending.timeout);
+                this.pendingAuth.delete(socketId);
+            }
+        });
+        
+        socket.on('error', (error) => {
+            Logger.error(`[Auth] Socket error during auth: ${error.message}`);
+            const pending = this.pendingAuth.get(socketId);
+            if (pending) {
+                clearTimeout(pending.timeout);
+                this.pendingAuth.delete(socketId);
+            }
+        });
+        
+        // 发送 auth_challenge
+        socket.send(JSON.stringify({
+            type: 'auth_challenge',
+            challenge,
+            timestamp: new Date().toISOString(),
+            serverVersion: '1.0.0'
+        }));
+        
+        Logger.info(`[Auth] Challenge sent to ${clientAddress}`);
+    }
+
+    /**
+     * 处理认证阶段的消息
+     * @param {string} socketId Socket标识
+     * @param {string} message 消息内容
+     */
+    async handleAuthMessage(socketId, message) {
+        const pending = this.pendingAuth.get(socketId);
+        if (!pending) {
+            return;
+        }
+        
+        const { socket, request, challenge, clientType, clientAddress, timeout } = pending;
+        
+        try {
+            const data = JSON.parse(message);
+            
+            if (data.type !== 'auth_response') {
+                // 忽略非认证响应消息
+                Logger.debug(`[Auth] Ignoring non-auth message during handshake: ${data.type}`);
+                return;
+            }
+            
+            // 清除超时定时器
+            clearTimeout(timeout);
+            
+            // 验证响应
+            const result = this.authManager.verifyResponse(challenge, data.response, clientAddress);
+            
+            if (!result.valid) {
+                // 认证失败
+                Logger.warn(`[Auth] Authentication failed for ${clientAddress}: ${result.reason}`);
+                
+                if (this.rateLimiter) {
+                    this.rateLimiter.recordAuthFailure(clientAddress);
+                }
+                
+                if (this.auditLogger) {
+                    await this.auditLogger.logAuthFailure(result.reason, clientAddress, {
+                        clientType,
+                        clientId: data.clientId
+                    });
+                }
+                
+                // 发送失败响应
+                socket.send(JSON.stringify({
+                    type: 'auth_result',
+                    success: false,
+                    error: result.reason,
+                    retryAfter: 5
+                }));
+                
+                // 关闭连接
+                setTimeout(() => socket.close(1008, 'Authentication failed'), 100);
+                this.pendingAuth.delete(socketId);
+                return;
+            }
+            
+            // 认证成功，创建会话
+            const clientId = data.clientId || uuidv4();
+            const session = this.authManager.createSession(clientId, clientType);
+            
+            // 记录认证成功
+            if (this.auditLogger) {
+                await this.auditLogger.logAuthSuccess(session.sessionId, clientId, clientType, clientAddress);
+            }
+            
+            // 存储已认证的连接信息
+            this.authenticatedSockets.set(socketId, {
+                sessionId: session.sessionId,
+                clientId,
+                clientType,
+                clientAddress
+            });
+            
+            // 发送成功响应
+            socket.send(JSON.stringify({
+                type: 'auth_result',
+                success: true,
+                sessionId: session.sessionId,
+                expiresIn: this.securityConfig?.auth?.sessionTTL || 3600,
+                permissions: session.permissions
+            }));
+            
+            Logger.info(`[Auth] Authentication successful for ${clientType}:${clientId} from ${clientAddress}`);
+            
+            // 清理待认证状态
+            this.pendingAuth.delete(socketId);
+            
+            // 移除认证阶段的消息监听器，重新设置正常的消息处理
+            socket.removeAllListeners('message');
+            
+            // 继续正常的连接处理
+            if (clientType === 'automation') {
+                await this.handleAutomationClient(socket, request, session.sessionId);
+            } else {
+                await this.handleExtensionClient(socket, request, session.sessionId);
+            }
+            
+        } catch (err) {
+            Logger.error(`[Auth] Error processing auth message: ${err.message}`);
+            clearTimeout(timeout);
+            this.pendingAuth.delete(socketId);
+            socket.close(1008, 'Invalid authentication message');
+        }
+    }
+
+    /**
+     * 验证请求中的 sessionId
+     * @param {string} sessionId 会话ID
+     * @returns {Object|null} 会话信息或 null
+     */
+    validateRequestSession(sessionId) {
+        if (!this.isAuthEnabled()) {
+            return { valid: true }; // 未启用认证时直接通过
+        }
+        
+        if (!sessionId) {
+            return null;
+        }
+        
+        return this.authManager.validateSession(sessionId);
+    }
+
+    /**
+     * 获取 socket 的认证信息
+     * @param {string} clientId 客户端ID
+     * @returns {Object|null} 认证信息
+     */
+    getSocketAuthInfo(clientId) {
+        for (const [socketId, authInfo] of this.authenticatedSockets) {
+            if (authInfo.clientId === clientId) {
+                return authInfo;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * 处理浏览器扩展客户端连接
+     * @param {WebSocket} socket WebSocket连接
+     * @param {Object} request HTTP请求
+     * @param {string|null} sessionId 会话ID（认证后传入）
+     */
+    async handleExtensionClient(socket, request, sessionId) {
         // 检查扩展客户端连接数限制
         if (this.activeConnections.size >= this.maxClients) {
             Logger.warning('Maximum extension client connections reached.');
@@ -205,19 +493,32 @@ class ExtensionWebSocketServer {
         const clientId = uuidv4();
         const clientAddress = `${request.socket.remoteAddress}:${request.socket.remotePort}`;
         
-        Logger.info(`Browser extension connected: ${clientAddress} (ID: ${clientId})`);
+        Logger.info(`Browser extension connected: ${clientAddress} (ID: ${clientId})${sessionId ? ' [authenticated]' : ''}`);
         
         await this.storeClient(clientId, clientAddress, 'extension');
         this.activeConnections.set(clientId, socket);
+        
+        // 存储 socket 的 sessionId 关联
+        socket._sessionId = sessionId;
+        socket._clientId = clientId;
 
         socket.on('message', async (message) => {
-            await this.handleMessage(message, clientId);
+            await this.handleMessage(message, clientId, sessionId);
         });
 
         socket.on('close', async () => {
             Logger.info(`Browser extension disconnected: ${clientAddress} (ID: ${clientId})`);
             await this.updateClientDisconnected(clientId);
             this.activeConnections.delete(clientId);
+            
+            // 记录会话结束
+            if (sessionId && this.auditLogger) {
+                const session = this.authManager?.getSessionInfo(sessionId);
+                if (session) {
+                    const duration = Math.floor((Date.now() - session.createdAt.getTime()) / 1000);
+                    await this.auditLogger.logSessionEnd(sessionId, duration, 'disconnected');
+                }
+            }
         });
 
         socket.on('error', async (error) => {
@@ -229,24 +530,40 @@ class ExtensionWebSocketServer {
 
     /**
      * 处理automation客户端连接
+     * @param {WebSocket} socket WebSocket连接
+     * @param {Object} request HTTP请求
+     * @param {string|null} sessionId 会话ID（认证后传入）
      */
-    async handleAutomationClient(socket, request) {
+    async handleAutomationClient(socket, request, sessionId) {
         const clientId = uuidv4();
         const clientAddress = `${request.socket.remoteAddress}:${request.socket.remotePort}`;
         
-        Logger.info(`Automation client connected: ${clientAddress} (ID: ${clientId})`);
+        Logger.info(`Automation client connected: ${clientAddress} (ID: ${clientId})${sessionId ? ' [authenticated]' : ''}`);
         
         await this.storeClient(clientId, clientAddress, 'automation_client');
         this.activeConnections.set(clientId, socket);
+        
+        // 存储 socket 的 sessionId 关联
+        socket._sessionId = sessionId;
+        socket._clientId = clientId;
 
         socket.on('message', async (message) => {
-            await this.handleAutomationMessage(message, clientId, socket);
+            await this.handleAutomationMessage(message, clientId, socket, sessionId);
         });
 
         socket.on('close', async () => {
             Logger.info(`Automation client disconnected: ${clientAddress} (ID: ${clientId})`);
             await this.updateClientDisconnected(clientId);
             this.activeConnections.delete(clientId);
+            
+            // 记录会话结束
+            if (sessionId && this.auditLogger) {
+                const session = this.authManager?.getSessionInfo(sessionId);
+                if (session) {
+                    const duration = Math.floor((Date.now() - session.createdAt.getTime()) / 1000);
+                    await this.auditLogger.logSessionEnd(sessionId, duration, 'disconnected');
+                }
+            }
         });
 
         socket.on('error', async (error) => {
@@ -259,6 +576,8 @@ class ExtensionWebSocketServer {
         this.sendToAutomationClient(socket, {
             type: 'connection_established',
             clientId: clientId,
+            sessionId: sessionId,
+            authenticated: !!sessionId,
             timestamp: new Date().toISOString()
         });
     }
@@ -266,14 +585,61 @@ class ExtensionWebSocketServer {
     /**
      * 处理automation客户端消息
      */
-    async handleAutomationMessage(message, clientId, socket) {
+    /**
+     * 处理automation客户端消息
+     * @param {string} message 消息内容
+     * @param {string} clientId 客户端ID
+     * @param {WebSocket} socket WebSocket连接
+     * @param {string|null} sessionId 会话ID
+     */
+    async handleAutomationMessage(message, clientId, socket, sessionId = null) {
+        const startTime = Date.now();
+        
         try {
             const data = JSON.parse(message);
             const { type, requestId } = data;
+            
+            // 支持新的消息格式（带 sessionId 和 action）
+            const action = data.action || type;
+            const messageSessionId = data.sessionId || sessionId;
 
-            Logger.info(`Received automation message: ${type} from ${clientId}`);
+            Logger.info(`Received automation message: ${action} from ${clientId}`);
+            
+            // 验证会话（如果启用认证）
+            if (this.isAuthEnabled()) {
+                const session = this.validateRequestSession(messageSessionId);
+                if (!session) {
+                    this.sendToAutomationClient(socket, {
+                        type: 'error',
+                        requestId,
+                        code: 'AUTH_REQUIRED',
+                        message: 'Authentication required or session expired'
+                    });
+                    return;
+                }
+            }
+            
+            // 检查速率限制
+            if (this.rateLimiter) {
+                const limitResult = this.rateLimiter.checkLimit(clientId, action);
+                if (!limitResult.allowed) {
+                    if (this.auditLogger) {
+                        await this.auditLogger.logRateLimited(clientId, limitResult.limitType, socket._clientAddress);
+                    }
+                    this.sendToAutomationClient(socket, {
+                        type: 'error',
+                        requestId,
+                        code: 'RATE_LIMITED',
+                        message: `Rate limit exceeded. Retry after ${limitResult.retryAfter} seconds`,
+                        retryAfter: limitResult.retryAfter
+                    });
+                    return;
+                }
+                // 记录请求
+                this.rateLimiter.recordRequest(clientId, action);
+            }
 
-            switch (type) {
+            switch (action) {
                 case 'get_tabs':
                     await this.handleGetTabsRequest(data, socket);
                     break;
@@ -288,12 +654,28 @@ class ExtensionWebSocketServer {
                     break;
                 case 'execute_script':
                     await this.handleExecuteScriptRequest(data, socket);
+                    // 记录敏感操作审计日志
+                    if (this.auditLogger) {
+                        const duration = Date.now() - startTime;
+                        await this.auditLogger.logSensitiveOp(
+                            messageSessionId, action, data.tabId, null, 'success', duration, requestId,
+                            { clientId, clientType: 'automation' }
+                        );
+                    }
                     break;
                 case 'inject_css':
                     await this.handleInjectCssRequest(data, socket);
                     break;
                 case 'get_cookies':
                     await this.handleGetCookiesRequest(data, socket);
+                    // 记录敏感操作审计日志
+                    if (this.auditLogger) {
+                        const duration = Date.now() - startTime;
+                        await this.auditLogger.logSensitiveOp(
+                            messageSessionId, action, data.tabId, null, 'success', duration, requestId,
+                            { clientId, clientType: 'automation' }
+                        );
+                    }
                     break;
                 case 'subscribe_events':
                     await this.handleSubscribeEventsRequest(data, socket, clientId);
@@ -305,7 +687,7 @@ class ExtensionWebSocketServer {
                     this.sendToAutomationClient(socket, {
                         type: 'error',
                         requestId,
-                        message: `Unknown message type: ${type}`
+                        message: `Unknown message type: ${action}`
                     });
                     break;
             }
@@ -735,10 +1117,20 @@ class ExtensionWebSocketServer {
      * 处理浏览器扩展消息
      * @param {string} message 接收到的消息
      * @param {string} clientId 客户端ID
+     * @param {string|null} sessionId 会话ID
      */
-    async handleMessage(message, clientId) {
+    async handleMessage(message, clientId, sessionId = null) {
         try {
             const data = JSON.parse(message);
+            
+            // 验证会话（如果启用认证）
+            if (this.isAuthEnabled() && sessionId) {
+                const session = this.validateRequestSession(sessionId);
+                if (!session) {
+                    Logger.warn(`[Auth] Invalid session for extension message from ${clientId}`);
+                    // 扩展消息通常是响应，不需要返回错误
+                }
+            }
 
             // 处理错误消息
             if (data.type === 'error') {

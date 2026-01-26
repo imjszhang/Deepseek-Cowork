@@ -20,6 +20,11 @@ const { browserEventEmitter } = require('./event-emitter');
 const { browserControlServerConfig } = require('./config');
 const ExtensionWebSocketServer = require('./ExtensionWebSocketServer');
 
+// 导入安全模块
+const AuthManager = require('./auth-manager');
+const AuditLogger = require('./audit-logger');
+const RateLimiter = require('./rate-limiter');
+
 /**
  * 设置浏览器控制服务
  * @param {Object} options 配置选项
@@ -38,6 +43,11 @@ function setupBrowserControlService(options = {}) {
       this.callbackManager = null;
       this.config = null;
       this.isRunning = false;
+      
+      // 安全模块
+      this.authManager = null;
+      this.auditLogger = null;
+      this.rateLimiter = null;
     }
 
     /**
@@ -93,6 +103,9 @@ function setupBrowserControlService(options = {}) {
           // 设置安全配置（用于 Origin 验证）
           this.extensionWebSocketServer.setSecurityConfig(this.config.security);
         }
+
+        // 初始化安全模块
+        await this.initSecurityModules();
 
         // Cookie管理改为完全手动模式
         Logger.info('Cookie retrieval in manual mode');
@@ -151,6 +164,68 @@ function setupBrowserControlService(options = {}) {
     }
 
     /**
+     * 初始化安全模块
+     */
+    async initSecurityModules() {
+      const securityConfig = this.config.security || {};
+      
+      // 初始化认证管理器
+      if (securityConfig.auth?.enabled !== false) {
+        try {
+          this.authManager = new AuthManager(securityConfig.auth);
+          Logger.info('AuthManager initialized');
+          
+          // 注入到 WebSocket 服务器
+          if (this.extensionWebSocketServer) {
+            this.extensionWebSocketServer.setAuthManager(this.authManager);
+          }
+        } catch (error) {
+          Logger.error(`Failed to initialize AuthManager: ${error.message}`);
+          // 认证初始化失败不应阻止服务启动，但需要记录
+        }
+      } else {
+        Logger.warn('Authentication is DISABLED - all connections will be accepted without verification');
+      }
+      
+      // 初始化审计日志
+      if (securityConfig.audit?.enabled !== false) {
+        try {
+          this.auditLogger = new AuditLogger(securityConfig.audit, this.database);
+          Logger.info('AuditLogger initialized');
+          
+          // 注入到 WebSocket 服务器
+          if (this.extensionWebSocketServer) {
+            this.extensionWebSocketServer.setAuditLogger(this.auditLogger);
+          }
+        } catch (error) {
+          Logger.error(`Failed to initialize AuditLogger: ${error.message}`);
+        }
+      }
+      
+      // 初始化速率限制器
+      if (securityConfig.rateLimit?.enabled !== false) {
+        try {
+          this.rateLimiter = new RateLimiter(securityConfig.rateLimit);
+          Logger.info('RateLimiter initialized');
+          
+          // 注入到 WebSocket 服务器
+          if (this.extensionWebSocketServer) {
+            this.extensionWebSocketServer.setRateLimiter(this.rateLimiter);
+          }
+        } catch (error) {
+          Logger.error(`Failed to initialize RateLimiter: ${error.message}`);
+        }
+      }
+      
+      // 输出安全模块状态摘要
+      Logger.info('Security modules status:', {
+        auth: this.authManager ? 'enabled' : 'disabled',
+        audit: this.auditLogger ? 'enabled' : 'disabled',
+        rateLimit: this.rateLimiter ? 'enabled' : 'disabled'
+      });
+    }
+
+    /**
      * 启动服务
      */
     async start() {
@@ -189,6 +264,22 @@ function setupBrowserControlService(options = {}) {
         if (this.extensionWebSocketServer) {
           this.extensionWebSocketServer.stop();
           Logger.info('Browser extension WebSocket server stopped');
+        }
+        
+        // 停止安全模块
+        if (this.authManager) {
+          this.authManager.stop();
+          Logger.info('AuthManager stopped');
+        }
+        
+        if (this.auditLogger) {
+          this.auditLogger.stop();
+          Logger.info('AuditLogger stopped');
+        }
+        
+        if (this.rateLimiter) {
+          this.rateLimiter.stop();
+          Logger.info('RateLimiter stopped');
         }
         
         // 清理TabsManager资源
@@ -317,6 +408,52 @@ function setupBrowserControlService(options = {}) {
           status: 'success',
           data: this.getStatus()
         });
+      });
+      
+      // 获取认证密钥（仅限本地请求）
+      apiRouter.get('/auth/secret', (req, res) => {
+        // 安全检查：仅允许本地请求
+        const clientIP = req.ip || req.connection.remoteAddress || '';
+        const isLocalRequest = clientIP === '127.0.0.1' || 
+                               clientIP === '::1' || 
+                               clientIP === 'localhost' ||
+                               clientIP === '::ffff:127.0.0.1';
+        
+        if (!isLocalRequest) {
+          Logger.warn(`[Security] Rejected auth/secret request from non-local IP: ${clientIP}`);
+          return res.status(403).json({
+            success: false,
+            error: 'Access denied: This endpoint is only available from localhost'
+          });
+        }
+        
+        // 检查认证管理器是否可用
+        if (!this.authManager) {
+          return res.json({
+            success: true,
+            secretKey: null,
+            source: null,
+            authEnabled: false,
+            message: 'Authentication is not enabled'
+          });
+        }
+        
+        try {
+          const secretInfo = this.authManager.getSecretInfo();
+          res.json({
+            success: true,
+            secretKey: secretInfo.secretKey,
+            source: secretInfo.source,
+            keyFile: secretInfo.keyFile,
+            authEnabled: true
+          });
+        } catch (err) {
+          Logger.error(`Failed to get auth secret: ${err.message}`);
+          res.status(500).json({
+            success: false,
+            error: 'Failed to retrieve authentication secret'
+          });
+        }
       });
       
       // 获取所有标签页
@@ -786,6 +923,12 @@ function setupBrowserControlService(options = {}) {
             port: this.config?.extensionWebSocket?.port,
             baseUrl: this.config?.extensionWebSocket?.baseUrl
           },
+        },
+        security: {
+          authEnabled: this.authManager ? true : false,
+          auditEnabled: this.auditLogger ? true : false,
+          rateLimitEnabled: this.rateLimiter ? true : false,
+          activeSessions: this.authManager ? this.authManager.getActiveSessionCount() : 0
         },
         extensionWsPort: this.config?.extensionWebSocket?.port,
         activeExtensionConnections: this.extensionWebSocketServer ? this.extensionWebSocketServer.getActiveClients() : 0

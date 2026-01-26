@@ -294,6 +294,11 @@
       // Server status
       serverStatus: 'Server Status',
       extensionConnections: 'Extension Connections',
+      authSecret: 'Auth Secret',
+      authStatus: 'Auth Status',
+      authEnabled: 'Enabled',
+      authDisabled: 'Disabled',
+      authError: 'Error',
       
       // Software Update
       softwareUpdate: 'Software Update',

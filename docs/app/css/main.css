@@ -406,6 +406,70 @@ body {
   color: var(--success);
 }
 
+/* Auth Secret Styles */
+.auth-secret-row {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px dashed var(--border);
+}
+
+.auth-secret-container {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: 1;
+}
+
+.auth-secret-input {
+  flex: 1;
+  background: var(--input);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+  font-size: 11px;
+  color: var(--foreground);
+  min-width: 0;
+  max-width: 200px;
+}
+
+.auth-secret-input:focus {
+  outline: none;
+  border-color: var(--primary);
+}
+
+.auth-secret-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--secondary);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 4px 6px;
+  cursor: pointer;
+  color: var(--muted-foreground);
+  transition: all 0.15s ease;
+}
+
+.auth-secret-btn:hover {
+  background: var(--accent);
+  color: var(--foreground);
+}
+
+.auth-secret-btn svg {
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.auth-secret-btn.copied {
+  background: var(--success);
+  color: white;
+  border-color: var(--success);
+}
+
 .env-path {
   font-family: var(--font-mono, 'JetBrains Mono', monospace);
   font-size: 11px;

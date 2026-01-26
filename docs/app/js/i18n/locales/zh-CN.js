@@ -294,6 +294,11 @@
       // 服务器状态
       serverStatus: '服务器状态',
       extensionConnections: '扩展连接',
+      authSecret: '认证密钥',
+      authStatus: '认证状态',
+      authEnabled: '已启用',
+      authDisabled: '已禁用',
+      authError: '错误',
       
       // 软件更新
       softwareUpdate: '软件更新',

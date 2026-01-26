@@ -31,6 +31,10 @@ class BrowserControlModule {
     
     // DOM 元素引用
     this.elements = {};
+    
+    // 认证密钥状态
+    this._authSecret = null;
+    this._secretVisible = false;
   }
 
   /**
@@ -60,8 +64,36 @@ class BrowserControlModule {
       serverPanelBadge: document.getElementById('server-panel-badge'),
       serverHttpPort: document.getElementById('server-http-port'),
       serverWsPort: document.getElementById('server-ws-port'),
-      serverExtCount: document.getElementById('server-ext-count')
+      serverExtCount: document.getElementById('server-ext-count'),
+      
+      // 认证密钥相关
+      authSecretInput: document.getElementById('auth-secret-input'),
+      authSecretToggle: document.getElementById('auth-secret-toggle'),
+      authSecretCopy: document.getElementById('auth-secret-copy'),
+      authStatusValue: document.getElementById('auth-status-value')
     };
+    
+    // 绑定认证密钥按钮事件
+    this.bindAuthSecretEvents();
+  }
+  
+  /**
+   * 绑定认证密钥按钮事件
+   */
+  bindAuthSecretEvents() {
+    // 显示/隐藏切换按钮
+    if (this.elements.authSecretToggle) {
+      this.elements.authSecretToggle.addEventListener('click', () => {
+        this.toggleSecretVisibility();
+      });
+    }
+    
+    // 复制按钮
+    if (this.elements.authSecretCopy) {
+      this.elements.authSecretCopy.addEventListener('click', () => {
+        this.copySecretToClipboard();
+      });
+    }
   }
 
   /**
@@ -306,6 +338,167 @@ class BrowserControlModule {
     }
   }
 
+  // ============ 认证密钥管理 ============
+
+  /**
+   * 获取认证密钥
+   * @returns {Promise<Object>} 密钥信息
+   */
+  async fetchAuthSecret() {
+    try {
+      // 优先使用 apiAdapter
+      if (window.apiAdapter && window.apiAdapter.isConnected()) {
+        const result = await window.apiAdapter.call('getAuthSecret');
+        if (result && result.success) {
+          this._authSecret = result.secretKey;
+          this.updateAuthDisplay(result);
+          return result;
+        }
+      }
+      
+      // 回退到直接 fetch
+      const response = await fetch('/api/browser/auth/secret');
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success) {
+          this._authSecret = result.secretKey;
+          this.updateAuthDisplay(result);
+          return result;
+        }
+      }
+      
+      // 请求失败
+      this.updateAuthDisplay({ authEnabled: false });
+      return null;
+    } catch (error) {
+      console.warn('[BrowserControlModule] Failed to fetch auth secret:', error);
+      this.updateAuthDisplay({ authEnabled: false, error: true });
+      return null;
+    }
+  }
+
+  /**
+   * 更新认证状态显示
+   * @param {Object} authInfo 认证信息
+   */
+  updateAuthDisplay(authInfo) {
+    const t = typeof I18nManager !== 'undefined' ? I18nManager.t.bind(I18nManager) : (k) => k;
+    
+    // 更新认证状态
+    if (this.elements.authStatusValue) {
+      if (authInfo.error) {
+        this.elements.authStatusValue.textContent = t('settings.authError') || 'Error';
+        this.elements.authStatusValue.className = 'env-value error';
+      } else if (authInfo.authEnabled) {
+        this.elements.authStatusValue.textContent = t('settings.authEnabled') || 'Enabled';
+        this.elements.authStatusValue.className = 'env-value running';
+      } else {
+        this.elements.authStatusValue.textContent = t('settings.authDisabled') || 'Disabled';
+        this.elements.authStatusValue.className = 'env-value';
+      }
+    }
+    
+    // 更新密钥输入框状态
+    if (this.elements.authSecretInput) {
+      if (authInfo.authEnabled && authInfo.secretKey) {
+        this.elements.authSecretInput.disabled = false;
+        if (!this._secretVisible) {
+          this.elements.authSecretInput.value = '••••••••••••••••';
+          this.elements.authSecretInput.type = 'password';
+        } else {
+          this.elements.authSecretInput.value = authInfo.secretKey;
+          this.elements.authSecretInput.type = 'text';
+        }
+      } else {
+        this.elements.authSecretInput.value = '-';
+        this.elements.authSecretInput.disabled = true;
+      }
+    }
+  }
+
+  /**
+   * 切换密钥显示/隐藏
+   */
+  toggleSecretVisibility() {
+    if (!this._authSecret) {
+      return;
+    }
+    
+    this._secretVisible = !this._secretVisible;
+    
+    const input = this.elements.authSecretInput;
+    const toggle = this.elements.authSecretToggle;
+    
+    if (input) {
+      if (this._secretVisible) {
+        input.type = 'text';
+        input.value = this._authSecret;
+      } else {
+        input.type = 'password';
+        input.value = '••••••••••••••••';
+      }
+    }
+    
+    // 切换图标
+    if (toggle) {
+      const eyeIcon = toggle.querySelector('.icon-eye');
+      const eyeOffIcon = toggle.querySelector('.icon-eye-off');
+      if (eyeIcon && eyeOffIcon) {
+        eyeIcon.style.display = this._secretVisible ? 'none' : 'block';
+        eyeOffIcon.style.display = this._secretVisible ? 'block' : 'none';
+      }
+    }
+  }
+
+  /**
+   * 复制密钥到剪贴板
+   */
+  async copySecretToClipboard() {
+    if (!this._authSecret) {
+      console.warn('[BrowserControlModule] No auth secret to copy');
+      return;
+    }
+    
+    try {
+      await navigator.clipboard.writeText(this._authSecret);
+      
+      // 显示复制成功反馈
+      const copyBtn = this.elements.authSecretCopy;
+      if (copyBtn) {
+        copyBtn.classList.add('copied');
+        copyBtn.title = 'Copied!';
+        
+        // 2秒后恢复
+        setTimeout(() => {
+          copyBtn.classList.remove('copied');
+          copyBtn.title = 'Copy to clipboard';
+        }, 2000);
+      }
+      
+      console.log('[BrowserControlModule] Auth secret copied to clipboard');
+    } catch (error) {
+      console.error('[BrowserControlModule] Failed to copy auth secret:', error);
+      // 尝试使用旧的 execCommand 方式
+      try {
+        const input = this.elements.authSecretInput;
+        if (input) {
+          const originalType = input.type;
+          const originalValue = input.value;
+          
+          input.type = 'text';
+          input.value = this._authSecret;
+          input.select();
+          document.execCommand('copy');
+          
+          input.type = originalType;
+          input.value = originalValue;
+        }
+      } catch (e) {
+        console.error('[BrowserControlModule] Fallback copy also failed:', e);
+      }
+    }
+  }
+
   // ============ 对外 API ============
 
   /**
@@ -398,6 +591,9 @@ class BrowserControlModule {
     
     // 获取扩展连接数
     await this.refreshExtensionConnections();
+    
+    // 获取认证密钥信息
+    await this.fetchAuthSecret();
     
     return status;
   }
