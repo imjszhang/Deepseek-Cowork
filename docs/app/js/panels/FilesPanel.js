@@ -23,6 +23,10 @@ class FilesPanel {
     this.selectedItem = null;
     this.contextMenuTarget = null;
     
+    // 目录树展开状态
+    this.expandedDirs = new Set();       // 已展开的目录路径集合
+    this.childrenCache = new Map();       // 子目录内容缓存 Map<dirPath, Array<item>>
+    
     // DOM 元素
     this.elements = {};
     
@@ -86,6 +90,10 @@ class FilesPanel {
     
     // 重置路径历史
     this.pathHistory = [];
+    
+    // 重置目录展开状态
+    this.expandedDirs.clear();
+    this.childrenCache.clear();
     
     // 获取工作区根目录
     try {
@@ -401,7 +409,8 @@ class FilesPanel {
   }
 
   /**
-   * 渲染面包屑导航（紧凑模式）
+   * 渲染面包屑导航（简洁三段式）
+   * 结构：[~] / [上一级目录] / [当前目录]
    * @param {string} relativePath 相对于工作目录的路径
    */
   renderBreadcrumb(relativePath) {
@@ -412,112 +421,94 @@ class FilesPanel {
     
     const t = typeof I18nManager !== 'undefined' ? I18nManager.t.bind(I18nManager) : (k) => k;
     
-    // 清空容器，确保没有残留内容
+    // 清空容器
     this.elements.filesBreadcrumb.innerHTML = '';
     
-    // 改进根目录判断逻辑
-    // 检查 relativePath 是否为空、点号、或只包含空白字符
-    // 同时检查 currentPath 是否等于 workspaceRoot
+    // 解析路径段
     const normalizedRelativePath = (relativePath || '').trim();
-    const isEmptyRelativePath = !normalizedRelativePath || 
-                                normalizedRelativePath === '.' || 
-                                normalizedRelativePath === '';
-    const isAtRootPath = this.currentPath === this.workspaceRoot || 
-                        !this.currentPath ||
-                        (this.workspaceRoot && this.currentPath === this.workspaceRoot);
-    
-    // 综合判断：如果相对路径为空且在根目录，则认为是根目录
-    const isAtRoot = isEmptyRelativePath && (isAtRootPath || !this.currentPath || this.currentPath === this.workspaceRoot);
+    const segments = normalizedRelativePath.split(/[\/\\]/).filter(s => s && s.trim());
+    const isAtRoot = segments.length === 0;
     
     console.log('[FilesPanel] renderBreadcrumb:', {
       relativePath,
-      normalizedRelativePath,
-      currentPath: this.currentPath,
-      workspaceRoot: this.workspaceRoot,
+      segments,
       isAtRoot,
-      isEmptyRelativePath,
-      isAtRootPath
+      currentPath: this.currentPath,
+      workspaceRoot: this.workspaceRoot
     });
     
-    // 1. 返回上级按钮（非根目录时显示）
-    // 如果不在根目录，或者有相对路径且不为空，则显示返回按钮
-    if (!isAtRoot && this.currentPath && this.workspaceRoot && this.currentPath !== this.workspaceRoot) {
-      const backBtn = document.createElement('button');
-      backBtn.className = 'breadcrumb-back-btn';
-      backBtn.title = t('files.goUp') || 'Go to parent folder';
-      backBtn.setAttribute('aria-label', t('files.goUp') || 'Go to parent folder');
-      backBtn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>';
-      
-      // 绑定点击事件，添加错误处理
-      backBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        console.log('[FilesPanel] Back button clicked, navigating up from:', this.currentPath);
-        try {
-          this.navigateUp();
-        } catch (error) {
-          console.error('[FilesPanel] Error navigating up:', error);
-          this.showError(error.message);
-        }
-      });
-      
-      this.elements.filesBreadcrumb.appendChild(backBtn);
-      console.log('[FilesPanel] Back button created and added to breadcrumb');
-    } else {
-      console.log('[FilesPanel] At root directory, skipping back button');
-    }
+    // 1. 根目录按钮（始终显示）
+    const rootBtn = document.createElement('button');
+    rootBtn.className = 'breadcrumb-item breadcrumb-root';
+    rootBtn.title = this.workspaceRoot || t('common.workDir') || 'Working Directory';
+    rootBtn.textContent = '~';
     
-    // 2. 当前目录显示
-    const currentDir = document.createElement('div');
-    currentDir.className = 'breadcrumb-current-dir';
-    
-    // 文件夹图标
-    const dirIcon = document.createElement('span');
-    dirIcon.className = 'breadcrumb-dir-icon';
-    dirIcon.textContent = '📁';
-    currentDir.appendChild(dirIcon);
-    
-    // 目录名
-    const dirName = document.createElement('span');
-    dirName.className = 'breadcrumb-dir-name';
-    
-    if (isAtRoot) {
-      dirName.textContent = t('common.workDir') || 'Working Directory';
-    } else {
-      // 获取最后一个目录名
-      const segments = normalizedRelativePath.split(/[\/\\]/).filter(s => s && s.trim());
-      if (segments.length > 0) {
-        dirName.textContent = segments[segments.length - 1];
-      } else if (this.currentPath && this.workspaceRoot) {
-        // 如果无法从相对路径获取，尝试从绝对路径提取
-        const pathDiff = this.currentPath.replace(this.workspaceRoot, '').replace(/^[\/\\]+/, '');
-        const pathSegments = pathDiff.split(/[\/\\]/).filter(s => s && s.trim());
-        dirName.textContent = pathSegments.length > 0 ? pathSegments[pathSegments.length - 1] : (t('common.workDir') || 'Working Directory');
-      } else {
-        dirName.textContent = normalizedRelativePath || (t('common.workDir') || 'Working Directory');
-      }
-    }
-    currentDir.appendChild(dirName);
-    
-    // 完整路径作为 tooltip
-    const fullPath = this.currentPath || this.workspaceRoot;
-    if (fullPath) {
-      currentDir.title = fullPath;
-    }
-    
-    // 点击返回根目录（如果不在根目录）
     if (!isAtRoot && this.workspaceRoot) {
-      currentDir.style.cursor = 'pointer';
-      currentDir.addEventListener('click', () => {
-        console.log('[FilesPanel] Current dir clicked, navigating to root:', this.workspaceRoot);
+      rootBtn.addEventListener('click', () => {
+        console.log('[FilesPanel] Root button clicked, navigating to:', this.workspaceRoot);
         this.navigateTo(this.workspaceRoot);
       });
     } else {
-      currentDir.style.cursor = 'default';
+      rootBtn.classList.add('breadcrumb-current');
+      rootBtn.style.cursor = 'default';
     }
     
-    this.elements.filesBreadcrumb.appendChild(currentDir);
-    console.log('[FilesPanel] Breadcrumb rendered successfully');
+    this.elements.filesBreadcrumb.appendChild(rootBtn);
+    
+    // 如果在根目录，直接返回
+    if (isAtRoot) {
+      console.log('[FilesPanel] At root, breadcrumb rendered');
+      return;
+    }
+    
+    // 2. 如果有上一级目录（二级及以上），显示上一级目录
+    if (segments.length >= 2) {
+      // 添加分隔符
+      const sep1 = document.createElement('span');
+      sep1.className = 'breadcrumb-separator';
+      sep1.textContent = '/';
+      this.elements.filesBreadcrumb.appendChild(sep1);
+      
+      // 上一级目录按钮
+      const parentName = segments[segments.length - 2];
+      const parentBtn = document.createElement('button');
+      parentBtn.className = 'breadcrumb-item';
+      
+      // 计算上一级目录的绝对路径
+      const separator = window.platform?.isWindows ? '\\' : '/';
+      const parentSegments = segments.slice(0, -1);
+      const parentPath = this.workspaceRoot + separator + parentSegments.join(separator);
+      
+      parentBtn.title = parentPath;
+      parentBtn.textContent = parentName;
+      parentBtn.addEventListener('click', () => {
+        console.log('[FilesPanel] Parent button clicked, navigating to:', parentPath);
+        this.navigateTo(parentPath);
+      });
+      
+      this.elements.filesBreadcrumb.appendChild(parentBtn);
+    }
+    
+    // 3. 当前目录（始终显示，不可点击）
+    // 添加分隔符
+    const sep2 = document.createElement('span');
+    sep2.className = 'breadcrumb-separator';
+    sep2.textContent = '/';
+    this.elements.filesBreadcrumb.appendChild(sep2);
+    
+    // 当前目录
+    const currentName = segments[segments.length - 1];
+    const currentBtn = document.createElement('span');
+    currentBtn.className = 'breadcrumb-item breadcrumb-current';
+    currentBtn.title = this.currentPath || '';
+    currentBtn.textContent = currentName;
+    
+    this.elements.filesBreadcrumb.appendChild(currentBtn);
+    
+    console.log('[FilesPanel] Breadcrumb rendered:', {
+      segments,
+      hasParent: segments.length >= 2
+    });
   }
   
   /**
@@ -612,36 +603,186 @@ class FilesPanel {
     this.elements.filesList.innerHTML = '';
     
     items.forEach(item => {
-      const fileItem = this.createFileItemElement(item);
+      const fileItem = this.createFileItemElement(item, 0);
       this.elements.filesList.appendChild(fileItem);
     });
   }
 
   /**
+   * 切换目录展开/收缩状态
+   * @param {string} dirPath 目录路径
+   * @param {HTMLElement} toggleElement 展开按钮元素
+   * @param {HTMLElement} fileItemElement 文件项元素
+   */
+  async toggleDirectory(dirPath, toggleElement, fileItemElement) {
+    console.log('[FilesPanel] toggleDirectory:', dirPath);
+    
+    if (this.expandedDirs.has(dirPath)) {
+      // 收缩目录
+      this.expandedDirs.delete(dirPath);
+      toggleElement.classList.remove('expanded');
+      fileItemElement.classList.remove('expanded');
+      
+      // 移除子目录容器
+      const childrenContainer = fileItemElement.nextElementSibling;
+      if (childrenContainer && childrenContainer.classList.contains('folder-children')) {
+        childrenContainer.remove();
+      }
+    } else {
+      // 展开目录
+      this.expandedDirs.add(dirPath);
+      toggleElement.classList.add('expanded');
+      fileItemElement.classList.add('expanded');
+      
+      // 加载并渲染子目录
+      const level = parseInt(fileItemElement.dataset.level || '0', 10);
+      await this.loadAndRenderChildren(dirPath, fileItemElement, level + 1);
+    }
+  }
+
+  /**
+   * 加载目录子项
+   * @param {string} dirPath 目录路径
+   * @returns {Promise<Array>} 子项列表
+   */
+  async loadChildren(dirPath) {
+    // 检查缓存
+    if (this.childrenCache.has(dirPath)) {
+      console.log('[FilesPanel] loadChildren from cache:', dirPath);
+      return this.childrenCache.get(dirPath);
+    }
+    
+    console.log('[FilesPanel] loadChildren from API:', dirPath);
+    
+    try {
+      const result = await window.browserControlManager.listDirectory(dirPath);
+      
+      if (result?.success && result.items) {
+        // 缓存结果
+        this.childrenCache.set(dirPath, result.items);
+        return result.items;
+      }
+      
+      return [];
+    } catch (error) {
+      console.error('[FilesPanel] Failed to load children:', error);
+      return [];
+    }
+  }
+
+  /**
+   * 加载并渲染子目录内容
+   * @param {string} dirPath 父目录路径
+   * @param {HTMLElement} parentElement 父元素
+   * @param {number} level 层级深度
+   */
+  async loadAndRenderChildren(dirPath, parentElement, level) {
+    // 显示加载状态
+    const loadingContainer = document.createElement('div');
+    loadingContainer.className = 'folder-children folder-children-loading';
+    loadingContainer.innerHTML = '<div class="loading-spinner-small"></div>';
+    parentElement.after(loadingContainer);
+    
+    try {
+      const children = await this.loadChildren(dirPath);
+      
+      // 移除加载状态
+      loadingContainer.remove();
+      
+      if (children.length === 0) {
+        // 空目录提示
+        const emptyContainer = document.createElement('div');
+        emptyContainer.className = 'folder-children folder-children-empty';
+        emptyContainer.style.paddingLeft = `${level * 16 + 24}px`;
+        emptyContainer.innerHTML = '<span class="empty-folder-hint">（空）</span>';
+        parentElement.after(emptyContainer);
+        return;
+      }
+      
+      // 渲染子目录内容
+      const childrenContainer = document.createElement('div');
+      childrenContainer.className = 'folder-children';
+      childrenContainer.dataset.parentPath = dirPath;
+      
+      children.forEach(item => {
+        const childElement = this.createFileItemElement(item, level);
+        childrenContainer.appendChild(childElement);
+      });
+      
+      parentElement.after(childrenContainer);
+      
+    } catch (error) {
+      loadingContainer.remove();
+      console.error('[FilesPanel] Failed to render children:', error);
+    }
+  }
+
+  /**
    * 创建文件项 DOM 元素 - VS Code 紧凑风格
    * @param {Object} item 文件信息
+   * @param {number} level 层级深度（默认为0）
    * @returns {HTMLElement} 文件项元素
    */
-  createFileItemElement(item) {
+  createFileItemElement(item, level = 0) {
     const div = document.createElement('div');
     div.className = `file-item ${item.isDirectory ? 'folder' : 'file'}`;
     div.dataset.path = item.path;
     div.dataset.name = item.name;
     div.dataset.isDirectory = item.isDirectory;
+    div.dataset.level = level;
+    
+    // 计算缩进（每层 16px）
+    const indent = level * 16;
     
     // 获取图标
     const icon = this.getFileIcon(item);
     
-    // VS Code 紧凑风格：只显示图标和文件名，操作通过右键菜单
-    div.innerHTML = `
-      <div class="file-icon">${icon}</div>
-      <div class="file-info">
-        <div class="file-name" title="${this.escapeHtml(item.name)}">${this.escapeHtml(item.name)}</div>
-      </div>
-    `;
+    // 检查目录是否已展开
+    const isExpanded = item.isDirectory && this.expandedDirs.has(item.path);
+    
+    // VS Code 紧凑风格：展开箭头 + 图标 + 文件名
+    if (item.isDirectory) {
+      div.innerHTML = `
+        <div class="folder-toggle${isExpanded ? ' expanded' : ''}" style="margin-left: ${indent}px;">
+          <svg viewBox="0 0 24 24" width="16" height="16">
+            <path d="M9 18l6-6-6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div class="file-icon">${icon}</div>
+        <div class="file-info">
+          <div class="file-name" title="${this.escapeHtml(item.name)}">${this.escapeHtml(item.name)}</div>
+        </div>
+      `;
+      
+      if (isExpanded) {
+        div.classList.add('expanded');
+      }
+      
+      // 绑定展开/收缩按钮事件
+      const toggleBtn = div.querySelector('.folder-toggle');
+      toggleBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        this.toggleDirectory(item.path, toggleBtn, div);
+      });
+    } else {
+      // 文件项：添加与展开箭头相同宽度的占位符以保持对齐
+      div.innerHTML = `
+        <div class="folder-toggle-placeholder" style="margin-left: ${indent}px;"></div>
+        <div class="file-icon">${icon}</div>
+        <div class="file-info">
+          <div class="file-name" title="${this.escapeHtml(item.name)}">${this.escapeHtml(item.name)}</div>
+        </div>
+      `;
+    }
     
     // 绑定事件（操作通过右键菜单触发）
-    div.addEventListener('click', (e) => this.handleFileClick(e, item));
+    div.addEventListener('click', (e) => {
+      // 如果点击的是展开按钮，不触发选中
+      if (!e.target.closest('.folder-toggle')) {
+        this.handleFileClick(e, item);
+      }
+    });
     div.addEventListener('dblclick', (e) => this.handleFileDoubleClick(e, item));
     div.addEventListener('contextmenu', (e) => this.handleFileContextMenu(e, item));
     
