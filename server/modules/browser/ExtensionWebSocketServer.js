@@ -23,9 +23,14 @@ class ExtensionWebSocketServer {
         this.eventEmitter = null;
         this.server = null;
         this.activeConnections = new Map();
-        this.pendingResponses = new Map();
+        this.pendingResponses = new Map();  // Map<requestId, { socket, timeoutId, createdAt, operationType }>
         this.isShuttingDown = false;  // 关闭标志，防止关闭过程中写入数据库
         this.securityConfig = null;   // 安全配置
+        
+        // 请求超时配置
+        this.requestTimeout = options.requestTimeout || 60000;  // 默认 60 秒超时
+        this.pendingCleanupInterval = null;
+        this.pendingCleanupIntervalMs = options.pendingCleanupInterval || 30000;  // 30秒清理一次
         
         // 安全模块
         this.authManager = null;      // 认证管理器
@@ -35,6 +40,148 @@ class ExtensionWebSocketServer {
         // 认证相关
         this.pendingAuth = new Map(); // 等待认证的连接：Map<socketId, { socket, request, challenge, timeout }>
         this.authenticatedSockets = new Map(); // 已认证的连接：Map<socketId, { sessionId, clientId, clientType }>
+        
+        // 请求去重：Map<dedupeKey, { requestId, createdAt }>
+        // dedupeKey 格式: "operationType:param1:param2"
+        this.activeRequests = new Map();
+        this.dedupeWindowMs = options.dedupeWindowMs || 5000;  // 5秒内的重复请求会被去重
+    }
+
+    /**
+     * 生成去重 key
+     * @param {string} operationType 操作类型
+     * @param {Object} params 参数
+     * @returns {string} 去重 key
+     */
+    generateDedupeKey(operationType, params) {
+        switch (operationType) {
+            case 'open_url':
+                // URL + tabId 组合去重
+                return `open_url:${params.url}:${params.tabId || 'new'}`;
+            case 'close_tab':
+                return `close_tab:${params.tabId}`;
+            case 'execute_script':
+                // tabId + 代码哈希去重
+                const codeHash = this.simpleHash(params.code || '');
+                return `execute_script:${params.tabId}:${codeHash}`;
+            case 'get_html':
+                return `get_html:${params.tabId}`;
+            case 'get_cookies':
+                return `get_cookies:${params.tabId}`;
+            default:
+                return null;  // 不支持去重的操作
+        }
+    }
+
+    /**
+     * 简单字符串哈希
+     * @param {string} str 字符串
+     * @returns {string} 哈希值
+     */
+    simpleHash(str) {
+        let hash = 0;
+        for (let i = 0; i < str.length; i++) {
+            const char = str.charCodeAt(i);
+            hash = ((hash << 5) - hash) + char;
+            hash = hash & hash;  // Convert to 32bit integer
+        }
+        return hash.toString(16);
+    }
+
+    /**
+     * 检查是否为重复请求
+     * @param {string} operationType 操作类型
+     * @param {Object} params 参数
+     * @returns {Object} { isDuplicate: boolean, existingRequestId?: string }
+     */
+    checkDuplicateRequest(operationType, params) {
+        const dedupeKey = this.generateDedupeKey(operationType, params);
+        
+        if (!dedupeKey) {
+            return { isDuplicate: false };
+        }
+        
+        const existing = this.activeRequests.get(dedupeKey);
+        
+        if (existing) {
+            const elapsed = Date.now() - existing.createdAt;
+            
+            // 如果在去重窗口内
+            if (elapsed < this.dedupeWindowMs) {
+                Logger.info(`[Dedup] Duplicate request detected: ${dedupeKey} (existing: ${existing.requestId})`);
+                return {
+                    isDuplicate: true,
+                    existingRequestId: existing.requestId,
+                    elapsed
+                };
+            }
+            
+            // 过期了，删除旧记录
+            this.activeRequests.delete(dedupeKey);
+        }
+        
+        return { isDuplicate: false };
+    }
+
+    /**
+     * 注册活动请求（用于去重）
+     * @param {string} operationType 操作类型
+     * @param {Object} params 参数
+     * @param {string} requestId 请求 ID
+     */
+    registerActiveRequest(operationType, params, requestId) {
+        const dedupeKey = this.generateDedupeKey(operationType, params);
+        
+        if (dedupeKey) {
+            this.activeRequests.set(dedupeKey, {
+                requestId,
+                createdAt: Date.now(),
+                operationType
+            });
+        }
+    }
+
+    /**
+     * 清除活动请求（请求完成后调用）
+     * @param {string} operationType 操作类型
+     * @param {Object} params 参数
+     */
+    clearActiveRequest(operationType, params) {
+        const dedupeKey = this.generateDedupeKey(operationType, params);
+        
+        if (dedupeKey) {
+            this.activeRequests.delete(dedupeKey);
+        }
+    }
+
+    /**
+     * 清理过期的活动请求记录
+     */
+    cleanupActiveRequests() {
+        const now = Date.now();
+        let cleanedCount = 0;
+        
+        for (const [key, info] of this.activeRequests) {
+            if (now - info.createdAt > this.dedupeWindowMs * 2) {
+                this.activeRequests.delete(key);
+                cleanedCount++;
+            }
+        }
+        
+        if (cleanedCount > 0) {
+            Logger.debug(`[Dedup] Cleaned ${cleanedCount} expired active requests`);
+        }
+        
+        return cleanedCount;
+    }
+
+    /**
+     * 设置请求超时时间
+     * @param {number} timeout 超时时间（毫秒）
+     */
+    setRequestTimeout(timeout) {
+        this.requestTimeout = timeout;
+        Logger.info(`Request timeout set to ${timeout}ms`);
     }
 
     /**
@@ -202,6 +349,145 @@ class ExtensionWebSocketServer {
 
         // 定期清理断开的连接
         setInterval(() => this.cleanupDisconnectedClients(), 30000);
+        
+        // 定期清理超时的 pendingResponses
+        this.pendingCleanupInterval = setInterval(() => {
+            this.cleanupPendingResponses();
+        }, this.pendingCleanupIntervalMs);
+        
+        Logger.info(`PendingResponses cleanup started (interval: ${this.pendingCleanupIntervalMs}ms)`);
+    }
+
+    /**
+     * 清理超时的 pendingResponses
+     * @returns {number} 清理数量
+     */
+    cleanupPendingResponses() {
+        const now = Date.now();
+        let cleanedCount = 0;
+        
+        for (const [requestId, info] of this.pendingResponses) {
+            const elapsed = now - info.createdAt;
+            
+            // 如果超过 2 倍超时时间还在 pending，说明有问题，强制清理
+            if (elapsed > this.requestTimeout * 2) {
+                // 清除超时定时器
+                if (info.timeoutId) {
+                    clearTimeout(info.timeoutId);
+                }
+                
+                this.pendingResponses.delete(requestId);
+                cleanedCount++;
+                
+                Logger.warn(`Force cleaned stale pendingResponse: ${requestId} (age: ${elapsed}ms)`);
+            }
+        }
+        
+        // 同时清理 activeRequests
+        const activeCleanedCount = this.cleanupActiveRequests();
+        
+        if (cleanedCount > 0) {
+            Logger.info(`Cleaned ${cleanedCount} stale pendingResponses, ${activeCleanedCount} active requests`);
+        }
+        
+        return cleanedCount;
+    }
+
+    /**
+     * 注册 pending response 并设置超时
+     * @param {string} requestId 请求 ID
+     * @param {WebSocket} socket WebSocket 连接
+     * @param {string} operationType 操作类型
+     * @param {number} customTimeout 自定义超时时间（可选）
+     */
+    registerPendingResponse(requestId, socket, operationType, customTimeout = null) {
+        const timeout = customTimeout || this.requestTimeout;
+        
+        const timeoutId = setTimeout(() => {
+            this.handleRequestTimeout(requestId, operationType);
+        }, timeout);
+        
+        this.pendingResponses.set(requestId, {
+            socket,
+            timeoutId,
+            createdAt: Date.now(),
+            operationType,
+            timeout
+        });
+        
+        Logger.debug(`Registered pending response: ${requestId} (op: ${operationType}, timeout: ${timeout}ms)`);
+    }
+
+    /**
+     * 清除 pending response（请求完成或失败时调用）
+     * @param {string} requestId 请求 ID
+     */
+    clearPendingResponse(requestId) {
+        const info = this.pendingResponses.get(requestId);
+        if (info) {
+            if (info.timeoutId) {
+                clearTimeout(info.timeoutId);
+            }
+            this.pendingResponses.delete(requestId);
+            Logger.debug(`Cleared pending response: ${requestId}`);
+        }
+    }
+
+    /**
+     * 处理请求超时
+     * @param {string} requestId 请求 ID
+     * @param {string} operationType 操作类型
+     */
+    async handleRequestTimeout(requestId, operationType) {
+        const info = this.pendingResponses.get(requestId);
+        if (!info) {
+            return;  // 已经被处理过了
+        }
+        
+        Logger.warn(`Request timeout: ${requestId} (operation: ${operationType}, waited: ${info.timeout}ms)`);
+        
+        // 清理 pending response
+        this.pendingResponses.delete(requestId);
+        
+        // 通知 CallbackManager 写入超时响应
+        if (this.callbackManager) {
+            await this.callbackManager.postToCallback(requestId, {
+                status: 'error',
+                type: `${operationType}_timeout`,
+                requestId,
+                message: `Request timed out after ${info.timeout}ms`,
+                operationType,
+                timestamp: new Date().toISOString()
+            });
+        }
+        
+        // 向等待的客户端发送超时响应
+        if (info.socket && info.socket.readyState === WebSocket.OPEN) {
+            this.sendToAutomationClient(info.socket, {
+                type: `${operationType}_response`,
+                requestId,
+                status: 'error',
+                message: `Request timed out after ${info.timeout}ms`
+            });
+        }
+    }
+
+    /**
+     * 获取 pending responses 统计
+     * @returns {Object} 统计信息
+     */
+    getPendingStats() {
+        const stats = {
+            total: this.pendingResponses.size,
+            byType: {}
+        };
+        
+        for (const [, info] of this.pendingResponses) {
+            const type = info.operationType || 'unknown';
+            stats.byType[type] = (stats.byType[type] || 0) + 1;
+        }
+        
+        return stats;
     }
 
     /**
@@ -737,11 +1023,32 @@ class ExtensionWebSocketServer {
                 throw new Error("缺少'url'参数");
             }
 
-            if (this.callbackManager) {
-                await this.callbackManager.registerCallback(requestId, '_internal');
+            // 检查重复请求
+            const dedupeCheck = this.checkDuplicateRequest('open_url', { url, tabId });
+            if (dedupeCheck.isDuplicate) {
+                Logger.info(`[Dedup] Returning existing request for open_url: ${dedupeCheck.existingRequestId}`);
+                this.sendToAutomationClient(socket, {
+                    type: 'open_url_response',
+                    requestId: data.requestId,
+                    status: 'pending',
+                    message: '相同请求正在处理中',
+                    existingRequestId: dedupeCheck.existingRequestId,
+                    deduplicated: true
+                });
+                return;
             }
 
-            this.pendingResponses.set(requestId, socket);
+            if (this.callbackManager) {
+                await this.callbackManager.registerCallback(requestId, '_internal', {
+                    operationType: 'open_url'
+                });
+            }
+
+            // 注册活动请求（用于去重）
+            this.registerActiveRequest('open_url', { url, tabId }, requestId);
+
+            // 注册 pending response 并设置超时
+            this.registerPendingResponse(requestId, socket, 'open_url');
 
             const result = await this.sendToExtensions({
                 type: 'open_url',
@@ -752,7 +1059,8 @@ class ExtensionWebSocketServer {
             });
 
             if (result.status === 'error') {
-                this.pendingResponses.delete(requestId);
+                this.clearPendingResponse(requestId);
+                this.clearActiveRequest('open_url', { url, tabId });
                 throw new Error(result.message);
             }
         } catch (error) {
@@ -777,10 +1085,12 @@ class ExtensionWebSocketServer {
             }
 
             if (this.callbackManager) {
-                await this.callbackManager.registerCallback(requestId, '_internal');
+                await this.callbackManager.registerCallback(requestId, '_internal', {
+                    operationType: 'close_tab'
+                });
             }
 
-            this.pendingResponses.set(requestId, socket);
+            this.registerPendingResponse(requestId, socket, 'close_tab');
 
             const result = await this.sendToExtensions({
                 type: 'close_tab',
@@ -789,7 +1099,7 @@ class ExtensionWebSocketServer {
             });
 
             if (result.status === 'error') {
-                this.pendingResponses.delete(requestId);
+                this.clearPendingResponse(requestId);
                 throw new Error(result.message);
             }
         } catch (error) {
@@ -814,10 +1124,12 @@ class ExtensionWebSocketServer {
             }
 
             if (this.callbackManager) {
-                await this.callbackManager.registerCallback(requestId, '_internal');
+                await this.callbackManager.registerCallback(requestId, '_internal', {
+                    operationType: 'get_html'
+                });
             }
 
-            this.pendingResponses.set(requestId, socket);
+            this.registerPendingResponse(requestId, socket, 'get_html');
 
             const result = await this.sendToExtensions({
                 type: 'get_html',
@@ -826,7 +1138,7 @@ class ExtensionWebSocketServer {
             });
 
             if (result.status === 'error') {
-                this.pendingResponses.delete(requestId);
+                this.clearPendingResponse(requestId);
                 throw new Error(result.message);
             }
 
@@ -854,11 +1166,31 @@ class ExtensionWebSocketServer {
                 throw new Error("缺少'tabId'或'code'参数");
             }
 
-            if (this.callbackManager) {
-                await this.callbackManager.registerCallback(requestId, '_internal');
+            // 检查重复请求
+            const dedupeCheck = this.checkDuplicateRequest('execute_script', { tabId, code });
+            if (dedupeCheck.isDuplicate) {
+                Logger.info(`[Dedup] Returning existing request for execute_script: ${dedupeCheck.existingRequestId}`);
+                this.sendToAutomationClient(socket, {
+                    type: 'execute_script_response',
+                    requestId: data.requestId,
+                    status: 'pending',
+                    message: '相同脚本正在执行中',
+                    existingRequestId: dedupeCheck.existingRequestId,
+                    deduplicated: true
+                });
+                return;
             }
 
-            this.pendingResponses.set(requestId, socket);
+            if (this.callbackManager) {
+                await this.callbackManager.registerCallback(requestId, '_internal', {
+                    operationType: 'execute_script'
+                });
+            }
+
+            // 注册活动请求（用于去重）
+            this.registerActiveRequest('execute_script', { tabId, code }, requestId);
+
+            this.registerPendingResponse(requestId, socket, 'execute_script');
 
             const result = await this.sendToExtensions({
                 type: 'execute_script',
@@ -868,7 +1200,8 @@ class ExtensionWebSocketServer {
             });
 
             if (result.status === 'error') {
-                this.pendingResponses.delete(requestId);
+                this.clearPendingResponse(requestId);
+                this.clearActiveRequest('execute_script', { tabId, code });
                 throw new Error(result.message);
             }
         } catch (error) {
@@ -893,10 +1226,12 @@ class ExtensionWebSocketServer {
             }
 
             if (this.callbackManager) {
-                await this.callbackManager.registerCallback(requestId, '_internal');
+                await this.callbackManager.registerCallback(requestId, '_internal', {
+                    operationType: 'inject_css'
+                });
             }
 
-            this.pendingResponses.set(requestId, socket);
+            this.registerPendingResponse(requestId, socket, 'inject_css');
 
             const result = await this.sendToExtensions({
                 type: 'inject_css',
@@ -906,7 +1241,7 @@ class ExtensionWebSocketServer {
             });
 
             if (result.status === 'error') {
-                this.pendingResponses.delete(requestId);
+                this.clearPendingResponse(requestId);
                 throw new Error(result.message);
             }
         } catch (error) {
@@ -931,10 +1266,12 @@ class ExtensionWebSocketServer {
             }
 
             if (this.callbackManager) {
-                await this.callbackManager.registerCallback(requestId, '_internal');
+                await this.callbackManager.registerCallback(requestId, '_internal', {
+                    operationType: 'get_cookies'
+                });
             }
 
-            this.pendingResponses.set(requestId, socket);
+            this.registerPendingResponse(requestId, socket, 'get_cookies');
 
             const result = await this.sendToExtensions({
                 type: 'get_cookies',
@@ -943,7 +1280,7 @@ class ExtensionWebSocketServer {
             });
 
             if (result.status === 'error') {
-                this.pendingResponses.delete(requestId);
+                this.clearPendingResponse(requestId);
                 throw new Error(result.message);
             }
         } catch (error) {
@@ -1167,6 +1504,11 @@ class ExtensionWebSocketServer {
                 const errorMessage = data.message || 'Unknown error';
                 Logger.error(`Received error message from extension ${clientId}: ${errorMessage}`);
                 
+                // 清除 pending response 超时
+                if (requestId) {
+                    this.clearPendingResponse(requestId);
+                }
+                
                 if (requestId && this.callbackManager) {
                     await this.callbackManager.postToCallback(requestId, {
                         status: 'error',
@@ -1244,6 +1586,11 @@ class ExtensionWebSocketServer {
             // 根据消息类型处理和转发
             switch (data.type) {
                 case 'open_url_complete':
+                    // 清除 pending response 超时
+                    this.clearPendingResponse(requestId);
+                    // 清除活动请求（去重）
+                    this.clearActiveRequest('open_url', { url: data.url, tabId: data.originalTabId });
+                    
                     if (data.cookies && this.tabsManager) {
                         await this.tabsManager.saveCookies(data.tabId, data.cookies);
                     }
@@ -1284,6 +1631,9 @@ class ExtensionWebSocketServer {
                     break;
 
                 case 'close_tab_complete':
+                    // 清除 pending response 超时
+                    this.clearPendingResponse(requestId);
+                    
                     if (this.callbackManager) {
                         await this.callbackManager.postToCallback(requestId, {
                             status: 'success',
@@ -1307,6 +1657,9 @@ class ExtensionWebSocketServer {
                     break;
 
                 case 'tab_html_complete':
+                    // 清除 pending response 超时
+                    this.clearPendingResponse(requestId);
+                    
                     if (this.tabsManager) {
                         await this.tabsManager.handleTabHtmlComplete(data, requestId);
                     }
@@ -1327,6 +1680,11 @@ class ExtensionWebSocketServer {
                     break;
 
                 case 'execute_script_complete':
+                    // 清除 pending response 超时
+                    this.clearPendingResponse(requestId);
+                    // 清除活动请求（去重）- 注意：这里没有原始的 code，所以只清理 tabId 相关的
+                    // 实际上脚本执行完成后，activeRequests 会因为超时自动清理
+                    
                     if (this.callbackManager) {
                         await this.callbackManager.postToCallback(requestId, {
                             status: 'success',
@@ -1353,6 +1711,9 @@ class ExtensionWebSocketServer {
                     break;
 
                 case 'inject_css_complete':
+                    // 清除 pending response 超时
+                    this.clearPendingResponse(requestId);
+                    
                     if (this.callbackManager) {
                         await this.callbackManager.postToCallback(requestId, {
                             status: 'success',
@@ -1376,6 +1737,9 @@ class ExtensionWebSocketServer {
                     break;
 
                 case 'get_cookies_complete':
+                    // 清除 pending response 超时
+                    this.clearPendingResponse(requestId);
+                    
                     Logger.info(`Received get_cookies_complete message: tabId=${data.tabId}, cookies count=${data.cookies ? data.cookies.length : 0}`);
                     
                     let cookieAnalysis = null;
@@ -1407,6 +1771,9 @@ class ExtensionWebSocketServer {
                     break;
 
                 case 'upload_file_to_tab_complete':
+                    // 清除 pending response 超时
+                    this.clearPendingResponse(requestId);
+                    
                     Logger.info(`Received upload_file_to_tab_complete message: tabId=${data.tabId}, uploaded files=${data.uploadedFiles ? data.uploadedFiles.length : 0}`);
                     
                     if (this.callbackManager) {
@@ -1442,20 +1809,41 @@ class ExtensionWebSocketServer {
                     break;
             }
 
-            // 如果有WebSocket客户端等待回调，直接发送给他们
-            if (data.requestId && this.callbackManager) {
-                const callbackUrl = await this.callbackManager.getCallbackUrl(data.requestId);
-                if (callbackUrl === '_websocket_internal') {
-                    this.broadcastToAutomationClients({
-                        type: `${data.type.replace('_complete', '_response')}`,
-                        requestId: data.requestId,
-                        status: 'success',
-                        data: data
-                    });
-                }
+            // 向等待的 WebSocket 客户端推送响应
+            if (data.requestId) {
+                await this.pushResponseToWaitingClient(data.requestId, data);
             }
         } catch (err) {
             Logger.error(`Error handling extension message from ${clientId}: ${err.message}`);
+        }
+    }
+
+    /**
+     * 向等待响应的 WebSocket 客户端推送结果
+     * @param {string} requestId 请求 ID
+     * @param {Object} data 响应数据
+     */
+    async pushResponseToWaitingClient(requestId, data) {
+        // 检查是否有客户端在等待这个 requestId 的响应
+        // 注意：pendingResponses 在收到响应后已被清除，所以这里需要在清除前获取 socket
+        // 或者使用另一种机制来追踪等待的客户端
+        
+        // 检查 callbackUrl 是否指示需要 WebSocket 推送
+        if (this.callbackManager) {
+            const callbackUrl = await this.callbackManager.getCallbackUrl(requestId);
+            if (callbackUrl === '_internal' || callbackUrl === '_websocket_internal') {
+                // 向所有 automation 客户端广播结果
+                const responseType = data.type ? data.type.replace('_complete', '_response') : 'response';
+                this.broadcastToAutomationClients({
+                    type: responseType,
+                    requestId: requestId,
+                    status: data.status || 'success',
+                    data: data,
+                    timestamp: new Date().toISOString()
+                });
+                
+                Logger.debug(`Pushed response to automation clients: ${requestId} (${responseType})`);
+            }
         }
     }
 
@@ -1581,6 +1969,23 @@ class ExtensionWebSocketServer {
     stop() {
         // 设置关闭标志，防止 close 事件回调写入已关闭的数据库
         this.isShuttingDown = true;
+        
+        // 清理 pendingResponses 清理定时器
+        if (this.pendingCleanupInterval) {
+            clearInterval(this.pendingCleanupInterval);
+            this.pendingCleanupInterval = null;
+        }
+        
+        // 清理所有 pending responses 的超时定时器
+        for (const [requestId, info] of this.pendingResponses) {
+            if (info.timeoutId) {
+                clearTimeout(info.timeoutId);
+            }
+        }
+        this.pendingResponses.clear();
+        
+        // 清理 activeRequests
+        this.activeRequests.clear();
         
         if (this.server) {
             this.server.close();

@@ -30,7 +30,7 @@ const logger = require('./utils/logger');
 async function main() {
     try {
         // 1. 加载配置
-        logger.info('加载配置...');
+        logger.info('Loading config...');
         const config = setupConfig();
         
         // 2. 创建 Express 应用
@@ -46,15 +46,15 @@ async function main() {
         });
         
         // 4. 设置中间件
-        logger.info('设置中间件...');
+        logger.info('Setting up middlewares...');
         setupMiddlewares(app, config);
         
         // 5. 初始化服务
-        logger.info('初始化服务...');
+        logger.info('Initializing services...');
         initServices(config);
         
         // 6. 设置全局路由
-        logger.info('设置路由...');
+        logger.info('Setting up routes...');
         setupRoutes(app, config, io);
         
         // 7. 设置关闭处理器
@@ -65,27 +65,27 @@ async function main() {
         const HOST = config.server.host || 'localhost';
         
         httpServer.listen(PORT, HOST, async () => {
-            logger.info(`DeepSeek Cowork Server 已启动`);
-            logger.info(`访问地址: ${config.server.baseUrl}`);
+            logger.info(`DeepSeek Cowork Server started`);
+            logger.info(`Access URL: ${config.server.baseUrl}`);
             
             // 9. 启动所有服务
             await bootstrapServices({ app, io, http: httpServer, config, PORT });
             
-            logger.info('所有服务已启动完成');
+            logger.info('All services started successfully');
         });
         
         // 处理服务器错误
         httpServer.on('error', (error) => {
             if (error.code === 'EADDRINUSE') {
-                logger.error(`端口 ${PORT} 已被占用，请检查或更换端口`);
+                logger.error(`Port ${PORT} is in use, please check or change the port`);
             } else {
-                logger.error('服务器错误:', error);
+                logger.error('Server error:', error);
             }
             process.exit(1);
         });
         
     } catch (error) {
-        logger.error('服务器启动失败:', error);
+        logger.error('Server startup failed:', error);
         process.exit(1);
     }
 }

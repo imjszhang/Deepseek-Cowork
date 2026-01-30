@@ -200,19 +200,24 @@ class Database {
         FOREIGN KEY (tab_id) REFERENCES html_content (tab_id) ON DELETE CASCADE
       )`,
 
-      // Create callbacks table
+      // Create callbacks table (with lifecycle management)
       `CREATE TABLE IF NOT EXISTS callbacks (
         request_id TEXT PRIMARY KEY,
         callback_url TEXT NOT NULL,
+        status TEXT DEFAULT 'pending',
+        operation_type TEXT,
+        ttl_ms INTEGER DEFAULT 60000,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        expires_at TIMESTAMP DEFAULT (DATETIME(CURRENT_TIMESTAMP, '+1 hour'))
+        expires_at TIMESTAMP DEFAULT (DATETIME(CURRENT_TIMESTAMP, '+1 hour')),
+        CONSTRAINT valid_status CHECK (status IN ('pending', 'processing', 'completed', 'timeout', 'error'))
       )`,
 
-      // Create callback responses table
+      // Create callback responses table (with lifecycle management)
       `CREATE TABLE IF NOT EXISTS callback_responses (
         request_id TEXT PRIMARY KEY,
         response_data TEXT,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        expires_at TIMESTAMP DEFAULT (DATETIME(CURRENT_TIMESTAMP, '+5 minutes'))
       )`,
 
       // Create WebSocket clients table
@@ -247,6 +252,9 @@ class Database {
       `CREATE INDEX IF NOT EXISTS idx_tabs_window ON tabs(window_id)`,
       `CREATE INDEX IF NOT EXISTS idx_tabs_active ON tabs(is_active)`,
       `CREATE INDEX IF NOT EXISTS idx_callbacks_expires ON callbacks(expires_at)`,
+      `CREATE INDEX IF NOT EXISTS idx_callbacks_status ON callbacks(status)`,
+      `CREATE INDEX IF NOT EXISTS idx_callbacks_created ON callbacks(created_at)`,
+      `CREATE INDEX IF NOT EXISTS idx_callback_responses_expires ON callback_responses(expires_at)`,
       `CREATE INDEX IF NOT EXISTS idx_cookies_domain ON cookies(domain)`,
       `CREATE INDEX IF NOT EXISTS idx_cookies_name ON cookies(name)`,
       `CREATE INDEX IF NOT EXISTS idx_audit_timestamp ON audit_logs(timestamp)`,
@@ -589,10 +597,93 @@ class Database {
         }
       }
 
+      // Check and upgrade callbacks table schema
+      await this.upgradeCallbacksTable();
+
       Logger.info('Database table check completed');
     } catch (err) {
       Logger.error(`Error checking/creating missing tables: ${err.message}`);
       throw err;
+    }
+  }
+
+  /**
+   * Upgrade callbacks and callback_responses table schema
+   * @returns {Promise<void>}
+   */
+  async upgradeCallbacksTable() {
+    try {
+      // Check callbacks table columns
+      const callbacksInfo = this.db.exec("PRAGMA table_info('callbacks')");
+      const existingColumns = new Set();
+      
+      if (callbacksInfo.length > 0 && callbacksInfo[0].values) {
+        callbacksInfo[0].values.forEach(row => existingColumns.add(row[1]));
+      }
+
+      // Add missing columns to callbacks table
+      const callbacksNewColumns = [
+        { name: 'status', sql: `ALTER TABLE callbacks ADD COLUMN status TEXT DEFAULT 'pending'` },
+        { name: 'operation_type', sql: `ALTER TABLE callbacks ADD COLUMN operation_type TEXT` },
+        { name: 'ttl_ms', sql: `ALTER TABLE callbacks ADD COLUMN ttl_ms INTEGER DEFAULT 60000` }
+      ];
+
+      for (const col of callbacksNewColumns) {
+        if (!existingColumns.has(col.name)) {
+          try {
+            this.db.run(col.sql);
+            this.isDirty = true;
+            Logger.info(`Added column '${col.name}' to callbacks table`);
+          } catch (err) {
+            if (!err.message.includes('duplicate column')) {
+              Logger.warn(`Add column warning: ${err.message}`);
+            }
+          }
+        }
+      }
+
+      // Check callback_responses table columns
+      const responsesInfo = this.db.exec("PRAGMA table_info('callback_responses')");
+      const responseColumns = new Set();
+      
+      if (responsesInfo.length > 0 && responsesInfo[0].values) {
+        responsesInfo[0].values.forEach(row => responseColumns.add(row[1]));
+      }
+
+      // Add expires_at column to callback_responses if missing
+      if (!responseColumns.has('expires_at')) {
+        try {
+          this.db.run(`ALTER TABLE callback_responses ADD COLUMN expires_at TIMESTAMP DEFAULT (DATETIME(CURRENT_TIMESTAMP, '+5 minutes'))`);
+          this.isDirty = true;
+          Logger.info(`Added column 'expires_at' to callback_responses table`);
+        } catch (err) {
+          if (!err.message.includes('duplicate column')) {
+            Logger.warn(`Add column warning: ${err.message}`);
+          }
+        }
+      }
+
+      // Create new indexes if not exist
+      const indexQueries = [
+        `CREATE INDEX IF NOT EXISTS idx_callbacks_status ON callbacks(status)`,
+        `CREATE INDEX IF NOT EXISTS idx_callbacks_created ON callbacks(created_at)`,
+        `CREATE INDEX IF NOT EXISTS idx_callback_responses_expires ON callback_responses(expires_at)`
+      ];
+
+      for (const query of indexQueries) {
+        try {
+          this.db.run(query);
+        } catch (err) {
+          if (!err.message.includes('already exists')) {
+            Logger.warn(`Index creation warning: ${err.message}`);
+          }
+        }
+      }
+
+      Logger.info('Callbacks table schema upgrade completed');
+    } catch (err) {
+      Logger.error(`Callbacks table upgrade error: ${err.message}`);
+      // Don't throw - this is not fatal
     }
   }
 

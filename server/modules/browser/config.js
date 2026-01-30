@@ -112,7 +112,11 @@ class BrowserControlServerConfig {
           globalLimit: 300,           // 全局请求限制（每分钟）
           sensitiveLimit: 30,         // 敏感操作限制（每分钟）
           windowMs: 60000,            // 时间窗口（毫秒）
-          sensitiveActions: ['execute_script', 'get_cookies']  // 敏感操作列表
+          sensitiveActions: ['execute_script', 'get_cookies'],  // 敏感操作列表
+          // 回调轮询限制
+          callbackQueryLimit: 60,     // 每分钟回调查询限制
+          perRequestIdLimit: 60,      // 单个 requestId 最大查询次数
+          callbackQueryWindow: 60000  // 回调查询时间窗口（毫秒）
         },
 
         // 审计日志配置
@@ -124,6 +128,31 @@ class BrowserControlServerConfig {
           logActions: ['execute_script', 'get_cookies', 'open_url', 'close_tab'],  // 需要记录的操作
           logPayload: false           // 是否记录请求详情（可能包含敏感数据）
         }
+      },
+
+      // 请求生命周期管理配置
+      request: {
+        defaultTimeout: 60000,        // 默认请求超时（毫秒）
+        responseRetention: 300000,    // 响应保留时间（毫秒，5分钟）
+        maxPendingRequests: 100,      // 最大并发请求数
+        timeoutCheckInterval: 5000,   // 超时检查间隔（毫秒）
+        cleanupInterval: 30000        // 清理间隔（毫秒）
+      },
+
+      // 长轮询配置
+      longPolling: {
+        enabled: true,                // 是否启用长轮询
+        maxWaitTime: 30000,           // 最大等待时间（毫秒）
+        pollInterval: 100             // 轮询检查间隔（毫秒）
+      },
+
+      // 资源监控配置
+      resourceMonitor: {
+        enabled: true,                // 是否启用资源监控
+        maxPendingResponses: 100,     // 最大待处理响应数
+        maxCallbacks: 1000,           // 最大回调数
+        healthCheckInterval: 30000,   // 健康检查间隔（毫秒）
+        warningThreshold: 0.8         // 警告阈值（80%）
       },
 
       // 日志配置

@@ -34,6 +34,9 @@ class RateLimiter {
    * @param {string[]} config.sensitiveActions 敏感操作列表
    * @param {number} config.maxFailedAttempts 最大认证失败次数
    * @param {number} config.lockoutDuration 锁定时间（秒）
+   * @param {number} config.callbackQueryLimit 回调查询限制（每分钟）
+   * @param {number} config.perRequestIdLimit 单个 requestId 最大查询次数
+   * @param {number} config.callbackQueryWindow 回调查询时间窗口（毫秒）
    */
   constructor(config = {}) {
     this.config = {
@@ -44,6 +47,10 @@ class RateLimiter {
       sensitiveActions: ['execute_script', 'get_cookies'],
       maxFailedAttempts: 5,
       lockoutDuration: 60,        // 锁定 60 秒
+      // 回调轮询限制
+      callbackQueryLimit: 60,     // 每分钟回调查询限制
+      perRequestIdLimit: 60,      // 单个 requestId 最大查询次数
+      callbackQueryWindow: 60000, // 回调查询时间窗口
       ...config
     };
 
@@ -56,10 +63,16 @@ class RateLimiter {
     // 锁定列表：Map<clientAddress, unlockTime>
     this.lockedClients = new Map();
 
+    // 回调查询计数器：Map<clientId, { queries: Array<timestamp> }>
+    this.callbackQueryCounts = new Map();
+
+    // 单个 requestId 查询计数：Map<requestId, count>
+    this.requestIdQueryCounts = new Map();
+
     // 启动定期清理
     this.startCleanupTimer();
 
-    Logger.info(`RateLimiter initialized (global: ${this.config.globalLimit}/min, sensitive: ${this.config.sensitiveLimit}/min)`);
+    Logger.info(`RateLimiter initialized (global: ${this.config.globalLimit}/min, sensitive: ${this.config.sensitiveLimit}/min, callbackQuery: ${this.config.callbackQueryLimit}/min)`);
   }
 
   /**
@@ -154,6 +167,102 @@ class RateLimiter {
    */
   isSensitiveAction(action) {
     return this.config.sensitiveActions.includes(action);
+  }
+
+  /**
+   * 检查回调查询是否允许
+   * @param {string} clientId 客户端标识
+   * @param {string} requestId 请求ID
+   * @returns {Object} { allowed: boolean, retryAfter?: number, limitType?: string, reason?: string }
+   */
+  checkCallbackQueryLimit(clientId, requestId) {
+    if (!this.config.enabled) {
+      return { allowed: true };
+    }
+
+    const now = Date.now();
+    const windowStart = now - this.config.callbackQueryWindow;
+
+    // 检查单个 requestId 的查询次数
+    const requestIdCount = this.requestIdQueryCounts.get(requestId) || 0;
+    if (requestIdCount >= this.config.perRequestIdLimit) {
+      Logger.warn(`[RateLimit] Per-requestId limit exceeded for ${requestId}: ${requestIdCount}/${this.config.perRequestIdLimit}`);
+      
+      return {
+        allowed: false,
+        retryAfter: 0,  // 不需要重试，这个 requestId 已经超限
+        limitType: 'per_request_id',
+        reason: `Request ${requestId} has been queried ${requestIdCount} times, exceeding limit of ${this.config.perRequestIdLimit}`
+      };
+    }
+
+    // 检查客户端的回调查询频率
+    let counter = this.callbackQueryCounts.get(clientId);
+    if (!counter) {
+      counter = { queries: [] };
+      this.callbackQueryCounts.set(clientId, counter);
+    }
+
+    // 清理过期的查询记录
+    counter.queries = counter.queries.filter(t => t > windowStart);
+
+    if (counter.queries.length >= this.config.callbackQueryLimit) {
+      const oldestQuery = counter.queries[0];
+      const retryAfter = Math.ceil((oldestQuery + this.config.callbackQueryWindow - now) / 1000);
+      
+      Logger.warn(`[RateLimit] Callback query limit exceeded for ${clientId}: ${counter.queries.length}/${this.config.callbackQueryLimit}`);
+      
+      return {
+        allowed: false,
+        retryAfter,
+        limitType: 'callback_query',
+        reason: `Callback query rate limit exceeded`
+      };
+    }
+
+    return { allowed: true };
+  }
+
+  /**
+   * 记录一次回调查询
+   * @param {string} clientId 客户端标识
+   * @param {string} requestId 请求ID
+   */
+  recordCallbackQuery(clientId, requestId) {
+    if (!this.config.enabled) {
+      return;
+    }
+
+    const now = Date.now();
+
+    // 记录客户端查询
+    let counter = this.callbackQueryCounts.get(clientId);
+    if (!counter) {
+      counter = { queries: [] };
+      this.callbackQueryCounts.set(clientId, counter);
+    }
+    counter.queries.push(now);
+
+    // 记录 requestId 查询次数
+    const currentCount = this.requestIdQueryCounts.get(requestId) || 0;
+    this.requestIdQueryCounts.set(requestId, currentCount + 1);
+  }
+
+  /**
+   * 清除 requestId 的查询计数（请求完成后调用）
+   * @param {string} requestId 请求ID
+   */
+  clearRequestIdCount(requestId) {
+    this.requestIdQueryCounts.delete(requestId);
+  }
+
+  /**
+   * 获取 requestId 的查询次数
+   * @param {string} requestId 请求ID
+   * @returns {number} 查询次数
+   */
+  getRequestIdQueryCount(requestId) {
+    return this.requestIdQueryCounts.get(requestId) || 0;
   }
 
   /**
@@ -263,8 +372,10 @@ class RateLimiter {
   cleanup() {
     const now = Date.now();
     const windowStart = now - this.config.windowMs;
+    const callbackWindowStart = now - this.config.callbackQueryWindow;
     let cleanedCounters = 0;
     let cleanedLocks = 0;
+    let cleanedCallbackCounters = 0;
 
     // 清理请求计数器
     for (const [clientId, counter] of this.requestCounts) {
@@ -296,8 +407,29 @@ class RateLimiter {
       }
     }
 
-    if (cleanedCounters > 0 || cleanedLocks > 0) {
-      Logger.debug(`[RateLimit] Cleanup: ${cleanedCounters} counters, ${cleanedLocks} locks`);
+    // 清理回调查询计数
+    for (const [clientId, counter] of this.callbackQueryCounts) {
+      counter.queries = counter.queries.filter(t => t > callbackWindowStart);
+      
+      if (counter.queries.length === 0) {
+        this.callbackQueryCounts.delete(clientId);
+        cleanedCallbackCounters++;
+      }
+    }
+
+    // 清理老的 requestId 查询计数（超过 5 分钟的）
+    // 注意：这里只是定期清理，正常情况下应该在请求完成时调用 clearRequestIdCount
+    // 这里作为兜底清理
+    const maxRequestIdAge = 5 * 60 * 1000;  // 5 分钟
+    // requestIdQueryCounts 没有时间戳，所以无法精确清理
+    // 但如果数量过多，可以考虑全部清空
+    if (this.requestIdQueryCounts.size > 10000) {
+      Logger.warn(`[RateLimit] requestIdQueryCounts too large (${this.requestIdQueryCounts.size}), clearing all`);
+      this.requestIdQueryCounts.clear();
+    }
+
+    if (cleanedCounters > 0 || cleanedLocks > 0 || cleanedCallbackCounters > 0) {
+      Logger.debug(`[RateLimit] Cleanup: ${cleanedCounters} counters, ${cleanedLocks} locks, ${cleanedCallbackCounters} callback counters`);
     }
   }
 
@@ -353,11 +485,15 @@ class RateLimiter {
         sensitiveLimit: this.config.sensitiveLimit,
         windowMs: this.config.windowMs,
         sensitiveActions: this.config.sensitiveActions,
-        lockoutDuration: this.config.lockoutDuration
+        lockoutDuration: this.config.lockoutDuration,
+        callbackQueryLimit: this.config.callbackQueryLimit,
+        perRequestIdLimit: this.config.perRequestIdLimit
       },
       activeClients: this.requestCounts.size,
       lockedClients: this.lockedClients.size,
-      pendingAuthFailures: this.authFailureCounts.size
+      pendingAuthFailures: this.authFailureCounts.size,
+      callbackQueryClients: this.callbackQueryCounts.size,
+      trackedRequestIds: this.requestIdQueryCounts.size
     };
   }
 

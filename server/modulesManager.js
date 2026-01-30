@@ -60,7 +60,7 @@ const coreServices = {
         try {
             return require('../lib/local-service/user-settings-cli');
         } catch (e) {
-            logger.warn('userSettings 加载失败:', e.message);
+            logger.warn('Failed to load userSettings:', e.message);
             return null;
         }
     },
@@ -73,7 +73,7 @@ const coreServices = {
         try {
             return require('../lib/local-service/secure-settings-cli');
         } catch (e) {
-            logger.warn('secureSettings 加载失败:', e.message);
+            logger.warn('Failed to load secureSettings:', e.message);
             return null;
         }
     }
@@ -113,7 +113,7 @@ function clearModuleCache(modulePath) {
         const resolvedPath = require.resolve(modulePath);
         if (require.cache[resolvedPath]) {
             delete require.cache[resolvedPath];
-            logger.debug(`已清理模块缓存: ${modulePath}`);
+            logger.debug(`Module cache cleared: ${modulePath}`);
         }
     } catch (e) {
         // 模块可能不在缓存中，忽略错误
@@ -129,7 +129,7 @@ function loadBuiltinConfig() {
         const builtinConfig = require('./modulesConfig');
         return builtinConfig.modules || [];
     } catch (error) {
-        logger.error('加载内置模块配置失败:', error);
+        logger.error('Failed to load builtin module config:', error);
         return [];
     }
 }
@@ -142,7 +142,7 @@ function loadUserConfig() {
     const configPath = getUserModulesConfigPath();
     
     if (!userModulesConfigExists()) {
-        logger.debug('用户模块配置文件不存在，跳过加载');
+        logger.debug('User module config file not found, skipping');
         return null;
     }
     
@@ -150,10 +150,10 @@ function loadUserConfig() {
         // 清除 require 缓存，确保每次读取最新配置
         delete require.cache[require.resolve(configPath)];
         const userConfig = require(configPath);
-        logger.info('已加载用户模块配置:', configPath);
+        logger.info('Loaded user module config:', configPath);
         return userConfig;
     } catch (error) {
-        logger.error('加载用户模块配置失败:', error);
+        logger.error('Failed to load user module config:', error);
         return null;
     }
 }
@@ -182,7 +182,7 @@ function loadAllConfigs() {
                 if (configMap.has(name)) {
                     const existing = configMap.get(name);
                     configMap.set(name, { ...existing, ...override });
-                    logger.debug(`用户配置覆盖内置模块: ${name}`);
+                    logger.debug(`User config overrides builtin module: ${name}`);
                 }
             }
         }
@@ -194,18 +194,18 @@ function loadAllConfigs() {
                     // 同名模块，用户配置覆盖
                     const existing = configMap.get(userModule.name);
                     configMap.set(userModule.name, { ...existing, ...userModule, source: 'user' });
-                    logger.debug(`用户模块覆盖: ${userModule.name}`);
+                    logger.debug(`User module override: ${userModule.name}`);
                 } else {
                     // 新模块
                     configMap.set(userModule.name, { ...userModule, source: 'user' });
-                    logger.debug(`添加用户模块: ${userModule.name}`);
+                    logger.debug(`Added user module: ${userModule.name}`);
                 }
             }
         }
     }
     
     mergedModuleConfigs = Array.from(configMap.values());
-    logger.info(`已加载 ${mergedModuleConfigs.length} 个模块配置`);
+    logger.info(`Loaded ${mergedModuleConfigs.length} module configs`);
     
     return mergedModuleConfigs;
 }
@@ -266,7 +266,7 @@ function reset() {
     mergedModuleConfigs = [];
     bootOrder = [];
     runtimeOptions = {};
-    logger.debug('模块管理器状态已重置');
+    logger.debug('Module manager state reset');
 }
 
 /**
@@ -292,7 +292,7 @@ function initModules(config, options = {}) {
     // 保存增强后的 runtimeContext（用于热加载）
     options.runtimeContext = enhancedRuntimeContext;
     
-    logger.info('已注入核心服务到 runtimeContext:', Object.keys(coreServices).join(', '));
+    logger.info('Injected core services to runtimeContext:', Object.keys(coreServices).join(', '));
     
     const enabledModules = getEnabledModules(config);
     
@@ -312,7 +312,7 @@ function initModules(config, options = {}) {
             // 获取 setup 函数
             const setupFunction = serviceModule[moduleConfig.setupFunction];
             if (typeof setupFunction !== 'function') {
-                logger.error(`模块 ${moduleConfig.name} 的 setup 函数不存在: ${moduleConfig.setupFunction}`);
+                logger.error(`Module ${moduleConfig.name} setup function not found: ${moduleConfig.setupFunction}`);
                 continue;
             }
             
@@ -328,9 +328,9 @@ function initModules(config, options = {}) {
             const instance = setupFunction(moduleOptions);
             moduleInstances[moduleConfig.name] = instance;
             
-            logger.info(`已初始化模块: ${moduleConfig.name} (来源: ${moduleConfig.source || 'builtin'})`);
+            logger.info(`Module initialized: ${moduleConfig.name} (source: ${moduleConfig.source || 'builtin'})`);
         } catch (error) {
-            logger.error(`初始化模块 ${moduleConfig.name} 失败:`, error);
+            logger.error(`Failed to initialize module ${moduleConfig.name}:`, error);
         }
     }
     
@@ -385,9 +385,9 @@ async function bootstrapModule(instance, moduleConfig, context) {
         // 记录启动顺序
         bootOrder.push(moduleConfig.name);
         
-        logger.info(`模块 ${moduleConfig.name} 启动成功`);
+        logger.info(`Module ${moduleConfig.name} started successfully`);
     } catch (error) {
-        logger.error(`启动模块 ${moduleConfig.name} 时出错:`, error);
+        logger.error(`Error starting module ${moduleConfig.name}:`, error);
     }
 }
 
@@ -405,11 +405,11 @@ async function bootstrapModules(context) {
     for (const moduleConfig of enabledModules) {
         const instance = moduleInstances[moduleConfig.name];
         if (!instance) {
-            logger.warn(`模块 ${moduleConfig.name} 未初始化，跳过启动`);
+            logger.warn(`Module ${moduleConfig.name} not initialized, skipping`);
             continue;
         }
         
-        logger.info(`正在启动模块: ${moduleConfig.name}...`);
+        logger.info(`Starting module: ${moduleConfig.name}...`);
         await bootstrapModule(instance, moduleConfig, context);
     }
 }
@@ -431,7 +431,7 @@ async function shutdownModules() {
                 logger.info(`Module ${moduleName} stopped`);
             }
         } catch (error) {
-            logger.error(`关闭模块 ${moduleName} 时出错:`, error);
+            logger.error(`Error stopping module ${moduleName}:`, error);
         }
     }
     
@@ -452,24 +452,24 @@ async function loadSingleModule(moduleName) {
     try {
         // 检查运行时上下文是否可用
         if (!runtimeContext) {
-            return { success: false, error: '服务未完全启动，无法热加载模块' };
+            return { success: false, error: 'Service not fully started, cannot hot-load module' };
         }
         
         // 检查模块是否已加载
         if (moduleInstances[moduleName]) {
-            return { success: false, error: `模块 ${moduleName} 已加载，请先卸载或使用重载` };
+            return { success: false, error: `Module ${moduleName} already loaded, please unload or reload` };
         }
         
         // 重新读取用户配置以获取最新的模块信息
         const userConfig = loadUserConfig();
         if (!userConfig || !userConfig.modules) {
-            return { success: false, error: '无法读取用户模块配置' };
+            return { success: false, error: 'Unable to read user module config' };
         }
         
         // 找到目标模块配置
         const moduleConfig = userConfig.modules.find(m => m.name === moduleName);
         if (!moduleConfig) {
-            return { success: false, error: `模块配置不存在: ${moduleName}` };
+            return { success: false, error: `Module config not found: ${moduleName}` };
         }
         
         // 标记为用户模块
@@ -480,13 +480,13 @@ async function loadSingleModule(moduleName) {
         
         // 检查模块文件是否存在
         if (!fs.existsSync(modulePath)) {
-            return { success: false, error: `模块文件不存在: ${modulePath}` };
+            return { success: false, error: `Module file not found: ${modulePath}` };
         }
         
         // 清理可能的旧缓存
         clearModuleCache(modulePath);
         
-        logger.info(`[热加载] 正在加载模块: ${moduleName}...`);
+        logger.info(`[Hot-load] Loading module: ${moduleName}...`);
         
         // 动态加载模块
         const serviceModule = require(modulePath);
@@ -494,7 +494,7 @@ async function loadSingleModule(moduleName) {
         // 获取 setup 函数
         const setupFunction = serviceModule[moduleConfig.setupFunction];
         if (typeof setupFunction !== 'function') {
-            return { success: false, error: `模块 ${moduleName} 的 setup 函数不存在: ${moduleConfig.setupFunction}` };
+            return { success: false, error: `Module ${moduleName} setup function not found: ${moduleConfig.setupFunction}` };
         }
         
         // 生成初始化参数
@@ -515,7 +515,7 @@ async function loadSingleModule(moduleName) {
         // 启动模块
         await bootstrapModule(instance, moduleConfig, runtimeContext);
         
-        logger.info(`[热加载] 模块 ${moduleName} 加载成功`);
+        logger.info(`[Hot-load] Module ${moduleName} loaded successfully`);
         
         return { 
             success: true, 
@@ -527,7 +527,7 @@ async function loadSingleModule(moduleName) {
         };
         
     } catch (error) {
-        logger.error(`[热加载] 加载模块 ${moduleName} 失败:`, error);
+        logger.error(`[Hot-load] Failed to load module ${moduleName}:`, error);
         return { success: false, error: error.message };
     }
 }
@@ -542,7 +542,7 @@ async function unloadSingleModule(moduleName) {
         // 检查模块是否已加载
         const instance = moduleInstances[moduleName];
         if (!instance) {
-            return { success: false, error: `模块 ${moduleName} 未加载` };
+            return { success: false, error: `Module ${moduleName} not loaded` };
         }
         
         // 找到模块配置
@@ -550,10 +550,10 @@ async function unloadSingleModule(moduleName) {
         
         // 不允许卸载内置模块
         if (moduleConfig && moduleConfig.source !== 'user') {
-            return { success: false, error: `不允许卸载内置模块: ${moduleName}` };
+            return { success: false, error: `Cannot unload builtin module: ${moduleName}` };
         }
         
-        logger.info(`[热加载] 正在卸载模块: ${moduleName}...`);
+        logger.info(`[Hot-load] Unloading module: ${moduleName}...`);
         
         // 调用 stop 方法
         if (instance.stop && typeof instance.stop === 'function') {
@@ -575,7 +575,7 @@ async function unloadSingleModule(moduleName) {
             clearModuleCache(modulePath);
         }
         
-        logger.info(`[热加载] 模块 ${moduleName} 已卸载`);
+        logger.info(`[Hot-load] Module ${moduleName} unloaded`);
         
         return { 
             success: true, 
@@ -586,7 +586,7 @@ async function unloadSingleModule(moduleName) {
         };
         
     } catch (error) {
-        logger.error(`[热加载] 卸载模块 ${moduleName} 失败:`, error);
+        logger.error(`[Hot-load] Failed to unload module ${moduleName}:`, error);
         return { success: false, error: error.message };
     }
 }
@@ -598,7 +598,7 @@ async function unloadSingleModule(moduleName) {
  */
 async function reloadModule(moduleName) {
     try {
-        logger.info(`[热加载] 正在重载模块: ${moduleName}...`);
+        logger.info(`[Hot-load] Reloading module: ${moduleName}...`);
         
         // 如果模块已加载，先卸载
         if (moduleInstances[moduleName]) {
@@ -614,7 +614,7 @@ async function reloadModule(moduleName) {
             return loadResult;
         }
         
-        logger.info(`[热加载] 模块 ${moduleName} 重载成功`);
+        logger.info(`[Hot-load] Module ${moduleName} reloaded successfully`);
         
         return { 
             success: true, 
@@ -625,7 +625,7 @@ async function reloadModule(moduleName) {
         };
         
     } catch (error) {
-        logger.error(`[热加载] 重载模块 ${moduleName} 失败:`, error);
+        logger.error(`[Hot-load] Failed to reload module ${moduleName}:`, error);
         return { success: false, error: error.message };
     }
 }

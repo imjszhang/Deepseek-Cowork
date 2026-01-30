@@ -38,17 +38,17 @@ const modules = [
         // 事件监听配置
         events: {
             started: ({ serverInfo }) => {
-                logger.info('浏览器控制服务器已启动');
-                logger.info('配置摘要:', JSON.stringify(serverInfo.config, null, 2));
+                logger.info('Browser control server started');
+                logger.info('Config summary:', JSON.stringify(serverInfo.config, null, 2));
                 if (serverInfo.connections?.extensionWebSocket?.enabled) {
-                    logger.info(`浏览器扩展WebSocket: ${serverInfo.connections.extensionWebSocket.baseUrl}`);
+                    logger.info(`Browser extension WebSocket: ${serverInfo.connections.extensionWebSocket.baseUrl}`);
                 }
             },
             stopped: () => {
                 logger.info('Browser control server stopped');
             },
             error: ({ type, error }) => {
-                logger.error(`浏览器控制服务器错误 (${type}):`, error);
+                logger.error(`Browser control server error (${type}):`, error);
             }
         }
     },
@@ -91,17 +91,17 @@ const modules = [
         // 事件监听配置
         events: {
             started: ({ serverInfo }) => {
-                logger.info('Explorer 服务已启动');
-                logger.info('Explorer 配置摘要:', JSON.stringify(serverInfo.config, null, 2));
+                logger.info('Explorer service started');
+                logger.info('Explorer config summary:', JSON.stringify(serverInfo.config, null, 2));
             },
             stopped: () => {
-                logger.info('Explorer 服务已停止');
+                logger.info('Explorer service stopped');
             },
             error: ({ type, error }) => {
-                logger.error(`Explorer 服务错误 (${type}):`, error);
+                logger.error(`Explorer service error (${type}):`, error);
             },
             file_change: (data) => {
-                logger.debug(`文件变化: ${data.type} - ${data.path}`);
+                logger.debug(`File change: ${data.type} - ${data.path}`);
             }
         }
     },
@@ -146,16 +146,16 @@ const modules = [
         // 事件监听配置
         events: {
             started: ({ serverInfo }) => {
-                logger.info('Memory 服务已启动');
+                logger.info('Memory service started');
             },
             stopped: () => {
-                logger.info('Memory 服务已停止');
+                logger.info('Memory service stopped');
             },
             error: ({ type, error }) => {
-                logger.error(`Memory 服务错误 (${type}):`, error);
+                logger.error(`Memory service error (${type}):`, error);
             },
             'memory:saved': ({ sessionId, memoryName, messageCount }) => {
-                logger.info(`Memory 已保存: ${memoryName} (${messageCount} 条消息)`);
+                logger.info(`Memory saved: ${memoryName} (${messageCount} messages)`);
             }
         }
     }

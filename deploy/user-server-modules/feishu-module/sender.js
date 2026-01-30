@@ -79,7 +79,7 @@ class Sender {
      */
     async sendText(to, text) {
         if (!this.client) {
-            throw new Error('FeishuClient 未初始化');
+            throw new Error('FeishuClient not initialized');
         }
         
         const receiveId = normalizeTarget(to);
@@ -113,7 +113,7 @@ class Sender {
      */
     async replyText(messageId, text) {
         if (!this.client) {
-            throw new Error('FeishuClient 未初始化');
+            throw new Error('FeishuClient not initialized');
         }
         
         // 检查是否需要分块
@@ -131,7 +131,7 @@ class Sender {
             } else {
                 // 后续消息需要获取 chatId
                 // 暂时跳过，因为需要先获取原消息的 chatId
-                console.warn(`[Sender] 分块消息 ${i + 1}/${chunks.length} 跳过（暂不支持）`);
+                console.warn(`[Sender] Chunked message ${i + 1}/${chunks.length} skipped (not yet supported)`);
             }
         }
         
@@ -150,7 +150,7 @@ class Sender {
      */
     async sendCard(to, card) {
         if (!this.client) {
-            throw new Error('FeishuClient 未初始化');
+            throw new Error('FeishuClient not initialized');
         }
         
         const receiveId = normalizeTarget(to);
@@ -171,7 +171,7 @@ class Sender {
      */
     async updateCard(messageId, card) {
         if (!this.client) {
-            throw new Error('FeishuClient 未初始化');
+            throw new Error('FeishuClient not initialized');
         }
         
         return await this.client.updateCard({

@@ -43,24 +43,24 @@ class FeishuMonitor extends EventEmitter {
      */
     async start() {
         if (this._isRunning) {
-            console.log('[FeishuMonitor] 已在运行中');
+            console.log('[FeishuMonitor] Already running');
             return;
         }
         
         if (!this.client) {
-            throw new Error('FeishuClient 未初始化');
+            throw new Error('FeishuClient not initialized');
         }
         
         // 获取机器人 Open ID
         this._botOpenId = await this.client.getBotOpenId();
-        console.log(`[FeishuMonitor] 机器人 Open ID: ${this._botOpenId || '未知'}`);
+        console.log(`[FeishuMonitor] Bot Open ID: ${this._botOpenId || 'unknown'}`);
         
         const connectionMode = this.config.connectionMode || 'websocket';
         
         if (connectionMode === 'websocket') {
             await this._startWebSocket();
         } else {
-            console.warn('[FeishuMonitor] Webhook 模式需要外部 HTTP 服务器配置');
+            console.warn('[FeishuMonitor] Webhook mode requires external HTTP server configuration');
         }
         
         this._isRunning = true;
@@ -87,14 +87,14 @@ class FeishuMonitor extends EventEmitter {
             lastDisconnectedAt: new Date().toISOString()
         });
         
-        console.log('[FeishuMonitor] 已停止');
+        console.log('[FeishuMonitor] Stopped');
     }
     
     /**
      * 重新连接
      */
     async reconnect() {
-        console.log('[FeishuMonitor] 正在重新连接...');
+        console.log('[FeishuMonitor] Reconnecting...');
         await this.stop();
         await this.start();
     }
@@ -103,7 +103,7 @@ class FeishuMonitor extends EventEmitter {
      * 启动 WebSocket 连接
      */
     async _startWebSocket() {
-        console.log('[FeishuMonitor] 正在建立 WebSocket 连接...');
+        console.log('[FeishuMonitor] Establishing WebSocket connection...');
         
         try {
             // 创建 WebSocket 客户端
@@ -129,10 +129,10 @@ class FeishuMonitor extends EventEmitter {
                 botInfo: this.client.getBotInfo()
             });
             
-            console.log('[FeishuMonitor] WebSocket 连接已建立');
+            console.log('[FeishuMonitor] WebSocket connection established');
             
         } catch (error) {
-            console.error('[FeishuMonitor] WebSocket 连接失败:', error.message);
+            console.error('[FeishuMonitor] WebSocket connection failed:', error.message);
             
             this.onConnectionChange({
                 connected: false,
@@ -156,7 +156,7 @@ class FeishuMonitor extends EventEmitter {
                 try {
                     await this._handleMessageEvent(data);
                 } catch (error) {
-                    console.error('[FeishuMonitor] 处理消息事件失败:', error.message);
+                    console.error('[FeishuMonitor] Failed to process message event:', error.message);
                 }
             },
             
@@ -167,18 +167,18 @@ class FeishuMonitor extends EventEmitter {
             
             // 机器人被添加到群聊
             'im.chat.member.bot.added_v1': async (data) => {
-                console.log(`[FeishuMonitor] 机器人被添加到群聊: ${data?.chat_id || '未知'}`);
+                console.log(`[FeishuMonitor] Bot added to chat: ${data?.chat_id || 'unknown'}`);
                 this.emit('bot_added', data);
             },
             
             // 机器人被移出群聊
             'im.chat.member.bot.deleted_v1': async (data) => {
-                console.log(`[FeishuMonitor] 机器人被移出群聊: ${data?.chat_id || '未知'}`);
+                console.log(`[FeishuMonitor] Bot removed from chat: ${data?.chat_id || 'unknown'}`);
                 this.emit('bot_removed', data);
             }
         });
         
-        console.log('[FeishuMonitor] 事件处理器已注册');
+        console.log('[FeishuMonitor] Event handlers registered');
     }
     
     /**
@@ -187,14 +187,14 @@ class FeishuMonitor extends EventEmitter {
      */
     async _handleMessageEvent(data) {
         if (!this.messageHandler) {
-            console.warn('[FeishuMonitor] 消息处理器未初始化');
+            console.warn('[FeishuMonitor] Message handler not initialized');
             return;
         }
         
         // 解析消息事件
         const event = this._parseMessageEvent(data);
         if (!event) {
-            console.warn('[FeishuMonitor] 无法解析消息事件');
+            console.warn('[FeishuMonitor] Unable to parse message event');
             return;
         }
         
@@ -244,7 +244,7 @@ class FeishuMonitor extends EventEmitter {
                 raw: data
             };
         } catch (error) {
-            console.error('[FeishuMonitor] 解析消息事件失败:', error.message);
+            console.error('[FeishuMonitor] Failed to parse message event:', error.message);
             return null;
         }
     }
@@ -258,16 +258,16 @@ class FeishuMonitor extends EventEmitter {
         this._reconnectAttempts++;
         
         if (this._reconnectAttempts > this._maxReconnectAttempts) {
-            console.error(`[FeishuMonitor] 重连失败，已达最大尝试次数 (${this._maxReconnectAttempts})`);
+            console.error(`[FeishuMonitor] Reconnection failed, max attempts reached (${this._maxReconnectAttempts})`);
             this.onConnectionChange({
                 connected: false,
-                lastError: `重连失败，已尝试 ${this._reconnectAttempts} 次`
+                lastError: `Reconnection failed after ${this._reconnectAttempts} attempts`
             });
             return;
         }
         
         const delay = this._reconnectDelay * this._reconnectAttempts;
-        console.log(`[FeishuMonitor] ${delay / 1000} 秒后尝试第 ${this._reconnectAttempts} 次重连...`);
+        console.log(`[FeishuMonitor] Attempting reconnection #${this._reconnectAttempts} in ${delay / 1000}s...`);
         
         await new Promise(resolve => setTimeout(resolve, delay));
         

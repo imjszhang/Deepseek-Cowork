@@ -49,30 +49,30 @@ function setupDemoModuleService(options = {}) {
          * 初始化模块
          */
         async init() {
-            console.log(`[DemoModule] 初始化中...`);
+            console.log(`[DemoModule] Initializing...`);
             
             // 检查静态目录是否存在
             if (!fs.existsSync(this.staticDir)) {
-                console.warn(`[DemoModule] 静态目录不存在: ${this.staticDir}`);
+                console.warn(`[DemoModule] Static directory not found: ${this.staticDir}`);
             }
             
             // 检查核心服务是否可用
             if (this.happyService) {
-                console.log(`[DemoModule] HappyService 已注入，可用于 AI 通信`);
+                console.log(`[DemoModule] HappyService injected, AI communication available`);
                 
                 // 演示：监听 HappyService 事件
                 this._setupHappyServiceListeners();
             } else {
-                console.warn(`[DemoModule] HappyService 未注入，AI 功能不可用`);
+                console.warn(`[DemoModule] HappyService not injected, AI features unavailable`);
             }
             
             if (this.messageStore) {
-                console.log(`[DemoModule] MessageStore 已注入，可用于消息持久化`);
+                console.log(`[DemoModule] MessageStore injected, message persistence available`);
             } else {
-                console.warn(`[DemoModule] MessageStore 未注入，消息持久化功能不可用`);
+                console.warn(`[DemoModule] MessageStore not injected, message persistence unavailable`);
             }
             
-            console.log(`[DemoModule] 初始化完成`);
+            console.log(`[DemoModule] Initialization complete`);
         }
         
         /**
@@ -84,7 +84,7 @@ function setupDemoModuleService(options = {}) {
             
             // 监听新消息事件
             this.happyService.on('happy:message', (message) => {
-                console.log(`[DemoModule] 收到消息: ${message.role} - ${message.content?.substring(0, 50)}...`);
+                console.log(`[DemoModule] Message received: ${message.role} - ${message.content?.substring(0, 50)}...`);
                 
                 // 缓存最近的消息
                 this.recentMessages.push({
@@ -104,16 +104,16 @@ function setupDemoModuleService(options = {}) {
             
             // 监听连接状态事件
             this.happyService.on('happy:connected', () => {
-                console.log(`[DemoModule] HappyService 已连接`);
+                console.log(`[DemoModule] HappyService connected`);
                 this.emit('demo:connected');
             });
             
             this.happyService.on('happy:disconnected', () => {
-                console.log(`[DemoModule] HappyService 已断开`);
+                console.log(`[DemoModule] HappyService disconnected`);
                 this.emit('demo:disconnected');
             });
             
-            console.log(`[DemoModule] 已设置 HappyService 事件监听`);
+            console.log(`[DemoModule] HappyService event listeners setup`);
         }
         
         /**
@@ -247,7 +247,7 @@ function setupDemoModuleService(options = {}) {
                 if (!this.messageStore) {
                     return res.status(503).json({
                         success: false,
-                        error: 'MessageStore 服务不可用'
+                        error: 'MessageStore service unavailable'
                     });
                 }
                 
@@ -296,19 +296,19 @@ function setupDemoModuleService(options = {}) {
                 if (!message) {
                     return res.status(400).json({
                         success: false,
-                        error: '缺少 message 参数'
+                        error: 'Missing message parameter'
                     });
                 }
                 
                 if (!this.happyService) {
                     return res.status(503).json({
                         success: false,
-                        error: 'HappyService 服务不可用'
+                        error: 'HappyService unavailable'
                     });
                 }
                 
                 try {
-                    console.log(`[DemoModule] 发送消息到 AI: ${message.substring(0, 50)}...`);
+                    console.log(`[DemoModule] Sending message to AI: ${message.substring(0, 50)}...`);
                     
                     // 演示：调用 HappyService.sendMessage()
                     // 注意：这是异步的，会触发流式响应
@@ -323,7 +323,7 @@ function setupDemoModuleService(options = {}) {
                         }
                     });
                 } catch (error) {
-                    console.error(`[DemoModule] 发送消息失败:`, error);
+                    console.error(`[DemoModule] Failed to send message:`, error);
                     res.status(500).json({
                         success: false,
                         error: error.message
@@ -331,7 +331,7 @@ function setupDemoModuleService(options = {}) {
                 }
             });
             
-            console.log(`[DemoModule] 已注册路由: /demo/, /api/demo/*`);
+            console.log(`[DemoModule] Routes registered: /demo/, /api/demo/*`);
         }
         
         /**
@@ -341,7 +341,7 @@ function setupDemoModuleService(options = {}) {
             this.isRunning = true;
             this.startTime = new Date();
             
-            console.log(`[DemoModule] 已启动`);
+            console.log(`[DemoModule] Started`);
             this.emit('started', { 
                 name: this.name,
                 version: this.version,
@@ -356,7 +356,7 @@ function setupDemoModuleService(options = {}) {
             this.isRunning = false;
             const uptime = this.getUptime();
             
-            console.log(`[DemoModule] 已停止 (运行时长: ${uptime}秒)`);
+            console.log(`[DemoModule] Stopped (uptime: ${uptime}s)`);
             this.emit('stopped', { 
                 uptime,
                 requestCount: this.requestCount 

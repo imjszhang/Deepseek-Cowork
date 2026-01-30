@@ -37,13 +37,13 @@ function setupRoutes(app, config, io) {
         global.dashboardNamespace = dashboardNamespace;
         
         dashboardNamespace.on('connection', (socket) => {
-            console.log('Dashboard WebSocket 连接已建立:', socket.id);
+            console.log('Dashboard WebSocket connected:', socket.id);
             
             // 发送当前服务列表
             socket.emit('services', getServices());
             
             socket.on('disconnect', () => {
-                console.log('Dashboard WebSocket 连接已断开:', socket.id);
+                console.log('Dashboard WebSocket disconnected:', socket.id);
             });
             
             // 监听客户端请求刷新
@@ -137,7 +137,7 @@ function setupRoutes(app, config, io) {
             if (!name) {
                 return res.status(400).json({
                     success: false,
-                    error: '缺少模块名称参数 (name)'
+                    error: 'Missing module name parameter (name)'
                 });
             }
             
@@ -164,7 +164,7 @@ function setupRoutes(app, config, io) {
             if (!name) {
                 return res.status(400).json({
                     success: false,
-                    error: '缺少模块名称参数 (name)'
+                    error: 'Missing module name parameter (name)'
                 });
             }
             
@@ -191,7 +191,7 @@ function setupRoutes(app, config, io) {
             if (!name) {
                 return res.status(400).json({
                     success: false,
-                    error: '缺少模块名称参数 (name)'
+                    error: 'Missing module name parameter (name)'
                 });
             }
             
@@ -212,13 +212,13 @@ function setupRoutes(app, config, io) {
            
     // 错误处理中间件
     app.use((err, req, res, next) => {
-        console.error('服务器错误:', err);
+        console.error('Server error:', err);
         
         // 对 API 请求返回 JSON 格式的错误
         if (req.path.startsWith('/api')) {
             return res.status(500).json({
                 success: false,
-                error: '服务器错误',
+                error: 'Server error',
                 message: err.message
             });
         }
@@ -227,9 +227,9 @@ function setupRoutes(app, config, io) {
         res.status(500).send(`
             <!DOCTYPE html>
             <html>
-            <head><title>服务器错误</title></head>
+            <head><title>Server Error</title></head>
             <body>
-                <h1>服务器错误</h1>
+                <h1>Server Error</h1>
                 <p>${err.message}</p>
             </body>
             </html>

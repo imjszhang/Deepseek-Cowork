@@ -43,7 +43,7 @@ function initServices(config) {
  */
 async function bootstrapServices({ app, io, http, config, PORT }) {
     await modulesManager.bootstrapModules({ app, io, http, config, PORT });
-    logger.info('所有模块已启动完成');
+    logger.info('All modules started successfully');
 }
 
 module.exports = {

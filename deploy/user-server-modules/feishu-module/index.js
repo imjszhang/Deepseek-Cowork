@@ -92,23 +92,23 @@ function setupFeishuModuleService(options = {}) {
          * 初始化模块
          */
         async init() {
-            console.log(`[FeishuModule] 初始化中...`);
+            console.log(`[FeishuModule] Initializing...`);
             
             // 检查静态目录是否存在
             if (!fs.existsSync(this.staticDir)) {
-                console.warn(`[FeishuModule] 静态目录不存在: ${this.staticDir}`);
+                console.warn(`[FeishuModule] Static directory not found: ${this.staticDir}`);
             }
             
             // 检查核心服务是否可用
             if (this.happyService) {
-                console.log(`[FeishuModule] HappyService 已注入，可用于 AI 通信`);
+                console.log(`[FeishuModule] HappyService injected, AI communication available`);
                 this._setupHappyServiceListeners();
             } else {
-                console.warn(`[FeishuModule] HappyService 未注入，AI 功能不可用`);
+                console.warn(`[FeishuModule] HappyService not injected, AI features unavailable`);
             }
             
             if (this.messageStore) {
-                console.log(`[FeishuModule] MessageStore 已注入，可用于消息持久化`);
+                console.log(`[FeishuModule] MessageStore injected, message persistence available`);
             }
             
             // 尝试从 secureSettings 加载敏感配置
@@ -117,7 +117,7 @@ function setupFeishuModuleService(options = {}) {
             // 加载子模块
             await this._loadSubModules();
             
-            console.log(`[FeishuModule] 初始化完成`);
+            console.log(`[FeishuModule] Initialization complete`);
         }
         
         /**
@@ -152,9 +152,9 @@ function setupFeishuModuleService(options = {}) {
                     onConnectionChange: (state) => this._handleConnectionChange(state)
                 });
                 
-                console.log(`[FeishuModule] 子模块加载完成`);
+                console.log(`[FeishuModule] Submodules loaded`);
             } catch (error) {
-                console.error(`[FeishuModule] 加载子模块失败:`, error.message);
+                console.error(`[FeishuModule] Failed to load submodules:`, error.message);
                 // 子模块加载失败不阻止模块启动，但功能会受限
             }
         }
@@ -173,9 +173,9 @@ function setupFeishuModuleService(options = {}) {
                 if (appId) this.config.appId = appId;
                 if (appSecret) this.config.appSecret = appSecret;
                 
-                console.log(`[FeishuModule] 已从 secureSettings 加载配置`);
+                console.log(`[FeishuModule] Config loaded from secureSettings`);
             } catch (error) {
-                console.warn(`[FeishuModule] 从 secureSettings 加载配置失败:`, error.message);
+                console.warn(`[FeishuModule] Failed to load config from secureSettings:`, error.message);
             }
         }
         
@@ -192,16 +192,16 @@ function setupFeishuModuleService(options = {}) {
             
             // 监听连接状态事件
             this.happyService.on('happy:connected', () => {
-                console.log(`[FeishuModule] HappyService 已连接`);
+                console.log(`[FeishuModule] HappyService connected`);
                 this.emit('feishu:ai_connected');
             });
             
             this.happyService.on('happy:disconnected', () => {
-                console.log(`[FeishuModule] HappyService 已断开`);
+                console.log(`[FeishuModule] HappyService disconnected`);
                 this.emit('feishu:ai_disconnected');
             });
             
-            console.log(`[FeishuModule] 已设置 HappyService 事件监听`);
+                console.log(`[FeishuModule] HappyService event listeners setup`);
         }
         
         /**
@@ -226,10 +226,10 @@ function setupFeishuModuleService(options = {}) {
             };
             
             if (state.connected) {
-                console.log(`[FeishuModule] 已连接到飞书`);
+                console.log(`[FeishuModule] Connected to Feishu`);
                 this.emit('feishu:connected', state);
             } else {
-                console.log(`[FeishuModule] 与飞书断开连接`);
+                console.log(`[FeishuModule] Disconnected from Feishu`);
                 this.emit('feishu:disconnected', state);
             }
         }
@@ -333,7 +333,7 @@ function setupFeishuModuleService(options = {}) {
                     
                     res.json({
                         success: true,
-                        message: '配置已更新'
+                        message: 'Config updated'
                     });
                     
                     this.emit('feishu:config_updated', this.config);
@@ -353,12 +353,12 @@ function setupFeishuModuleService(options = {}) {
                         await this.monitor.reconnect();
                         res.json({
                             success: true,
-                            message: '正在重新连接...'
+                            message: 'Reconnecting...'
                         });
                     } else {
                         res.status(503).json({
                             success: false,
-                            error: '监听器未初始化'
+                            error: 'Monitor not initialized'
                         });
                     }
                 } catch (error) {
@@ -378,14 +378,14 @@ function setupFeishuModuleService(options = {}) {
                     if (!to || !message) {
                         return res.status(400).json({
                             success: false,
-                            error: '缺少 to 或 message 参数'
+                            error: 'Missing to or message parameter'
                         });
                     }
                     
                     if (!this.sender) {
                         return res.status(503).json({
                             success: false,
-                            error: '发送器未初始化'
+                            error: 'Sender not initialized'
                         });
                     }
                     
@@ -418,7 +418,7 @@ function setupFeishuModuleService(options = {}) {
                 });
             });
             
-            console.log(`[FeishuModule] 已注册路由: /feishu/, /api/feishu/*`);
+            console.log(`[FeishuModule] Routes registered: /feishu/, /api/feishu/*`);
         }
         
         /**
@@ -430,12 +430,12 @@ function setupFeishuModuleService(options = {}) {
             
             // 检查配置是否完整
             if (!this.config.appId || !this.config.appSecret) {
-                console.warn(`[FeishuModule] 飞书凭证未配置，请通过 /feishu/ 页面配置`);
+                console.warn(`[FeishuModule] Feishu credentials not configured, please configure via /feishu/ page`);
                 this.emit('started', { 
                     name: this.name,
                     version: this.version,
                     startTime: this.startTime,
-                    warning: '飞书凭证未配置'
+                    warning: 'Feishu credentials not configured'
                 });
                 return;
             }
@@ -444,14 +444,14 @@ function setupFeishuModuleService(options = {}) {
             if (this.config.enabled && this.monitor) {
                 try {
                     await this.monitor.start();
-                    console.log(`[FeishuModule] 飞书连接已启动`);
+                    console.log(`[FeishuModule] Feishu connection started`);
                 } catch (error) {
-                    console.error(`[FeishuModule] 启动飞书连接失败:`, error.message);
+                    console.error(`[FeishuModule] Failed to start Feishu connection:`, error.message);
                     this.connectionState.lastError = error.message;
                 }
             }
             
-            console.log(`[FeishuModule] 已启动`);
+            console.log(`[FeishuModule] Started`);
             this.emit('started', { 
                 name: this.name,
                 version: this.version,
@@ -470,13 +470,13 @@ function setupFeishuModuleService(options = {}) {
             if (this.monitor) {
                 try {
                     await this.monitor.stop();
-                    console.log(`[FeishuModule] 飞书连接已停止`);
+                    console.log(`[FeishuModule] Feishu connection stopped`);
                 } catch (error) {
-                    console.error(`[FeishuModule] 停止飞书连接失败:`, error.message);
+                    console.error(`[FeishuModule] Failed to stop Feishu connection:`, error.message);
                 }
             }
             
-            console.log(`[FeishuModule] 已停止 (运行时长: ${uptime}秒)`);
+            console.log(`[FeishuModule] Stopped (uptime: ${uptime}s)`);
             this.emit('stopped', { 
                 uptime,
                 requestCount: this.requestCount 
@@ -503,7 +503,7 @@ function setupFeishuModuleService(options = {}) {
          */
         async sendMessage(to, text) {
             if (!this.sender) {
-                throw new Error('发送器未初始化');
+                throw new Error('Sender not initialized');
             }
             return await this.sender.sendText(to, text);
         }

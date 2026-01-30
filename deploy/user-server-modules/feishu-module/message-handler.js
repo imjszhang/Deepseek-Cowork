@@ -49,7 +49,7 @@ class MessageHandler extends EventEmitter {
      * @param {string} botOpenId - 机器人 Open ID
      */
     async handleIncomingMessage(event, botOpenId) {
-        console.log(`[MessageHandler] 收到消息: ${event.chatType} - ${event.senderOpenId}`);
+        console.log(`[MessageHandler] Message received: ${event.chatType} - ${event.senderOpenId}`);
         
         // 解析消息内容
         const context = this._parseMessageContext(event, botOpenId);
@@ -57,7 +57,7 @@ class MessageHandler extends EventEmitter {
         // 权限检查
         const policyResult = this._checkPolicy(context);
         if (!policyResult.allowed) {
-            console.log(`[MessageHandler] 消息被策略拒绝: ${policyResult.reason}`);
+            console.log(`[MessageHandler] Message rejected by policy: ${policyResult.reason}`);
             
             // 群聊中未@机器人的消息，记录到历史但不响应
             if (policyResult.reason === 'not_mentioned' && context.isGroup) {
@@ -233,7 +233,7 @@ class MessageHandler extends EventEmitter {
             history.splice(0, history.length - maxHistory);
         }
         
-        console.log(`[MessageHandler] 记录到历史: ${historyKey} (${history.length} 条)`);
+        console.log(`[MessageHandler] Recorded to history: ${historyKey} (${history.length} messages)`);
     }
     
     /**
@@ -242,7 +242,7 @@ class MessageHandler extends EventEmitter {
      */
     async _sendToAI(context) {
         if (!this.happyService) {
-            console.error('[MessageHandler] HappyService 未初始化');
+            console.error('[MessageHandler] HappyService not initialized');
             return;
         }
         
@@ -274,13 +274,13 @@ class MessageHandler extends EventEmitter {
         // 设置响应超时
         setTimeout(() => {
             if (this.pendingResponses.has(responseId)) {
-                console.warn(`[MessageHandler] 响应超时: ${responseId}`);
+                console.warn(`[MessageHandler] Response timeout: ${responseId}`);
                 this.pendingResponses.delete(responseId);
             }
         }, this.responseTimeout);
         
         try {
-            console.log(`[MessageHandler] 发送到 AI: ${messageBody.substring(0, 100)}...`);
+            console.log(`[MessageHandler] Sending to AI: ${messageBody.substring(0, 100)}...`);
             
             // 调用 HappyService 发送消息
             // 注意：实际的响应通过 happy:message 事件返回
@@ -296,7 +296,7 @@ class MessageHandler extends EventEmitter {
                 });
             } else {
                 // 如果 sendMessage 不可用，尝试其他方法
-                console.warn('[MessageHandler] HappyService.sendMessage 不可用');
+                console.warn('[MessageHandler] HappyService.sendMessage not available');
             }
             
             // 保存消息到 MessageStore
@@ -314,21 +314,21 @@ class MessageHandler extends EventEmitter {
                         }
                     });
                 } catch (e) {
-                    console.warn('[MessageHandler] 保存消息失败:', e.message);
+                    console.warn('[MessageHandler] Failed to save message:', e.message);
                 }
             }
             
         } catch (error) {
-            console.error('[MessageHandler] 发送到 AI 失败:', error.message);
+            console.error('[MessageHandler] Failed to send to AI:', error.message);
             this.pendingResponses.delete(responseId);
             
             // 发送错误消息到用户
             if (this.sender) {
                 try {
                     await this.sender.replyText(context.messageId, 
-                        `抱歉，处理消息时出现错误: ${error.message}`);
+                        `Sorry, an error occurred while processing the message: ${error.message}`);
                 } catch (e) {
-                    console.error('[MessageHandler] 发送错误消息失败:', e.message);
+                    console.error('[MessageHandler] Failed to send error message:', e.message);
                 }
             }
         }
@@ -362,7 +362,7 @@ class MessageHandler extends EventEmitter {
         }
         
         // 没有匹配的等待响应，可能是主动推送
-        console.log('[MessageHandler] 收到无匹配的 AI 响应');
+        console.log('[MessageHandler] Received AI response with no matching request');
     }
     
     /**
@@ -391,11 +391,11 @@ class MessageHandler extends EventEmitter {
         this.pendingResponses.delete(responseId);
         
         if (!finalContent.trim()) {
-            console.warn('[MessageHandler] AI 响应为空');
+            console.warn('[MessageHandler] AI response is empty');
             return;
         }
         
-        console.log(`[MessageHandler] 发送 AI 响应到飞书: ${finalContent.substring(0, 100)}...`);
+        console.log(`[MessageHandler] Sending AI response to Feishu: ${finalContent.substring(0, 100)}...`);
         
         if (this.sender) {
             try {
@@ -421,7 +421,7 @@ class MessageHandler extends EventEmitter {
                 }
                 
             } catch (error) {
-                console.error('[MessageHandler] 发送响应到飞书失败:', error.message);
+                console.error('[MessageHandler] Failed to send response to Feishu:', error.message);
             }
         }
     }

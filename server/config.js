@@ -21,15 +21,15 @@ function setupConfig() {
     try {
         // 检查指定的配置文件是否存在
         if (!fs.existsSync(configPath)) {
-            logger.warn(`配置文件不存在: ${configPath}`);
-            logger.info('使用默认配置...');
+            logger.warn(`Config file not found: ${configPath}`);
+            logger.info('Using default config...');
             config = getDefaultConfig();
         } else {
-            logger.info(`使用配置文件: ${configFileName}`);
+            logger.info(`Using config file: ${configFileName}`);
             config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
         }
     } catch (err) {
-        logger.error('读取配置文件出错:', err);
+        logger.error('Error reading config file:', err);
         config = getDefaultConfig();
     }
 
@@ -56,7 +56,7 @@ function setupConfig() {
             : `${protocol}://${host}`;
     }
     
-    logger.info(`服务器访问地址: ${config.server.baseUrl}`);
+    logger.info(`Server URL: ${config.server.baseUrl}`);
     
     return config;
 }

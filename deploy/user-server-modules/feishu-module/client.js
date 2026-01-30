@@ -14,7 +14,7 @@ let Lark;
 try {
     Lark = require('@larksuiteoapi/node-sdk');
 } catch (error) {
-    console.warn('[FeishuClient] @larksuiteoapi/node-sdk 未安装，请运行: npm install @larksuiteoapi/node-sdk');
+    console.warn('[FeishuClient] @larksuiteoapi/node-sdk not installed, please run: npm install @larksuiteoapi/node-sdk');
     Lark = null;
 }
 
@@ -68,7 +68,7 @@ class FeishuClient {
      */
     checkCredentials() {
         if (!this.config.appId || !this.config.appSecret) {
-            throw new Error('飞书凭证未配置 (appId, appSecret)');
+            throw new Error('Feishu credentials not configured (appId, appSecret)');
         }
     }
     
@@ -231,7 +231,7 @@ class FeishuClient {
         });
         
         if (response.code !== 0) {
-            throw new Error(`发送失败: ${response.msg || `code ${response.code}`}`);
+            throw new Error(`Send failed: ${response.msg || `code ${response.code}`}`);
         }
         
         return {
@@ -260,7 +260,7 @@ class FeishuClient {
         });
         
         if (response.code !== 0) {
-            throw new Error(`回复失败: ${response.msg || `code ${response.code}`}`);
+            throw new Error(`Reply failed: ${response.msg || `code ${response.code}`}`);
         }
         
         return {
@@ -291,7 +291,7 @@ class FeishuClient {
         });
         
         if (response.code !== 0) {
-            throw new Error(`发送卡片失败: ${response.msg || `code ${response.code}`}`);
+            throw new Error(`Send card failed: ${response.msg || `code ${response.code}`}`);
         }
         
         return {
@@ -317,7 +317,7 @@ class FeishuClient {
         });
         
         if (response.code !== 0) {
-            throw new Error(`更新卡片失败: ${response.msg || `code ${response.code}`}`);
+            throw new Error(`Update card failed: ${response.msg || `code ${response.code}`}`);
         }
         
         return { success: true };
@@ -363,7 +363,7 @@ class FeishuClient {
                 createTime: item.create_time ? parseInt(item.create_time, 10) : undefined
             };
         } catch (error) {
-            console.error(`[FeishuClient] 获取消息失败:`, error.message);
+            console.error(`[FeishuClient] Failed to get message:`, error.message);
             return null;
         }
     }
@@ -390,7 +390,7 @@ class FeishuClient {
         });
         
         if (response.code !== 0) {
-            throw new Error(`添加表情失败: ${response.msg || `code ${response.code}`}`);
+            throw new Error(`Add reaction failed: ${response.msg || `code ${response.code}`}`);
         }
         
         return { success: true };
@@ -414,7 +414,7 @@ class FeishuClient {
         });
         
         if (response.code !== 0) {
-            throw new Error(`移除表情失败: ${response.msg || `code ${response.code}`}`);
+            throw new Error(`Remove reaction failed: ${response.msg || `code ${response.code}`}`);
         }
         
         return { success: true };

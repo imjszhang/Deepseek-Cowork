@@ -24,6 +24,7 @@ const ExtensionWebSocketServer = require('./ExtensionWebSocketServer');
 const AuthManager = require('./auth-manager');
 const AuditLogger = require('./audit-logger');
 const RateLimiter = require('./rate-limiter');
+const ResourceMonitor = require('./resource-monitor');
 
 /**
  * 设置浏览器控制服务
@@ -48,6 +49,7 @@ function setupBrowserControlService(options = {}) {
       this.authManager = null;
       this.auditLogger = null;
       this.rateLimiter = null;
+      this.resourceMonitor = null;
     }
 
     /**
@@ -84,8 +86,17 @@ function setupBrowserControlService(options = {}) {
         this.database = new Database(dbPath);
         await this.database.initDb();
         
-        // 创建回调管理器
-        this.callbackManager = new CallbackManager(this.database);
+        // 创建回调管理器（带生命周期管理配置）
+        const requestConfig = this.config.request || {};
+        this.callbackManager = new CallbackManager(this.database, {
+          requestTTL: requestConfig.defaultTimeout || 60000,
+          responseRetention: requestConfig.responseRetention || 300000,
+          timeoutCheckInterval: requestConfig.timeoutCheckInterval || 5000,
+          cleanupInterval: requestConfig.cleanupInterval || 30000
+        });
+        
+        // 连接 CallbackManager 事件到服务事件
+        this.setupCallbackManagerEvents();
         
         // 创建标签页管理器
         this.tabsManager = new TabsManager(this.database, this.callbackManager);
@@ -107,6 +118,9 @@ function setupBrowserControlService(options = {}) {
         // 初始化安全模块
         await this.initSecurityModules();
 
+        // 初始化资源监控
+        await this.initResourceMonitor();
+
         // Cookie管理改为完全手动模式
         Logger.info('Cookie retrieval in manual mode');
         
@@ -122,6 +136,27 @@ function setupBrowserControlService(options = {}) {
         this.emit('error', { type: 'initError', error });
         throw error;
       }
+    }
+
+    /**
+     * 设置 CallbackManager 事件桥接
+     */
+    setupCallbackManagerEvents() {
+      if (!this.callbackManager) return;
+      
+      // Forward callback_result events for SSE/WebSocket push
+      this.callbackManager.on('callback_result', (data) => {
+        this.emit('callback_result', data);
+        Logger.debug(`Callback result event: ${data.requestId} - ${data.status}`);
+      });
+      
+      // Forward timeout events
+      this.callbackManager.on('request_timeout', (data) => {
+        this.emit('request_timeout', data);
+        Logger.warn(`Request timeout event: ${data.requestId}`);
+      });
+      
+      Logger.info('CallbackManager event bridge setup complete');
     }
 
     /**
@@ -232,16 +267,52 @@ function setupBrowserControlService(options = {}) {
     }
 
     /**
+     * 初始化资源监控
+     */
+    async initResourceMonitor() {
+      const monitorConfig = this.config.resourceMonitor || {};
+      
+      if (monitorConfig.enabled !== false) {
+        try {
+          this.resourceMonitor = new ResourceMonitor(monitorConfig);
+          
+          // 注入依赖
+          this.resourceMonitor.setDependencies({
+            extensionWebSocketServer: this.extensionWebSocketServer,
+            callbackManager: this.callbackManager,
+            database: this.database
+          });
+          
+          Logger.info('ResourceMonitor initialized');
+        } catch (error) {
+          Logger.error(`Failed to initialize ResourceMonitor: ${error.message}`);
+        }
+      }
+    }
+
+    /**
      * 启动服务
      */
     async start() {
       try {
         Logger.info("Starting browser control server...");
         
+        // 启动 CallbackManager 的超时检查和清理
+        if (this.callbackManager) {
+          this.callbackManager.start();
+          Logger.info('CallbackManager started');
+        }
+        
         // 启动浏览器扩展WebSocket服务器
         if (this.extensionWebSocketServer && this.config.extensionWebSocket.enabled) {
           this.extensionWebSocketServer.start();
           Logger.info(`Browser extension WebSocket server started: ${this.config.extensionWebSocket.baseUrl}`);
+        }
+        
+        // 启动资源监控
+        if (this.resourceMonitor) {
+          this.resourceMonitor.start();
+          Logger.info('ResourceMonitor started');
         }
         
         this.isRunning = true;
@@ -270,6 +341,18 @@ function setupBrowserControlService(options = {}) {
         if (this.extensionWebSocketServer) {
           this.extensionWebSocketServer.stop();
           Logger.info('Browser extension WebSocket server stopped');
+        }
+        
+        // 停止 CallbackManager
+        if (this.callbackManager) {
+          this.callbackManager.stop();
+          Logger.info('CallbackManager stopped');
+        }
+        
+        // 停止资源监控
+        if (this.resourceMonitor) {
+          this.resourceMonitor.stop();
+          Logger.info('ResourceMonitor stopped');
         }
         
         // 停止安全模块
@@ -416,6 +499,91 @@ function setupBrowserControlService(options = {}) {
         });
       });
       
+      // 健康检查端点
+      apiRouter.get('/health', async (req, res) => {
+        try {
+          let health;
+          
+          if (this.resourceMonitor) {
+            health = await this.resourceMonitor.performHealthCheck();
+          } else {
+            // 基本健康检查
+            health = {
+              timestamp: new Date().toISOString(),
+              status: 'healthy',
+              message: 'ResourceMonitor not enabled'
+            };
+          }
+          
+          // 根据状态返回不同的 HTTP 状态码
+          const statusCode = health.status === 'healthy' ? 200 : 
+                            health.status === 'warning' ? 200 : 
+                            health.status === 'critical' ? 503 : 500;
+          
+          res.status(statusCode).json(health);
+        } catch (err) {
+          Logger.error(`Health check failed: ${err.message}`);
+          res.status(500).json({
+            status: 'error',
+            message: err.message
+          });
+        }
+      });
+      
+      // 管理端点：手动清理（仅限本地访问）
+      apiRouter.post('/admin/cleanup', async (req, res) => {
+        // 安全检查：仅允许本地请求
+        const clientIP = req.ip || req.connection.remoteAddress || '';
+        const isLocalRequest = clientIP === '127.0.0.1' || 
+                               clientIP === '::1' || 
+                               clientIP === 'localhost' ||
+                               clientIP === '::ffff:127.0.0.1';
+        
+        if (!isLocalRequest) {
+          Logger.warn(`[Security] Rejected admin/cleanup request from non-local IP: ${clientIP}`);
+          return res.status(403).json({
+            status: 'error',
+            message: 'Access denied: This endpoint is only available from localhost'
+          });
+        }
+        
+        try {
+          let result;
+          
+          if (this.resourceMonitor) {
+            result = await this.resourceMonitor.manualCleanup();
+          } else {
+            // 手动执行清理
+            result = {
+              timestamp: new Date().toISOString(),
+              cleanedCallbacks: 0,
+              cleanedResponses: 0,
+              cleanedPending: 0
+            };
+            
+            if (this.callbackManager) {
+              result.cleanedCallbacks = await this.callbackManager.cleanupExpiredCallbacks();
+              result.cleanedResponses = await this.callbackManager.cleanupExpiredResponses();
+            }
+            
+            if (this.extensionWebSocketServer) {
+              result.cleanedPending = this.extensionWebSocketServer.cleanupPendingResponses();
+            }
+          }
+          
+          res.json({
+            status: 'success',
+            result
+          });
+        } catch (err) {
+          Logger.error(`Manual cleanup failed: ${err.message}`);
+          res.status(500).json({
+            status: 'error',
+            message: err.message
+          });
+        }
+      });
+      
       // 获取认证密钥（仅限本地请求）
       apiRouter.get('/auth/secret', (req, res) => {
         // 安全检查：仅允许本地请求
@@ -489,11 +657,15 @@ function setupBrowserControlService(options = {}) {
         }
       });
       
-      // SSE 事件接口
+      // SSE 事件接口（支持 callback_result 推送）
+      // 可选参数：?requestId=xxx 只接收指定 requestId 的回调结果
       apiRouter.get('/events', (req, res) => {
         res.setHeader('Content-Type', 'text/event-stream');
         res.setHeader('Cache-Control', 'no-cache');
         res.setHeader('Connection', 'keep-alive');
+        
+        // 获取可选的 requestId 过滤参数
+        const filterRequestId = req.query.requestId;
         
         res.write(':\n\n');
         
@@ -507,10 +679,25 @@ function setupBrowserControlService(options = {}) {
           };
         };
         
+        // 创建 callback_result 事件处理器（支持 requestId 过滤）
+        const createCallbackResultHandler = () => {
+          return (data) => {
+            try {
+              // 如果设置了过滤，只发送匹配的 requestId
+              if (filterRequestId && data.requestId !== filterRequestId) {
+                return;
+              }
+              res.write(`event: callback_result\ndata: ${JSON.stringify(data)}\n\n`);
+            } catch (err) {
+              Logger.error(`Error sending callback_result event: ${err.message}`);
+            }
+          };
+        };
+        
         const eventTypes = [
           'tabs_update', 'tab_opened', 'tab_closed', 'tab_url_changed',
           'tab_html_received', 'script_executed', 'css_injected',
-          'cookies_received', 'error', 'init', 'custom_event'
+          'cookies_received', 'error', 'init', 'custom_event', 'request_timeout'
         ];
         
         const eventHandlers = {};
@@ -520,8 +707,13 @@ function setupBrowserControlService(options = {}) {
           this.on(type, eventHandlers[type]);
         });
         
+        // 添加 callback_result 事件监听（支持过滤）
+        eventHandlers['callback_result'] = createCallbackResultHandler();
+        this.on('callback_result', eventHandlers['callback_result']);
+        
         res.write(`event: connected\ndata: ${JSON.stringify({
           message: 'SSE连接已建立',
+          filterRequestId: filterRequestId || null,
           timestamp: new Date().toISOString()
         })}\n\n`);
         
@@ -531,11 +723,15 @@ function setupBrowserControlService(options = {}) {
         
         req.on('close', () => {
           clearInterval(heartbeatInterval);
+          // 清理所有事件监听
           eventTypes.forEach(type => {
             if (eventHandlers[type]) {
               this.removeListener(type, eventHandlers[type]);
             }
           });
+          if (eventHandlers['callback_result']) {
+            this.removeListener('callback_result', eventHandlers['callback_result']);
+          }
           Logger.info('SSE client disconnected');
         });
       });
@@ -874,9 +1070,11 @@ function setupBrowserControlService(options = {}) {
         }
       });
       
-      // 获取回调响应
+      // 获取回调响应（支持长轮询）
+      // 可选参数：?wait=30 服务器最多等待 30 秒
       apiRouter.get('/callback_response/:requestId', async (req, res) => {
         const { requestId } = req.params;
+        const waitParam = req.query.wait;
         
         if (!requestId) {
           return res.status(400).json({ 
@@ -892,14 +1090,80 @@ function setupBrowserControlService(options = {}) {
           });
         }
         
+        // 获取客户端标识（使用 IP 或其他标识）
+        const clientId = req.ip || req.connection.remoteAddress || 'unknown';
+        
+        // 检查回调查询限制
+        if (this.rateLimiter) {
+          const limitResult = this.rateLimiter.checkCallbackQueryLimit(clientId, requestId);
+          if (!limitResult.allowed) {
+            const retryAfter = limitResult.retryAfter || 5;
+            res.set('Retry-After', retryAfter.toString());
+            return res.status(429).json({
+              status: 'error',
+              code: 'RATE_LIMITED',
+              message: limitResult.reason || '回调查询频率超限',
+              limitType: limitResult.limitType,
+              retryAfter,
+              queryCount: this.rateLimiter.getRequestIdQueryCount(requestId)
+            });
+          }
+          
+          // 记录查询
+          this.rateLimiter.recordCallbackQuery(clientId, requestId);
+        }
+        
+        // 解析等待时间
+        const longPollingConfig = this.config.longPolling || {};
+        const maxWaitTime = longPollingConfig.maxWaitTime || 30000;
+        const pollInterval = longPollingConfig.pollInterval || 100;
+        let waitTime = 0;
+        
+        if (waitParam && longPollingConfig.enabled !== false) {
+          waitTime = Math.min(parseInt(waitParam) * 1000 || 0, maxWaitTime);
+        }
+        
         try {
-          const response = await this.callbackManager.getCallbackResponse(requestId);
+          // 首先检查是否已有响应
+          let response = await this.callbackManager.getCallbackResponse(requestId);
+          
+          // 如果启用了长轮询且没有响应，进入等待循环
+          if (!response && waitTime > 0) {
+            const startTime = Date.now();
+            
+            // 监听 callback_result 事件以便提前返回
+            let eventReceived = false;
+            const callbackHandler = (data) => {
+              if (data.requestId === requestId) {
+                eventReceived = true;
+              }
+            };
+            this.on('callback_result', callbackHandler);
+            
+            // 等待循环
+            while (!response && (Date.now() - startTime) < waitTime && !eventReceived) {
+              await new Promise(resolve => setTimeout(resolve, pollInterval));
+              response = await this.callbackManager.getCallbackResponse(requestId);
+            }
+            
+            // 清理事件监听
+            this.removeListener('callback_result', callbackHandler);
+          }
+          
           if (response) {
+            // 如果响应已完成，清除 requestId 的查询计数
+            if (this.rateLimiter && (response.status === 'success' || response.status === 'error' || response.type === 'timeout')) {
+              this.rateLimiter.clearRequestIdCount(requestId);
+            }
             res.json(response);
           } else {
-            res.status(404).json({ 
-              status: 'error', 
-              message: '未找到给定请求ID的响应' 
+            // 返回 202 表示请求仍在处理中
+            res.status(202).json({ 
+              status: 'pending', 
+              message: '请求正在处理中',
+              requestId,
+              queryCount: this.rateLimiter ? this.rateLimiter.getRequestIdQueryCount(requestId) : undefined,
+              longPolling: waitTime > 0 ? { waited: waitTime, maxWait: maxWaitTime } : undefined
             });
           }
         } catch (err) {
