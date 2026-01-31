@@ -642,23 +642,50 @@ class Database {
         }
       }
 
-      // Check callback_responses table columns
-      const responsesInfo = this.db.exec("PRAGMA table_info('callback_responses')");
-      const responseColumns = new Set();
-      
-      if (responsesInfo.length > 0 && responsesInfo[0].values) {
-        responsesInfo[0].values.forEach(row => responseColumns.add(row[1]));
-      }
+      // Check if callback_responses table exists
+      const callbackResponsesExists = await this.get(
+        "SELECT name FROM sqlite_master WHERE type='table' AND name='callback_responses'"
+      );
 
-      // Add expires_at column to callback_responses if missing
-      if (!responseColumns.has('expires_at')) {
+      if (!callbackResponsesExists) {
+        // Create callback_responses table if it doesn't exist
+        Logger.info('Missing callback_responses table detected, creating...');
         try {
-          this.db.run(`ALTER TABLE callback_responses ADD COLUMN expires_at TIMESTAMP DEFAULT (DATETIME(CURRENT_TIMESTAMP, '+5 minutes'))`);
+          this.db.run(`CREATE TABLE IF NOT EXISTS callback_responses (
+            request_id TEXT PRIMARY KEY,
+            response_data TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            expires_at TIMESTAMP DEFAULT (DATETIME(CURRENT_TIMESTAMP, '+5 minutes'))
+          )`);
           this.isDirty = true;
-          Logger.info(`Added column 'expires_at' to callback_responses table`);
+          Logger.info('callback_responses table created successfully');
         } catch (err) {
-          if (!err.message.includes('duplicate column')) {
-            Logger.warn(`Add column warning: ${err.message}`);
+          Logger.error(`Failed to create callback_responses table: ${err.message}`);
+        }
+      } else {
+        // Check callback_responses table columns
+        const responsesInfo = this.db.exec("PRAGMA table_info('callback_responses')");
+        const responseColumns = new Set();
+        
+        if (responsesInfo.length > 0 && responsesInfo[0].values) {
+          responsesInfo[0].values.forEach(row => responseColumns.add(row[1]));
+        }
+
+        // Add expires_at column to callback_responses if missing
+        if (!responseColumns.has('expires_at')) {
+          try {
+            // Use simpler DEFAULT value for ALTER TABLE compatibility
+            this.db.run(`ALTER TABLE callback_responses ADD COLUMN expires_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP`);
+            this.isDirty = true;
+            Logger.info(`Added column 'expires_at' to callback_responses table`);
+            
+            // Update existing rows to set expires_at based on created_at
+            this.db.run(`UPDATE callback_responses SET expires_at = DATETIME(created_at, '+5 minutes') WHERE expires_at IS NULL`);
+            Logger.info('Updated existing callback_responses records with expires_at values');
+          } catch (err) {
+            if (!err.message.includes('duplicate column')) {
+              Logger.warn(`Add column warning: ${err.message}`);
+            }
           }
         }
       }
