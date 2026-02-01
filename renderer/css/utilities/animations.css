@@ -513,3 +513,36 @@ textarea,
     transition-duration: 0.01ms !important;
   }
 }
+
+/* ===== 浅色主题动画样式 - 颜色反转 ===== */
+
+/* 浅色主题 - 主色脉冲发光动画 */
+@keyframes pulseGlowPrimaryLight {
+  0%, 100% {
+    opacity: 1;
+    box-shadow: 0 0 8px rgba(0, 0, 0, 0.2), 0 0 16px rgba(0, 0, 0, 0.1);
+  }
+  50% {
+    opacity: 0.8;
+    box-shadow: 0 0 16px rgba(0, 0, 0, 0.3), 0 0 32px rgba(0, 0, 0, 0.15);
+  }
+}
+
+/* 浅色主题 - 光晕脉冲动画 */
+@keyframes glowPulseLight {
+  0%, 100% {
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.05);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.1), 0 0 40px rgba(0, 0, 0, 0.05);
+  }
+}
+
+/* 浅色主题下使用反转动画 */
+body:not(.dark) .animate-pulse-glow-primary {
+  animation: pulseGlowPrimaryLight 2s ease-in-out infinite;
+}
+
+body:not(.dark) .animate-glow-pulse {
+  animation: glowPulseLight 2s ease-in-out infinite;
+}

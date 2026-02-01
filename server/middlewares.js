@@ -6,6 +6,7 @@
 
 const express = require('express');
 const path = require('path');
+const fs = require('fs');
 const cors = require('cors');
 
 /**
@@ -14,6 +15,30 @@ const cors = require('cors');
  * @param {Object} config 配置对象
  */
 function setupMiddlewares(app, config) {
+    // favicon.ico 处理 - 放在最前面以快速响应
+    const faviconPath = path.join(__dirname, '..', 'icons', 'icon.ico');
+    let faviconBuffer = null;
+    
+    // 预加载 favicon 文件
+    if (fs.existsSync(faviconPath)) {
+        try {
+            faviconBuffer = fs.readFileSync(faviconPath);
+        } catch (err) {
+            console.warn('Failed to load favicon:', err.message);
+        }
+    }
+    
+    app.get('/favicon.ico', (req, res) => {
+        if (faviconBuffer) {
+            res.setHeader('Content-Type', 'image/x-icon');
+            res.setHeader('Cache-Control', 'public, max-age=604800'); // 缓存 7 天
+            res.send(faviconBuffer);
+        } else {
+            // 返回空响应而不是 404，避免浏览器反复请求
+            res.status(204).end();
+        }
+    });
+    
     // 启用 CORS
     app.use(cors({
         origin: config.cors?.origins || '*',

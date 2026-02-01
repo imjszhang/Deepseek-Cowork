@@ -1450,3 +1450,32 @@ body:not(.dark) .markdown-preview blockquote {
 body:not(.dark) .markdown-preview tr:nth-child(even) {
   background: var(--glass-bg, rgba(0, 0, 0, 0.02));
 }
+
+/* Three.js 动态背景容器 - 浅色主题 */
+body:not(.dark) .preview-threejs-bg {
+  background: #f8f8f8;
+}
+
+/* 图片查看器棋盘格背景 - 浅色主题 */
+body:not(.dark) .image-viewer {
+  background-image: 
+    linear-gradient(45deg, rgba(0,0,0,0.05) 25%, transparent 25%),
+    linear-gradient(-45deg, rgba(0,0,0,0.05) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, rgba(0,0,0,0.05) 75%),
+    linear-gradient(-45deg, transparent 75%, rgba(0,0,0,0.05) 75%);
+}
+
+/* PDF 查看器背景 - 浅色主题 */
+body:not(.dark) .pdf-viewer {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+/* 重连中状态 - 浅色主题 */
+body:not(.dark) .explorer-status.reconnecting {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+/* 当前预览文件高亮 - 浅色主题 */
+body:not(.dark) .file-item.previewing {
+  background: rgba(0, 0, 0, 0.1);
+}

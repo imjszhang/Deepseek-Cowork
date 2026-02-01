@@ -375,7 +375,7 @@ async function bootstrapModule(instance, moduleConfig, context) {
         // 设置 Socket.IO（如果模块支持）
         if (io && instance.setupSocketIO) {
             instance.setupSocketIO(io);
-            logger.debug(`Module ${moduleConfig.name} Socket.IO setup completed`);
+            logger.info(`Module ${moduleConfig.name} Socket.IO namespace initialized`);
         }
         
         // 启动服务

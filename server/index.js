@@ -41,8 +41,16 @@ async function main() {
         const io = new Server(httpServer, {
             cors: {
                 origin: config.cors?.origins || '*',
-                methods: config.cors?.methods || ['GET', 'POST']
-            }
+                methods: config.cors?.methods || ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+                credentials: true
+            },
+            // 允许 WebSocket 和轮询两种传输方式
+            transports: ['websocket', 'polling'],
+            // 允许升级连接
+            allowUpgrades: true,
+            // 连接超时设置
+            pingTimeout: 60000,
+            pingInterval: 25000
         });
         
         // 4. 设置中间件
@@ -67,6 +75,7 @@ async function main() {
         httpServer.listen(PORT, HOST, async () => {
             logger.info(`DeepSeek Cowork Server started`);
             logger.info(`Access URL: ${config.server.baseUrl}`);
+            logger.info(`Socket.IO enabled on ${config.server.baseUrl}/socket.io/`);
             
             // 9. 启动所有服务
             await bootstrapServices({ app, io, http: httpServer, config, PORT });
