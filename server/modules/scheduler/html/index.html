@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>调度器管理中心</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    colors: {
+                        primary: '#f5f5f5',
+                        secondary: '#a3a3a3',
+                        dark: {
+                            900: '#171717',
+                            950: '#0a0a0a',
+                        },
+                        accent: {
+                            cyan: '#ffffff',
+                            purple: '#d4d4d4',
+                        }
+                    },
+                    animation: {
+                        'blob': 'blob 7s infinite',
+                        'spin-slow': 'spin 8s linear infinite',
+                        'reverse-spin': 'reverse-spin 1s linear infinite',
+                        'spin-slow-reverse': 'spin 12s linear infinite reverse',
+                        'spin-tilted': 'spin-tilted 5s linear infinite',
+                        'pulse-fast': 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'float': 'float 6s ease-in-out infinite',
+                    },
+                    keyframes: {
+                        blob: {
+                            '0%': { transform: 'translate(0px, 0px) scale(1)' },
+                            '33%': { transform: 'translate(30px, -50px) scale(1.1)' },
+                            '66%': { transform: 'translate(-20px, 20px) scale(0.9)' },
+                            '100%': { transform: 'translate(0px, 0px) scale(1)' },
+                        },
+                        'reverse-spin': {
+                            from: { transform: 'rotate(360deg)' },
+                            to: { transform: 'rotate(0deg)' },
+                        },
+                        'spin-tilted': {
+                            '0%': { transform: 'rotate3d(1, 1, 1, 0deg)' },
+                            '100%': { transform: 'rotate3d(1, 1, 1, 360deg)' },
+                        },
+                        'float': {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-20px)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #000000;
+            background-image: none;
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .glass-card:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #000000; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #333333; 
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #555555; 
+        }
+        
+        /* Status Indicator Animations */
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+        
+        .status-running {
+            background: #22c55e;
+            animation: pulse 2s infinite;
+        }
+        
+        .status-stopped {
+            background: #ef4444;
+        }
+        
+        .status-starting {
+            background: #eab308;
+            animation: pulse 1s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .loading {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-top: 2px solid rgba(255, 255, 255, 0.5);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        /* Task Card States */
+        .task-card.disabled {
+            opacity: 0.6;
+        }
+        
+        .task-card.running {
+            border-left-color: #22c55e;
+            background: rgba(34, 197, 94, 0.05);
+        }
+        
+        .task-card.executing {
+            border-left-color: #eab308;
+            background: rgba(234, 179, 8, 0.05);
+        }
+        
+        /* Modal Styles */
+        .modal-content {
+            background: rgba(23, 23, 23, 0.95);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .modal-header {
+            background: rgba(255, 255, 255, 0.05);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .modal-body {
+            background: rgba(0, 0, 0, 0.3);
+        }
+        
+        /* History Item Styles */
+        .history-item {
+            background: rgba(255, 255, 255, 0.03);
+            border-left: 4px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .history-item.success {
+            border-left-color: #22c55e;
+            background: rgba(34, 197, 94, 0.05);
+        }
+        
+        .history-item.error {
+            border-left-color: #ef4444;
+            background: rgba(239, 68, 68, 0.05);
+        }
+        
+        /* File Tree Styles */
+        .file-tree {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .file-tree-folder {
+            color: #a78bfa;
+        }
+        
+        .file-tree-file {
+            color: #a3a3a3;
+        }
+        
+        /* Button Styles */
+        .btn {
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: none;
+            outline: none;
+        }
+        
+        .btn-primary {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .btn-primary:hover:not(:disabled) {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+        
+        .btn-success {
+            background: rgba(34, 197, 94, 0.2);
+            color: #86efac;
+            border: 1px solid rgba(34, 197, 94, 0.3);
+        }
+        
+        .btn-success:hover:not(:disabled) {
+            background: rgba(34, 197, 94, 0.3);
+            border-color: rgba(34, 197, 94, 0.5);
+        }
+        
+        .btn-warning {
+            background: rgba(234, 179, 8, 0.2);
+            color: #fde047;
+            border: 1px solid rgba(234, 179, 8, 0.3);
+        }
+        
+        .btn-warning:hover:not(:disabled) {
+            background: rgba(234, 179, 8, 0.3);
+            border-color: rgba(234, 179, 8, 0.5);
+        }
+        
+        .btn-danger {
+            background: rgba(239, 68, 68, 0.2);
+            color: #fca5a5;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+        
+        .btn-danger:hover:not(:disabled) {
+            background: rgba(239, 68, 68, 0.3);
+            border-color: rgba(239, 68, 68, 0.5);
+        }
+        
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+        
+        .btn-sm {
+            padding: 0.375rem 0.75rem;
+            font-size: 0.75rem;
+        }
+        
+        /* Tab Button Styles */
+        .tab-btn {
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .tab-btn.active {
+            background: white;
+            color: black;
+            box-shadow: 0 4px 12px rgba(255, 255, 255, 0.1);
+        }
+        
+        .tab-btn:not(.active) {
+            background: rgba(23, 23, 23, 0.5);
+            color: #a3a3a3;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        
+        .tab-btn:not(.active):hover {
+            background: rgba(38, 38, 38, 0.8);
+            color: white;
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+    </style>
+</head>
+<body class="bg-black min-h-screen font-sans text-neutral-200 relative overflow-x-hidden selection:bg-white/20 selection:text-white">
+    <!-- Three.js Background Container -->
+    <div class="fixed inset-0 -z-10 bg-black" id="canvas-container"></div>
+
+    <div class="connection-status fixed top-5 right-5 px-4 py-2 rounded-full text-xs font-mono font-semibold z-[1000] backdrop-blur-xl border border-white/10" id="connection-status">
+        <span class="status-indicator"></span>
+        连接中...
+    </div>
+    
+    <div class="refresh-indicator fixed bottom-5 right-5 px-4 py-2 rounded-full text-xs font-mono backdrop-blur-xl border border-white/10 bg-neutral-900/50 text-white hidden z-[1000]" id="refresh-indicator">
+        <div class="loading"></div>
+        正在刷新...
+    </div>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 relative z-10">
+        <div class="glass-card rounded-3xl p-8 mb-8 text-center">
+            <h1 class="text-5xl font-extrabold tracking-tight text-white sm:text-6xl mb-4">
+                调度器管理中心
+            </h1>
+            <p class="text-neutral-400 text-lg">统一管理和监控定时任务调度系统</p>
+        </div>
+        
+        <div id="alert-container" class="mb-6"></div>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div class="glass-card rounded-2xl p-6 border-l-4 border-l-white/20">
+                <h3 class="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                    <span class="status-indicator" id="service-status-indicator"></span>
+                    <span>服务状态</span>
+                </h3>
+                <div id="service-status-info">
+                    <div class="flex items-center gap-2 text-neutral-400">
+                        <div class="loading"></div>
+                        <span>加载中...</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="glass-card rounded-2xl p-6 border-l-4 border-l-white/20">
+                <h3 class="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                    <span class="status-indicator" id="scheduler-status-indicator"></span>
+                    <span>调度器状态</span>
+                </h3>
+                <div id="scheduler-status-info">
+                    <div class="flex items-center gap-2 text-neutral-400">
+                        <div class="loading"></div>
+                        <span>加载中...</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="glass-card rounded-2xl p-6 border-l-4 border-l-white/20">
+                <h3 class="text-lg font-bold text-white mb-4">系统统计</h3>
+                <div id="system-stats">
+                    <div class="flex items-center gap-2 text-neutral-400">
+                        <div class="loading"></div>
+                        <span>加载中...</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="glass-card rounded-2xl p-6 border-l-4 border-l-white/20">
+                <h3 class="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                    <span class="status-indicator" id="filewatcher-status-indicator"></span>
+                    <span>文件监控状态</span>
+                </h3>
+                <div id="filewatcher-status-info">
+                    <div class="flex items-center gap-2 text-neutral-400">
+                        <div class="loading"></div>
+                        <span>加载中...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="glass-card rounded-2xl p-6 mb-8">
+            <h3 class="text-xl font-bold text-white mb-4">系统控制</h3>
+            <div class="flex flex-wrap gap-3">
+                <button class="btn btn-success px-6 py-3 rounded-lg text-sm font-semibold transition-all hover:scale-105 flex items-center gap-2" id="start-scheduler-btn" onclick="startScheduler()">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.348a1.125 1.125 0 010 1.971l-11.54 6.347a1.125 1.125 0 01-1.667-.985V5.653z" />
+                    </svg>
+                    <span>启动调度器</span>
+                </button>
+                <button class="btn btn-danger px-6 py-3 rounded-lg text-sm font-semibold transition-all hover:scale-105 flex items-center gap-2" id="stop-scheduler-btn" onclick="stopScheduler()">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M5.25 7.5A2.25 2.25 0 017.5 5.25h9a2.25 2.25 0 012.25 2.25v9a2.25 2.25 0 01-2.25 2.25h-9a2.25 2.25 0 01-2.25-2.25v-9z" />
+                    </svg>
+                    <span>停止调度器</span>
+                </button>
+                <button class="btn btn-warning px-6 py-3 rounded-lg text-sm font-semibold transition-all hover:scale-105 flex items-center gap-2" onclick="reloadConfig()">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
+                    </svg>
+                    <span>重新加载配置</span>
+                </button>
+                <button class="btn btn-primary px-6 py-3 rounded-lg text-sm font-semibold transition-all hover:scale-105 flex items-center gap-2" onclick="refreshData()">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
+                    </svg>
+                    <span>刷新数据</span>
+                </button>
+                <button class="btn btn-primary px-6 py-3 rounded-lg text-sm font-semibold transition-all hover:scale-105 flex items-center gap-2" onclick="showConfigDirectory()">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12.75V12A2.25 2.25 0 014.5 9.75h15A2.25 2.25 0 0121.75 12v.75m-8.69-6.44l-2.12-2.12a1.5 1.5 0 00-1.061-.44H4.5A2.25 2.25 0 002.25 6v12a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9a2.25 2.25 0 00-2.25-2.25h-5.379a1.5 1.5 0 01-1.06-.44z" />
+                    </svg>
+                    <span>配置目录</span>
+                </button>
+                <button class="btn btn-warning px-6 py-3 rounded-lg text-sm font-semibold transition-all hover:scale-105 flex items-center gap-2" onclick="restartFileWatcher()">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
+                    </svg>
+                    <span>重启文件监控</span>
+                </button>
+            </div>
+        </div>
+        
+        <div class="glass-card rounded-2xl p-6">
+            <h3 class="text-xl font-bold text-white mb-6">任务管理</h3>
+            
+            <div class="flex gap-3 mb-6 border-b border-white/10 pb-4">
+                <button class="tab-btn px-5 py-2 rounded-lg text-sm font-semibold transition-all" onclick="switchTab('cron')" id="tab-cron">周期任务 (Cron)</button>
+                <button class="tab-btn px-5 py-2 rounded-lg text-sm font-semibold transition-all" onclick="switchTab('once')" id="tab-once">一次性任务</button>
+                <button class="tab-btn px-5 py-2 rounded-lg text-sm font-semibold transition-all" onclick="switchTab('archived')" id="tab-archived">已归档</button>
+            </div>
+
+            <div id="tasks-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div class="col-span-full text-center py-10">
+                    <div class="loading mx-auto"></div>
+                    <p class="mt-4 text-neutral-400">加载任务中...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 任务历史模态框 -->
+    <div id="history-modal" class="modal fixed z-[2000] left-0 top-0 w-full h-full bg-black/60 backdrop-blur-sm hidden">
+        <div class="modal-content bg-neutral-900/95 backdrop-blur-xl border border-white/10 rounded-2xl my-[3%] mx-auto p-0 w-[90%] max-w-3xl max-h-[85vh] overflow-y-auto shadow-2xl">
+            <div class="modal-header px-6 py-5 border-b border-white/10 flex justify-between items-center rounded-t-2xl">
+                <h3 id="history-modal-title" class="text-xl font-bold text-white">任务执行历史</h3>
+                <span class="close text-3xl font-bold cursor-pointer text-white/80 hover:text-white transition-opacity" onclick="closeHistoryModal()">&times;</span>
+            </div>
+            <div class="modal-body px-6 py-5" id="history-modal-body">
+                <!-- 历史记录内容 -->
+            </div>
+        </div>
+    </div>
+
+    <!-- 配置目录模态框 -->
+    <div id="config-directory-modal" class="modal fixed z-[2000] left-0 top-0 w-full h-full bg-black/60 backdrop-blur-sm hidden">
+        <div class="modal-content bg-neutral-900/95 backdrop-blur-xl border border-white/10 rounded-2xl my-[3%] mx-auto p-0 w-[90%] max-w-3xl max-h-[85vh] overflow-y-auto shadow-2xl">
+            <div class="modal-header px-6 py-5 border-b border-white/10 flex justify-between items-center rounded-t-2xl">
+                <h3 class="text-xl font-bold text-white">配置目录结构</h3>
+                <span class="close text-3xl font-bold cursor-pointer text-white/80 hover:text-white transition-opacity" onclick="closeConfigDirectoryModal()">&times;</span>
+            </div>
+            <div class="modal-body px-6 py-5" id="config-directory-body">
+                <!-- 配置目录内容 -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- Three.js Quantum Data Ocean & Holographic Sphere Animation ---
+        function initThreeJSBackground() {
+            const container = document.getElementById('canvas-container');
+            if (!container) return;
+
+            let camera, scene, renderer;
+            let particles, count = 0;
+            let sphereGroup, coreSphere, outerShell, rings = [];
+            let mouseX = 0, mouseY = 0;
+            let windowHalfX = window.innerWidth / 2;
+            let windowHalfY = window.innerHeight / 2;
+
+            init();
+            animate();
+
+            function init() {
+                camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 10000);
+                camera.position.z = 1000;
+                camera.position.y = 200;
+
+                scene = new THREE.Scene();
+                scene.fog = new THREE.FogExp2(0x000000, 0.001);
+
+                // --- 1. 底部数据海洋 ---
+                const SEPARATION = 80, AMOUNTX = 60, AMOUNTY = 60;
+                const numParticles = AMOUNTX * AMOUNTY;
+                const positions = new Float32Array(numParticles * 3);
+                const scales = new Float32Array(numParticles);
+
+                let i = 0, j = 0;
+                for (let ix = 0; ix < AMOUNTX; ix++) {
+                    for (let iy = 0; iy < AMOUNTY; iy++) {
+                        positions[i] = ix * SEPARATION - ((AMOUNTX * SEPARATION) / 2);
+                        positions[i + 1] = 0;
+                        positions[i + 2] = iy * SEPARATION - ((AMOUNTY * SEPARATION) / 2);
+                        scales[j] = 1;
+                        i += 3;
+                        j++;
+                    }
+                }
+
+                const geometry = new THREE.BufferGeometry();
+                geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+                geometry.setAttribute('scale', new THREE.BufferAttribute(scales, 1));
+
+                const material = new THREE.PointsMaterial({
+                    color: 0x555555,
+                    size: 2,
+                    transparent: true,
+                    opacity: 0.5,
+                    sizeAttenuation: true
+                });
+
+                particles = new THREE.Points(geometry, material);
+                particles.position.y = -300;
+                scene.add(particles);
+
+                // --- 2. 全息球体 ---
+                sphereGroup = new THREE.Group();
+                sphereGroup.position.y = 150;
+                scene.add(sphereGroup);
+
+                // A. 核心线框球
+                const coreGeo = new THREE.IcosahedronGeometry(180, 2);
+                const coreMat = new THREE.MeshBasicMaterial({ 
+                    color: 0xffffff, 
+                    wireframe: true, 
+                    transparent: true, 
+                    opacity: 0.3 
+                });
+                coreSphere = new THREE.Mesh(coreGeo, coreMat);
+                sphereGroup.add(coreSphere);
+
+                // B. 内部发光核
+                const innerGeo = new THREE.IcosahedronGeometry(100, 4);
+                const innerMat = new THREE.MeshBasicMaterial({
+                    color: 0xffffff,
+                    wireframe: true,
+                    transparent: true,
+                    opacity: 0.1
+                });
+                const innerSphere = new THREE.Mesh(innerGeo, innerMat);
+                sphereGroup.add(innerSphere);
+
+                // C. 外部点阵壳
+                const shellGeo = new THREE.IcosahedronGeometry(240, 3);
+                const shellPos = shellGeo.attributes.position;
+                const shellPointsGeo = new THREE.BufferGeometry();
+                shellPointsGeo.setAttribute('position', shellPos);
+                
+                const shellMat = new THREE.PointsMaterial({
+                    color: 0xaaaaaa,
+                    size: 3,
+                    transparent: true,
+                    opacity: 0.6,
+                    sizeAttenuation: true
+                });
+                outerShell = new THREE.Points(shellPointsGeo, shellMat);
+                sphereGroup.add(outerShell);
+
+                // D. 旋转轨道环
+                const createRing = (radius, tube, radialSegments, tubularSegments, arc, rotation) => {
+                    const ringGeo = new THREE.TorusGeometry(radius, tube, radialSegments, tubularSegments, arc);
+                    const ringMat = new THREE.MeshBasicMaterial({ 
+                        color: 0xffffff, 
+                        wireframe: true,
+                        transparent: true,
+                        opacity: 0.2
+                    });
+                    const ring = new THREE.Mesh(ringGeo, ringMat);
+                    ring.rotation.set(rotation.x, rotation.y, rotation.z);
+                    sphereGroup.add(ring);
+                    rings.push(ring);
+                };
+
+                createRing(280, 2, 16, 100, Math.PI * 2, { x: Math.PI / 2, y: 0, z: 0 });
+                createRing(320, 1, 16, 100, Math.PI * 2, { x: Math.PI / 3, y: Math.PI / 6, z: 0 });
+                createRing(350, 1, 16, 100, Math.PI * 2, { x: -Math.PI / 4, y: 0, z: Math.PI / 6 });
+
+                // E. 浮动粒子云
+                const cloudGeo = new THREE.BufferGeometry();
+                const cloudCount = 200;
+                const cloudPos = new Float32Array(cloudCount * 3);
+                
+                for(let k=0; k<cloudCount*3; k+=3) {
+                    const r = 300 + Math.random() * 200;
+                    const theta = Math.random() * Math.PI * 2;
+                    const phi = Math.acos(2 * Math.random() - 1);
+                    
+                    cloudPos[k] = r * Math.sin(phi) * Math.cos(theta);
+                    cloudPos[k+1] = r * Math.sin(phi) * Math.sin(theta);
+                    cloudPos[k+2] = r * Math.cos(phi);
+                }
+                
+                cloudGeo.setAttribute('position', new THREE.BufferAttribute(cloudPos, 3));
+                const cloudMat = new THREE.PointsMaterial({
+                    color: 0x888888,
+                    size: 2,
+                    transparent: true,
+                    opacity: 0.4
+                });
+                const cloud = new THREE.Points(cloudGeo, cloudMat);
+                sphereGroup.add(cloud);
+
+                // 渲染器
+                renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+                renderer.setPixelRatio(window.devicePixelRatio);
+                renderer.setSize(window.innerWidth, window.innerHeight);
+                container.appendChild(renderer.domElement);
+
+                // 事件监听
+                document.addEventListener('mousemove', onDocumentMouseMove);
+                window.addEventListener('resize', onWindowResize);
+            }
+
+            function onWindowResize() {
+                windowHalfX = window.innerWidth / 2;
+                windowHalfY = window.innerHeight / 2;
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            }
+
+            function onDocumentMouseMove(event) {
+                mouseX = event.clientX - windowHalfX;
+                mouseY = event.clientY - windowHalfY;
+            }
+
+            function animate() {
+                requestAnimationFrame(animate);
+                render();
+            }
+
+            function render() {
+                // 摄像机跟随鼠标缓慢移动
+                camera.position.x += (mouseX - camera.position.x) * 0.02;
+                camera.position.y += (-mouseY + 200 - camera.position.y) * 0.02;
+                camera.lookAt(scene.position);
+
+                // 1. 粒子波浪动画
+                const positions = particles.geometry.attributes.position.array;
+                let i = 0;
+                const SEPARATION = 80, AMOUNTX = 60, AMOUNTY = 60;
+                for (let ix = 0; ix < AMOUNTX; ix++) {
+                    for (let iy = 0; iy < AMOUNTY; iy++) {
+                        positions[i + 1] = (Math.sin((ix + count) * 0.3) * 50) +
+                                           (Math.sin((iy + count) * 0.5) * 50);
+                        i += 3;
+                    }
+                }
+                particles.geometry.attributes.position.needsUpdate = true;
+                count += 0.1;
+
+                // 2. 全息球动画
+                if (sphereGroup) {
+                    sphereGroup.position.y = 150 + Math.sin(count * 0.2) * 20;
+                    coreSphere.rotation.y += 0.005;
+                    coreSphere.rotation.z += 0.002;
+                    outerShell.rotation.y -= 0.003;
+                    rings.forEach((ring, idx) => {
+                        ring.rotation.x += 0.002 * (idx + 1);
+                        ring.rotation.y += 0.002 * (idx + 1);
+                    });
+                    sphereGroup.rotation.x = mouseY * 0.0005;
+                    sphereGroup.rotation.y = mouseX * 0.0005;
+                }
+
+                renderer.render(scene, camera);
+            }
+        }
+
+        // 启动 Three.js 背景
+        initThreeJSBackground();
+    </script>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="index.js"></script>
+</body>
+</html>

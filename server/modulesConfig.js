@@ -217,6 +217,56 @@ const modules = [
                 logger.warn(`Process timeout: ${processId}`);
             }
         }
+    },
+    
+    {
+        // Scheduler 调度器服务
+        name: 'scheduler',
+        module: './modules/scheduler',
+        setupFunction: 'setupSchedulerService',
+        enabled: true,
+        
+        // 启用条件（通过配置控制）
+        enabledCondition: (config) => config.scheduler?.enabled !== false,
+        
+        // 服务特性
+        features: {
+            hasRoutes: true,
+            emitsEvents: true
+        },
+        
+        // 生成初始化参数（支持 runtimeContext）
+        getOptions: (config, runtimeContext) => {
+            // 调度器配置保存在用户数据目录
+            const schedulerDir = path.join(getUserDataDir(), 'scheduler');
+            
+            return {
+                workDir: schedulerDir,
+                serviceName: 'Scheduler',
+                autoStartScheduler: config.scheduler?.autoStartScheduler !== false,
+                enableLogging: config.scheduler?.enableLogging !== false,
+                maxLogs: config.scheduler?.maxLogs || 1000
+            };
+        },
+        
+        // 事件监听配置
+        events: {
+            started: ({ serviceName, startTime, config }) => {
+                logger.info('Scheduler service started');
+            },
+            stopped: ({ serviceName, uptime }) => {
+                logger.info('Scheduler service stopped');
+            },
+            error: ({ type, error }) => {
+                logger.error(`Scheduler service error (${type}):`, error);
+            },
+            task_execution_completed: ({ taskId, executionId, duration, exitCode }) => {
+                logger.info(`Scheduler task completed: ${taskId} (exit: ${exitCode}, duration: ${duration}ms)`);
+            },
+            task_execution_failed: ({ taskId, executionId, error }) => {
+                logger.error(`Scheduler task failed: ${taskId} - ${error}`);
+            }
+        }
     }
 ];
 

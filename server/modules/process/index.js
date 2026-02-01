@@ -91,6 +91,9 @@ function setupProcessService(options = {}) {
         this.isRunning = true;
         this.startTime = new Date();
         
+        // 设置全局实例，供其他模块（如 scheduler）使用
+        global.processManagerService = this;
+        
         this.logger.info(`${this.serviceName}服务已启动`);
         this.emit('started', { 
           serviceName: this.serviceName,

@@ -1,0 +1,28 @@
+{
+  "version": "1.0.0",
+  "lastUpdated": "2026-02-02T00:00:00+08:00",
+  "settings": {
+    "timezone": "Asia/Shanghai",
+    "maxRetries": 3,
+    "logLevel": "info",
+    "healthCheckInterval": 60000,
+    "webApiPort": 3333,
+    "webApiEnabled": true
+  },
+  "completed_tasks": {},
+  "tasks": {
+    "example_task": {
+      "type": "cron",
+      "name": "示例任务",
+      "description": "这是一个示例任务，用于演示调度器基本配置格式",
+      "schedule": "0 9 * * *",
+      "script": "server/modules/scheduler/example-task.js",
+      "args": ["--message", "定时任务执行", "--verbose"],
+      "enabled": false,
+      "timeout": 28800000,
+      "retryOnFailure": false,
+      "maxRetries": 0,
+      "tags": ["example", "demo"]
+    }
+  }
+}

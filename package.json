@@ -54,6 +54,7 @@
     "express": "^4.18.2",
     "happy-coder": "file:./lib/happy-cli",
     "libsodium-wrappers": "^0.7.13",
+    "node-cron": "^3.0.3",
     "socket.io": "^4.7.0",
     "socket.io-client": "^4.7.0",
     "sql.js": "^1.11.0",
