@@ -45,8 +45,12 @@ function getConfigFile() {
 
 // 基础配置常量
 const BASE_CONFIG = {
-  WORK_DIR: getWorkDir(),
-  PID_FILE: getSubDir('process/scheduler.pid'),
+  get WORK_DIR() {
+    return getWorkDir();
+  },
+  get PID_FILE() {
+    return getSubDir('process/scheduler.pid');
+  },
   get CONFIG_FILE() {
     return getConfigFile();
   }
