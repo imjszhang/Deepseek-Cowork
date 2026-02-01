@@ -581,3 +581,90 @@ input:focus + .slider {
 .command-suggestions::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.25);
 }
+
+/* ===== 浅色主题样式 - 颜色反转 ===== */
+
+/* 基础输入框聚焦 - 浅色主题 */
+body:not(.dark) .input:focus {
+  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.1), var(--glow-primary);
+}
+
+/* 文本域聚焦 - 浅色主题 */
+body:not(.dark) .textarea:focus {
+  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.1), var(--glow-primary);
+}
+
+/* 选择框聚焦 - 浅色主题 */
+body:not(.dark) .select:focus {
+  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.1), var(--glow-primary);
+}
+
+/* 设置项输入框聚焦 - 浅色主题 */
+body:not(.dark) .setting-item input:focus {
+  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.1);
+}
+
+/* Modal 输入框聚焦 - 浅色主题 */
+body:not(.dark) .modal-body input:focus {
+  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.1);
+}
+
+/* Switch 开关 - 浅色主题 */
+body:not(.dark) input:checked + .slider {
+  background-color: rgba(0, 0, 0, 0.15);
+  border-color: rgba(0, 0, 0, 0.3);
+  box-shadow: 0 0 12px rgba(0, 0, 0, 0.15);
+}
+
+body:not(.dark) input:checked + .slider:before {
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.3);
+}
+
+body:not(.dark) input:focus + .slider {
+  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.1);
+}
+
+/* 命令建议下拉框 - 浅色主题 */
+body:not(.dark) .command-suggestions {
+  background: rgba(255, 255, 255, 0.98);
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.15);
+}
+
+body:not(.dark) .command-item {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+body:not(.dark) .command-item:hover {
+  background: rgba(0, 0, 0, 0.06);
+}
+
+body:not(.dark) .command-item.selected {
+  background: rgba(0, 0, 0, 0.15) !important;
+  border-left: 3px solid rgba(0, 0, 0, 0.7);
+}
+
+body:not(.dark) .command-name {
+  color: rgba(0, 0, 0, 0.5);
+}
+
+body:not(.dark) .command-desc {
+  color: rgba(0, 0, 0, 0.3);
+}
+
+body:not(.dark) .command-suggestions .command-item.selected .command-name {
+  color: #000000 !important;
+}
+
+body:not(.dark) .command-suggestions .command-item.selected .command-desc {
+  color: rgba(0, 0, 0, 0.75) !important;
+}
+
+/* 命令建议滚动条 - 浅色主题 */
+body:not(.dark) .command-suggestions::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.15);
+}
+
+body:not(.dark) .command-suggestions::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.25);
+}

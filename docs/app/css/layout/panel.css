@@ -702,3 +702,49 @@
     display: none;
   }
 }
+
+/* ===== 浅色主题样式 ===== */
+body:not(.dark) .panel-header {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+body:not(.dark) .panel-header h2 {
+  color: black;
+}
+
+body:not(.dark) .panel-content.files-panel-no-header #files-breadcrumb {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+body:not(.dark) #chat-panel {
+  border-right: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+body:not(.dark) .loading-spinner {
+  border: 3px solid rgba(0, 0, 0, 0.1);
+}
+
+body:not(.dark) .settings-nav {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+body:not(.dark) .settings-nav-item:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+body:not(.dark) .restart-prompt {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+body:not(.dark) .display-panel-header {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  background: rgba(255, 255, 255, 0.2);
+}
+
+body:not(.dark) .display-header-btn:hover {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+body:not(.dark) .display-header-btn:active {
+  background: rgba(0, 0, 0, 0.15);
+}

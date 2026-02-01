@@ -9,70 +9,121 @@
   --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   --font-mono: 'JetBrains Mono', 'Monaco', 'Menlo', 'Consolas', monospace;
   
-  /* ===== 颜色系统 - 浅色主题 ===== */
+  /* ===== 颜色系统 - 浅色主题（深色主题完全反转） ===== */
+  /* 深色 hsl(0 0% 0%) → 浅色 hsl(0 0% 100%) */
   --background: hsl(0 0% 100%);
-  --foreground: hsl(240 10% 3.9%);
+  /* 深色 hsl(0 0% 90%) → 浅色 hsl(0 0% 10%) */
+  --foreground: hsl(0 0% 10%);
   
   --card: hsl(0 0% 100%);
-  --card-foreground: hsl(240 10% 3.9%);
+  --card-foreground: hsl(0 0% 10%);
   
   --popover: hsl(0 0% 100%);
-  --popover-foreground: hsl(240 10% 3.9%);
+  --popover-foreground: hsl(0 0% 10%);
   
-  --primary: hsl(0 0% 20%);
-  --primary-foreground: hsl(0 0% 98%);
+  /* 深色 hsl(0 0% 96%) → 浅色 hsl(0 0% 4%) */
+  --primary: hsl(0 0% 4%);
+  /* 深色 hsl(0 0% 9%) → 浅色 hsl(0 0% 91%) */
+  --primary-foreground: hsl(0 0% 91%);
   
-  --secondary: hsl(240 4.8% 95.9%);
-  --secondary-foreground: hsl(240 5.9% 10%);
+  /* 深色 hsl(0 0% 10%) → 浅色 hsl(0 0% 90%) */
+  --secondary: hsl(0 0% 90%);
+  /* 深色 hsl(0 0% 98%) → 浅色 hsl(0 0% 2%) */
+  --secondary-foreground: hsl(0 0% 2%);
   
-  --muted: hsl(240 4.8% 95.9%);
-  --muted-foreground: hsl(240 3.8% 46.1%);
+  --muted: hsl(0 0% 90%);
+  /* 深色 hsl(0 0% 64%) → 浅色 hsl(0 0% 36%) */
+  --muted-foreground: hsl(0 0% 36%);
   
-  --accent: hsl(240 4.8% 95.9%);
-  --accent-foreground: hsl(240 5.9% 10%);
+  --accent: hsl(0 0% 90%);
+  --accent-foreground: hsl(0 0% 2%);
   
-  --destructive: hsl(0 84.2% 60.2%);
-  --destructive-foreground: hsl(0 0% 98%);
+  /* 深色 hsl(0 62.8% 30.6%) → 浅色 hsl(0 62.8% 69.4%) */
+  --destructive: hsl(0 62.8% 69.4%);
+  --destructive-foreground: hsl(0 0% 2%);
   
-  --border: hsl(240 5.9% 90%);
-  --input: hsl(240 5.9% 90%);
-  --ring: hsl(0 0% 20%);
+  /* 深色 hsl(0 0% 100% / 0.1) → 浅色 hsl(0 0% 0% / 0.1) */
+  --border: hsl(0 0% 0% / 0.1);
+  --input: hsl(0 0% 0% / 0.1);
+  /* 深色 hsl(0 0% 100% / 0.2) → 浅色 hsl(0 0% 0% / 0.2) */
+  --ring: hsl(0 0% 0% / 0.2);
   
-  /* ===== 语义颜色 ===== */
+  /* ===== 语义颜色 - 浅色主题 ===== */
   --success: hsl(142 76% 36%);
-  --success-foreground: hsl(0 0% 98%);
+  --success-foreground: hsl(0 0% 2%);
   
   --warning: hsl(38 92% 50%);
-  --warning-foreground: hsl(0 0% 98%);
+  --warning-foreground: hsl(0 0% 2%);
   
-  --info: hsl(0 0% 40%);
-  --info-foreground: hsl(0 0% 98%);
+  /* 深色 hsl(0 0% 70%) → 浅色 hsl(0 0% 30%) */
+  --info: hsl(0 0% 30%);
+  --info-foreground: hsl(0 0% 2%);
   
   /* ===== 状态颜色半透明变体 - 浅色主题 ===== */
   --success-bg: hsl(142 76% 36% / 0.1);
+  /* 深色 hsl(142 76% 60%) → 浅色 hsl(142 76% 30%) */
   --success-text: hsl(142 76% 30%);
   --success-border: hsl(142 76% 36% / 0.2);
   
   --error-bg: hsl(0 84% 60% / 0.1);
-  --error-text: hsl(0 84% 50%);
+  /* 深色 hsl(0 84% 70%) → 浅色 hsl(0 84% 30%) */
+  --error-text: hsl(0 84% 30%);
   --error-border: hsl(0 84% 60% / 0.2);
   
   --warning-bg: hsl(38 92% 50% / 0.1);
-  --warning-text: hsl(38 92% 40%);
+  /* 深色 hsl(38 92% 70%) → 浅色 hsl(38 92% 30%) */
+  --warning-text: hsl(38 92% 30%);
   --warning-border: hsl(38 92% 50% / 0.2);
   
+  /* 深色 hsl(0 0% 100% / 0.1) → 浅色 hsl(0 0% 0% / 0.05) */
   --info-bg: hsl(0 0% 0% / 0.05);
-  --info-text: hsl(0 0% 30%);
+  /* 深色 hsl(0 0% 85%) → 浅色 hsl(0 0% 15%) */
+  --info-text: hsl(0 0% 15%);
   --info-border: hsl(0 0% 0% / 0.1);
   
-  /* ===== 玻璃态变量 - 浅色主题 ===== */
-  --glass-bg: rgba(0, 0, 0, 0.02);
-  --glass-bg-hover: rgba(0, 0, 0, 0.05);
-  --glass-border: rgba(0, 0, 0, 0.08);
-  --glass-border-hover: rgba(0, 0, 0, 0.15);
+  /* ===== 玻璃态变量 - 浅色主题（深色 rgba(255,255,255,...) → 浅色 rgba(0,0,0,...)） ===== */
+  --glass-bg: rgba(0, 0, 0, 0.03);
+  --glass-bg-hover: rgba(0, 0, 0, 0.08);
+  --glass-border: rgba(0, 0, 0, 0.1);
+  --glass-border-hover: rgba(0, 0, 0, 0.2);
   --glass-blur: 10px;
   
-  /* ===== 发光效果变量 - 浅色主题 ===== */
+  /* ===== 对话框专用玻璃态变量 - 浅色主题 ===== */
+  /* 消息气泡 */
+  --chat-user-bg: rgba(0, 0, 0, 0.1);
+  --chat-user-border: rgba(0, 0, 0, 0.2);
+  --chat-user-text: black;
+  
+  --chat-assistant-bg: rgba(0, 0, 0, 0.03);
+  --chat-assistant-border: rgba(0, 0, 0, 0.08);
+  --chat-assistant-text: rgba(0, 0, 0, 0.9);
+  
+  --chat-system-bg: rgba(0, 0, 0, 0.02);
+  --chat-system-border: rgba(0, 0, 0, 0.05);
+  --chat-system-text: rgba(0, 0, 0, 0.6);
+  
+  /* 输入区域 */
+  --chat-input-bg: rgba(0, 0, 0, 0.05);
+  --chat-input-border: rgba(0, 0, 0, 0.1);
+  --chat-input-focus-border: rgba(0, 0, 0, 0.3);
+  --chat-input-placeholder: rgba(0, 0, 0, 0.4);
+  
+  /* 按钮 */
+  --chat-btn-bg: rgba(0, 0, 0, 0.1);
+  --chat-btn-border: rgba(0, 0, 0, 0.2);
+  --chat-btn-hover-bg: rgba(0, 0, 0, 0.2);
+  --chat-btn-hover-border: rgba(0, 0, 0, 0.3);
+  
+  /* 代码块 - 浅色主题使用浅灰背景 */
+  --chat-code-bg: rgba(0, 0, 0, 0.05);
+  --chat-code-border: rgba(0, 0, 0, 0.1);
+  --chat-code-text: rgba(0, 0, 0, 0.8);
+  
+  --chat-inline-code-bg: rgba(0, 0, 0, 0.05);
+  --chat-inline-code-border: rgba(0, 0, 0, 0.08);
+  --chat-inline-code-text: rgba(0, 0, 0, 0.85);
+  
+  /* ===== 发光效果变量 - 浅色主题（降低强度） ===== */
   --glow-success: 0 0 12px hsl(142 76% 36% / 0.3);
   --glow-warning: 0 0 12px hsl(38 92% 50% / 0.3);
   --glow-error: 0 0 12px hsl(0 84% 60% / 0.3);
@@ -86,7 +137,7 @@
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
   
-  /* ===== 阴影系统 ===== */
+  /* ===== 阴影系统 - 浅色主题（较轻） ===== */
   --shadow-sm: 0 1px 2px 0 hsl(0 0% 0% / 0.05);
   --shadow: 0 1px 3px 0 hsl(0 0% 0% / 0.1), 0 1px 2px -1px hsl(0 0% 0% / 0.1);
   --shadow-md: 0 4px 6px -1px hsl(0 0% 0% / 0.1), 0 2px 4px -2px hsl(0 0% 0% / 0.1);

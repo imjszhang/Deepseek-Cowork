@@ -2,9 +2,8 @@
  * ThemeManager - 主题管理模块
  * 支持浅色/深色/跟随系统三种模式
  * 
- * [暂时修改] 当前强制使用深色模式，其他模式已禁用
- * 
  * @created 2026-01-16
+ * @updated 2026-02-01 - 启用主题切换功能
  * @module core/ThemeManager
  */
 
@@ -13,11 +12,9 @@ const ThemeManager = {
   THEMES: ['light', 'dark', 'system'],
   
   // 当前主题模式 ('light' | 'dark' | 'system')
-  // [暂时修改] 强制使用深色模式
-  currentMode: 'dark',
+  currentMode: 'system',
   
   // 实际应用的主题 ('light' | 'dark')
-  // [暂时修改] 强制使用深色模式
   appliedTheme: 'dark',
   
   // 系统主题媒体查询
@@ -30,20 +27,19 @@ const ThemeManager = {
     // 设置媒体查询
     this.mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
     
-    // [暂时禁用] 读取保存的主题偏好，强制使用深色模式
-    // const saved = localStorage.getItem(this.STORAGE_KEY);
-    // if (saved && this.THEMES.includes(saved)) {
-    //   this.currentMode = saved;
-    // } else {
-    //   this.currentMode = 'system';
-    // }
-    this.currentMode = 'dark';  // 强制深色模式
+    // 读取保存的主题偏好
+    const saved = localStorage.getItem(this.STORAGE_KEY);
+    if (saved && this.THEMES.includes(saved)) {
+      this.currentMode = saved;
+    } else {
+      this.currentMode = 'system';
+    }
     
     // 应用主题
     this.applyTheme();
     
-    // [暂时禁用] 监听系统主题变化
-    // this.watchSystem();
+    // 监听系统主题变化
+    this.watchSystem();
     
     console.log('[ThemeManager] 初始化完成，当前模式:', this.currentMode);
   },

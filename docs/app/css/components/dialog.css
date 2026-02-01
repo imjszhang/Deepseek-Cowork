@@ -512,3 +512,29 @@
   justify-content: center;
   gap: 0.75rem;
 }
+
+/* ===== 浅色主题样式 - 颜色反转 ===== */
+
+/* 对话框容器 - 浅色主题 */
+body:not(.dark) .modal-dialog {
+  background: var(--glass-bg, rgba(255, 255, 255, 0.95));
+  border: 1px solid var(--glass-border, rgba(0, 0, 0, 0.1));
+  box-shadow: var(--shadow-glass, 0 16px 70px rgba(0, 0, 0, 0.15)), 0 0 40px rgba(0, 0, 0, 0.1);
+}
+
+/* 对话框头部 - 浅色主题 */
+body:not(.dark) .modal-header {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+/* 关闭按钮悬停 - 浅色主题 */
+body:not(.dark) .modal-close-btn:hover {
+  background: rgba(0, 0, 0, 0.1);
+  color: black;
+}
+
+/* 对话框底部 - 浅色主题 */
+body:not(.dark) .modal-footer {
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+  background: rgba(255, 255, 255, 0.3);
+}

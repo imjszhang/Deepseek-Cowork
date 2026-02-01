@@ -965,3 +965,89 @@
   transform: scale(0.96);
   transition: transform 0.1s ease;
 }
+
+/* ===== 浅色主题样式 - 颜色反转 ===== */
+
+/* btn-primary 悬停 - 浅色主题 */
+body:not(.dark) .btn-primary:hover:not(:disabled) {
+  background: hsl(0 0% 85%);
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.15);
+}
+
+/* btn-link 悬停 - 浅色主题 */
+body:not(.dark) .btn-link:hover:not(:disabled) {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+/* btn-icon-sm 悬停 - 浅色主题 */
+body:not(.dark) .btn-icon-sm:hover:not(:disabled) {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+/* btn-glass 基础 - 浅色主题 */
+body:not(.dark) .btn-glass {
+  background: var(--glass-bg-hover, rgba(0, 0, 0, 0.08));
+  border: 1px solid var(--glass-border-hover, rgba(0, 0, 0, 0.2));
+}
+
+body:not(.dark) .btn-glass:hover:not(:disabled) {
+  background: rgba(0, 0, 0, 0.15);
+  border-color: rgba(0, 0, 0, 0.3);
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+}
+
+/* btn-glass-sm - 浅色主题 */
+body:not(.dark) .btn-glass-sm {
+  background: var(--glass-bg, rgba(0, 0, 0, 0.03));
+  border: 1px solid var(--glass-border, rgba(0, 0, 0, 0.1));
+}
+
+body:not(.dark) .btn-glass-sm:hover:not(:disabled) {
+  background: var(--glass-bg-hover, rgba(0, 0, 0, 0.08));
+  border-color: var(--glass-border-hover, rgba(0, 0, 0, 0.2));
+}
+
+/* btn-glass-secondary - 浅色主题 */
+body:not(.dark) .btn-glass-secondary {
+  background: var(--glass-bg, rgba(0, 0, 0, 0.03));
+  border: 1px solid var(--glass-border, rgba(0, 0, 0, 0.1));
+}
+
+body:not(.dark) .btn-glass-secondary:hover:not(:disabled) {
+  background: var(--glass-bg-hover, rgba(0, 0, 0, 0.08));
+  border-color: var(--glass-border-hover, rgba(0, 0, 0, 0.2));
+}
+
+/* btn-glass-icon - 浅色主题 */
+body:not(.dark) .btn-glass-icon {
+  background: var(--glass-bg, rgba(0, 0, 0, 0.03));
+  border: 1px solid var(--glass-border, rgba(0, 0, 0, 0.1));
+}
+
+body:not(.dark) .btn-glass-icon:hover:not(:disabled) {
+  background: var(--glass-bg-hover, rgba(0, 0, 0, 0.08));
+  border-color: var(--glass-border-hover, rgba(0, 0, 0, 0.2));
+}
+
+/* btn-glass-icon-sm - 浅色主题 */
+body:not(.dark) .btn-glass-icon-sm {
+  background: var(--glass-bg, rgba(0, 0, 0, 0.03));
+  border: 1px solid var(--glass-border, rgba(0, 0, 0, 0.1));
+}
+
+body:not(.dark) .btn-glass-icon-sm:hover:not(:disabled) {
+  background: var(--glass-bg-hover, rgba(0, 0, 0, 0.08));
+  border-color: var(--glass-border-hover, rgba(0, 0, 0, 0.2));
+}
+
+/* btn-glass-primary - 浅色主题 */
+body:not(.dark) .btn-glass-primary {
+  background: rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(0, 0, 0, 0.2);
+}
+
+body:not(.dark) .btn-glass-primary:hover:not(:disabled) {
+  background: rgba(0, 0, 0, 0.2);
+  border-color: rgba(0, 0, 0, 0.3);
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.15);
+}

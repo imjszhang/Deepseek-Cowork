@@ -242,7 +242,7 @@ class InternalScheduler extends EventEmitter {
   }
   
   /**
-   * 初始化文件系统管理（优先使用 Explorer，回退到 FileSystemManager）
+   * 初始化文件系统管理（总是初始化独立的 FileSystemManager，可选使用 Explorer）
    */
   initializeFileSystemManagement() {
     try {
@@ -272,18 +272,21 @@ class InternalScheduler extends EventEmitter {
         });
         
       } else {
-        // 回退到原有的 FileSystemManager 方式
-        this.log('warn', 'Explorer 实例不可用，回退到独立的 FileSystemManager');
-        this.initializeFallbackFileSystemManager();
+        this.log('info', 'Explorer 实例不可用');
       }
+      
+      // 总是初始化独立的 FileSystemManager 作为备用（用于监控配置文件）
+      this.initializeFallbackFileSystemManager();
       
     } catch (error) {
       this.log('error', '初始化文件系统管理失败', { error: error.message });
-      // 尝试回退到原有方式
-      try {
-        this.initializeFallbackFileSystemManager();
-      } catch (fallbackError) {
-        this.log('error', '回退到 FileSystemManager 也失败', { error: fallbackError.message });
+      // 尝试确保独立的 FileSystemManager 可用
+      if (!this.fileSystemManager) {
+        try {
+          this.initializeFallbackFileSystemManager();
+        } catch (fallbackError) {
+          this.log('error', '回退到 FileSystemManager 也失败', { error: fallbackError.message });
+        }
       }
     }
   }
@@ -558,6 +561,9 @@ class InternalScheduler extends EventEmitter {
       
       this.log('info', '内置调度器启动中...');
       
+      // 重新尝试连接 Explorer 实例（此时其他模块应该已经启动）
+      this.tryConnectExplorer();
+      
       // 启动时归档过期的 once 任务
       await this.archiveExpiredOnceTasks();
       
@@ -582,6 +588,44 @@ class InternalScheduler extends EventEmitter {
     } catch (error) {
       this.log('error', '启动调度器失败', { error: error.message });
       throw error;
+    }
+  }
+  
+  /**
+   * 尝试连接 Explorer 实例
+   * 在启动时调用，此时其他模块应该已经启动
+   */
+  tryConnectExplorer() {
+    // 如果已经连接了 Explorer，不需要重新连接
+    if (this.explorerInstance && this.explorerInstance.fileSystemManager) {
+      this.log('info', 'Explorer 实例已连接');
+      return;
+    }
+    
+    // 尝试获取全局 Explorer 实例
+    if (global.explorerInstance && global.explorerInstance.fileSystemManager) {
+      this.explorerInstance = global.explorerInstance;
+      
+      // 监听文件变化事件
+      const fileSystemManager = this.explorerInstance.fileSystemManager;
+      fileSystemManager.on('fileChange', (data) => {
+        if (data.watcherKey === this.configWatcherKey) {
+          this.handleConfigFileChange(data);
+        }
+      });
+      
+      // 监听监控器错误事件
+      fileSystemManager.on('watcherError', (data) => {
+        if (data.watcherKey === this.configWatcherKey) {
+          this.log('error', '配置文件监听出错', { error: data.error });
+        }
+      });
+      
+      this.log('info', 'Explorer 实例连接成功', { 
+        workDir: fileSystemManager.workDir 
+      });
+    } else {
+      this.log('info', 'Explorer 实例不可用，继续使用独立的 FileSystemManager');
     }
   }
   
@@ -1691,17 +1735,39 @@ class InternalScheduler extends EventEmitter {
       this.explorerInstance = global.explorerInstance;
     }
     
+    // 获取当前使用的配置文件路径
+    const configFile = BASE_CONFIG.CONFIG_FILE;
+    const configDir = path.dirname(configFile);
+    
     let fileSystemManager = null;
     let managerType = '';
+    let useRelativePath = false;
     
-    // 优先使用 Explorer 的 FileSystemManager
+    // 检查配置目录是否在 Explorer 的工作目录下
     if (this.explorerInstance && this.explorerInstance.fileSystemManager) {
-      fileSystemManager = this.explorerInstance.fileSystemManager;
-      managerType = 'Explorer';
-    } else if (this.fileSystemManager) {
-      // 回退到独立的 FileSystemManager
+      const explorerWorkDir = this.explorerInstance.fileSystemManager.workDir;
+      const normalizedConfigDir = path.normalize(configDir);
+      const normalizedWorkDir = path.normalize(explorerWorkDir);
+      
+      // 检查配置目录是否在 Explorer 工作目录下
+      if (normalizedConfigDir.startsWith(normalizedWorkDir)) {
+        fileSystemManager = this.explorerInstance.fileSystemManager;
+        managerType = 'Explorer';
+        useRelativePath = true;
+        this.log('info', '配置目录在 Explorer 工作目录下，使用 Explorer FileSystemManager');
+      } else {
+        this.log('info', '配置目录不在 Explorer 工作目录下，使用独立的 FileSystemManager', {
+          configDir: configDir,
+          explorerWorkDir: explorerWorkDir
+        });
+      }
+    }
+    
+    // 如果 Explorer 不可用或配置目录不在其工作目录下，使用独立的 FileSystemManager
+    if (!fileSystemManager && this.fileSystemManager) {
       fileSystemManager = this.fileSystemManager;
       managerType = 'Fallback';
+      useRelativePath = true; // 独立的 FileSystemManager 以配置目录的父目录为工作目录
     }
     
     if (!fileSystemManager) {
@@ -1713,28 +1779,32 @@ class InternalScheduler extends EventEmitter {
       // 停止现有的监控器（如果存在）
       fileSystemManager.stopFileWatcher(this.configWatcherKey);
       
-      // 获取当前使用的配置文件路径
-      const configFile = BASE_CONFIG.CONFIG_FILE;
-      const configDir = path.dirname(configFile);
       const workDir = fileSystemManager.workDir;
       
-      // 计算配置文件相对于 FileSystemManager 工作目录的路径
-      let relativeConfigDir = null;
-      try {
-        relativeConfigDir = path.relative(workDir, configDir);
-      } catch (error) {
-        // 如果路径不在 workDir 下，尝试使用绝对路径监控
-        this.log('warn', '配置文件不在 FileSystemManager 工作目录下，尝试监控绝对路径', {
-          configFile: configFile,
-          workDir: workDir
-        });
-        // 对于 Explorer 的 FileSystemManager，可能需要特殊处理
-        relativeConfigDir = configDir;
+      // 计算监控路径
+      let watchPath;
+      if (useRelativePath) {
+        watchPath = path.relative(workDir, configDir);
+        // 如果相对路径以 .. 开头，说明配置目录不在工作目录下，这种情况应该已经被上面的逻辑处理了
+        if (watchPath.startsWith('..')) {
+          this.log('warn', '配置目录不在工作目录下，无法使用相对路径监控', {
+            configDir: configDir,
+            workDir: workDir
+          });
+          // 尝试使用独立的 FileSystemManager
+          if (fileSystemManager !== this.fileSystemManager && this.fileSystemManager) {
+            fileSystemManager = this.fileSystemManager;
+            managerType = 'Fallback';
+            watchPath = path.relative(this.fileSystemManager.workDir, configDir);
+          }
+        }
+      } else {
+        watchPath = configDir;
       }
       
       // 设置配置文件监听
       const watcher = fileSystemManager.setupFileWatcher({
-        path: relativeConfigDir,
+        path: watchPath,
         key: this.configWatcherKey,
         name: '调度器配置文件监控',
         description: '监控调度器配置文件变化并自动重新加载',
@@ -1748,7 +1818,7 @@ class InternalScheduler extends EventEmitter {
       if (watcher) {
         this.log('info', '配置文件监听已启动', { 
           configFile: configFile,
-          watchPath: relativeConfigDir,
+          watchPath: watchPath,
           managerType: `${managerType} FileSystemManager`
         });
       } else {

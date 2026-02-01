@@ -465,3 +465,36 @@
     border-color: var(--primary);
   }
 }
+
+/* ===== 浅色主题样式 - 颜色反转 ===== */
+
+/* 文件项选中 - 浅色主题 */
+body:not(.dark) .file-item.selected {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+/* 展开的目录 - 浅色主题 */
+body:not(.dark) .file-item.folder.expanded {
+  background: rgba(0, 0, 0, 0.03);
+}
+
+/* 进行中状态 - 浅色主题 */
+body:not(.dark) .todo-item.in_progress {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+/* 文件高亮动画 - 浅色主题 */
+@keyframes fileHighlightLight {
+  0%, 100% {
+    background: var(--card);
+    border-color: transparent;
+  }
+  50% {
+    background: rgba(0, 0, 0, 0.15);
+    border-color: var(--primary);
+  }
+}
+
+body:not(.dark) .file-item.file-highlight {
+  animation: fileHighlightLight 0.6s ease-in-out;
+}

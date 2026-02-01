@@ -503,3 +503,52 @@
   border-radius: 2px;
   transition: width 0.3s ease;
 }
+
+/* ===== 浅色主题样式 - 颜色反转 ===== */
+
+/* AI 状态 - 浅色主题 */
+body:not(.dark) .ai-status {
+  background: var(--glass-bg, rgba(0, 0, 0, 0.03));
+  border: 1px solid var(--glass-border, rgba(0, 0, 0, 0.1));
+}
+
+body:not(.dark) .ai-status:hover {
+  background: var(--glass-bg-hover, rgba(0, 0, 0, 0.05));
+  border-color: var(--glass-border-hover, rgba(0, 0, 0, 0.15));
+}
+
+/* Happy AI 事件状态指示器 - 浅色主题 */
+body:not(.dark) .happy-event-status {
+  background: var(--glass-bg, rgba(0, 0, 0, 0.03));
+  border: 1px solid var(--glass-border, rgba(0, 0, 0, 0.1));
+}
+
+body:not(.dark) .happy-event-status:hover {
+  background: var(--glass-bg-hover, rgba(0, 0, 0, 0.05));
+  border-color: var(--glass-border-hover, rgba(0, 0, 0, 0.15));
+}
+
+/* Daemon 状态 - 浅色主题 */
+body:not(.dark) .daemon-status-badge {
+  background: var(--glass-bg, rgba(0, 0, 0, 0.03));
+  border: 1px solid var(--glass-border, rgba(0, 0, 0, 0.1));
+}
+
+body:not(.dark) .daemon-status-badge:hover {
+  background: var(--glass-bg-hover, rgba(0, 0, 0, 0.05));
+}
+
+/* 模型徽章 - 浅色主题 */
+body:not(.dark) .model-badge {
+  background: var(--glass-bg, rgba(0, 0, 0, 0.03));
+  border: 1px solid var(--info-border, rgba(0, 0, 0, 0.15));
+}
+
+body:not(.dark) .model-badge:hover {
+  background: var(--info-bg, rgba(0, 0, 0, 0.1));
+}
+
+/* 更新进度条 - 浅色主题 */
+body:not(.dark) .update-progress-bar {
+  background: var(--glass-bg, rgba(0, 0, 0, 0.1));
+}

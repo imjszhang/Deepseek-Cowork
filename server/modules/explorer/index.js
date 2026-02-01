@@ -144,6 +144,9 @@ function setupExplorerService(options = {}) {
           Logger.info('Internal monitoring disabled, webhook mode active');
         }
         
+        // Set global instance for other modules (e.g., scheduler) to share
+        global.explorerInstance = this;
+        
         this.isRunning = true;
         this.emit('started', { serverInfo: this.getStatus() });
         Logger.info('Explorer service started successfully');
@@ -176,6 +179,11 @@ function setupExplorerService(options = {}) {
           }
         });
         this.sseClients.clear();
+        
+        // Clear global instance
+        if (global.explorerInstance === this) {
+          global.explorerInstance = null;
+        }
         
         this.isRunning = false;
         this.emit('stopped');

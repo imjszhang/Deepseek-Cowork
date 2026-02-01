@@ -215,3 +215,54 @@
 #no-tabs-message {
   flex-direction: column;
 }
+
+/* ===== 浅色主题样式 - 颜色反转 ===== */
+
+/* 通用标签按钮 - 浅色主题 */
+body:not(.dark) .tab-btn {
+  background: rgba(0, 0, 0, 0.05);
+  color: var(--muted-foreground);
+}
+
+body:not(.dark) .tab-btn:hover {
+  background: rgba(0, 0, 0, 0.12);
+  color: var(--foreground);
+}
+
+body:not(.dark) .tab-btn.active {
+  background: var(--foreground);
+  color: var(--background);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* 标签组容器 - 浅色主题 */
+body:not(.dark) .tab-group {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+/* 玻璃态标签组 - 浅色主题 */
+body:not(.dark) .tab-group-glass {
+  background: rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+/* 标签页项 - 浅色主题 */
+body:not(.dark) .tab-item {
+  background: rgba(0, 0, 0, 0.03);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+body:not(.dark) .tab-item:hover {
+  background: rgba(0, 0, 0, 0.08);
+  border-color: rgba(0, 0, 0, 0.2);
+}
+
+/* 标签页图标 - 浅色主题 */
+body:not(.dark) .tab-icon {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+/* 标签页操作按钮 - 浅色主题 */
+body:not(.dark) .tab-action-btn {
+  background: rgba(0, 0, 0, 0.05);
+}

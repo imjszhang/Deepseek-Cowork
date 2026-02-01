@@ -117,3 +117,10 @@
     transform: scale(1.1);
   }
 }
+
+/* ===== 浅色主题样式 - 颜色反转 ===== */
+
+/* 进行中状态 - 浅色主题 */
+body:not(.dark) .todo-item.in_progress {
+  background: rgba(0, 0, 0, 0.1);
+}

@@ -927,3 +927,318 @@ pre:hover .code-copy-btn {
     padding: 0.875rem 3rem 0.875rem 0.875rem;
   }
 }
+
+/* ===== 浅色主题样式 - 颜色反转 ===== */
+
+/* 对话框专用滚动条 - 浅色主题 */
+body:not(.dark) #ai-messages::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+body:not(.dark) #ai-messages::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.2);
+}
+
+/* 欢迎消息 - 浅色主题 */
+body:not(.dark) .ai-welcome {
+  color: rgba(0, 0, 0, 0.5);
+}
+
+body:not(.dark) .ai-welcome h3 {
+  background: linear-gradient(135deg, #000000 0%, #5c5c5c 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+body:not(.dark) .ai-welcome p {
+  color: rgba(0, 0, 0, 0.4);
+}
+
+/* 用户消息 - 浅色主题 */
+body:not(.dark) .ai-message.user {
+  background: rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  color: black;
+}
+
+body:not(.dark) .ai-message.user:hover {
+  background: rgba(0, 0, 0, 0.15);
+  border-color: rgba(0, 0, 0, 0.25);
+}
+
+/* AI 助手消息 - 浅色主题 */
+body:not(.dark) .ai-message.assistant {
+  background: rgba(0, 0, 0, 0.03);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  color: rgba(0, 0, 0, 0.9);
+}
+
+body:not(.dark) .ai-message.assistant:hover {
+  background: rgba(0, 0, 0, 0.06);
+  border-color: rgba(0, 0, 0, 0.12);
+}
+
+/* 系统消息 - 浅色主题 */
+body:not(.dark) .ai-message.system {
+  background: rgba(0, 0, 0, 0.02);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  color: rgba(0, 0, 0, 0.6);
+}
+
+/* 系统事件消息 - 浅色主题 */
+body:not(.dark) .ai-message.system-event {
+  color: rgba(0, 0, 0, 0.5);
+  background: rgba(0, 0, 0, 0.03);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+/* AI 输入区 - 浅色主题 */
+body:not(.dark) #ai-input-area {
+  background: rgba(255, 255, 255, 0.3);
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+/* 发送按钮 - 浅色主题 */
+body:not(.dark) .send-btn {
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  background: rgba(0, 0, 0, 0.1);
+  color: black;
+}
+
+body:not(.dark) .send-btn:hover:not(:disabled) {
+  background: rgba(0, 0, 0, 0.2);
+  border-color: rgba(0, 0, 0, 0.3);
+}
+
+body:not(.dark) .send-btn:focus-visible {
+  outline: 2px solid rgba(0, 0, 0, 0.3);
+}
+
+body:not(.dark) .send-btn:disabled {
+  background: rgba(0, 0, 0, 0.05);
+  border-color: rgba(0, 0, 0, 0.1);
+  color: rgba(0, 0, 0, 0.3);
+}
+
+/* 中止按钮 - 浅色主题（保持红色） */
+body:not(.dark) .abort-btn {
+  color: hsl(0 84% 30%);
+}
+
+/* Markdown 标题 - 浅色主题 */
+body:not(.dark) .markdown-content h1,
+body:not(.dark) .markdown-content h2,
+body:not(.dark) .markdown-content h3,
+body:not(.dark) .markdown-content h4 {
+  color: rgba(0, 0, 0, 0.95);
+}
+
+/* 内联代码 - 浅色主题 */
+body:not(.dark) .markdown-content code {
+  background: rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  color: rgba(0, 0, 0, 0.85);
+}
+
+/* 代码块 - 浅色主题 */
+body:not(.dark) .markdown-content pre {
+  background: rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+body:not(.dark) .markdown-content pre code {
+  color: rgba(0, 0, 0, 0.8);
+}
+
+/* 引用块 - 浅色主题 */
+body:not(.dark) .markdown-content blockquote {
+  border-left: 3px solid rgba(0, 0, 0, 0.3);
+  background: rgba(0, 0, 0, 0.02);
+  color: rgba(0, 0, 0, 0.7);
+}
+
+/* 链接 - 浅色主题 */
+body:not(.dark) .markdown-content a {
+  color: rgba(0, 0, 0, 0.8);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.3);
+}
+
+body:not(.dark) .markdown-content a:hover {
+  color: black;
+  border-bottom-color: rgba(0, 0, 0, 0.6);
+}
+
+/* 消息展开/折叠按钮 - 浅色主题 */
+body:not(.dark) .message-expand-btn {
+  color: rgba(0, 0, 0, 0.6);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  background: rgba(0, 0, 0, 0.02);
+}
+
+body:not(.dark) .message-expand-btn:hover {
+  background: rgba(0, 0, 0, 0.08);
+  border-color: rgba(0, 0, 0, 0.2);
+  color: rgba(0, 0, 0, 0.9);
+}
+
+/* 截断提示 - 浅色主题 */
+body:not(.dark) .truncated-indicator {
+  color: rgba(0, 0, 0, 0.4);
+}
+
+/* 代码复制按钮 - 浅色主题 */
+body:not(.dark) .code-copy-btn {
+  background: rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  color: rgba(0, 0, 0, 0.6);
+}
+
+body:not(.dark) .code-copy-btn:hover {
+  background: rgba(0, 0, 0, 0.1);
+  color: rgba(0, 0, 0, 0.9);
+  border-color: rgba(0, 0, 0, 0.2);
+}
+
+body:not(.dark) .code-copy-btn.copied {
+  background: rgba(34, 197, 94, 0.1);
+  color: hsl(142 76% 30%);
+  border-color: rgba(34, 197, 94, 0.2);
+}
+
+/* 消息复制按钮 - 浅色主题 */
+body:not(.dark) .message-copy-btn {
+  background: rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  color: rgba(0, 0, 0, 0.4);
+}
+
+body:not(.dark) .message-copy-btn:hover {
+  background: rgba(0, 0, 0, 0.1);
+  color: rgba(0, 0, 0, 0.8);
+  border-color: rgba(0, 0, 0, 0.2);
+}
+
+body:not(.dark) .message-copy-btn.copied {
+  background: rgba(34, 197, 94, 0.1);
+  color: hsl(142 76% 30%);
+  border-color: rgba(34, 197, 94, 0.2);
+}
+
+/* 上下文使用量状态栏 - 浅色主题 */
+body:not(.dark) .context-bar {
+  background: rgba(255, 255, 255, 0.2);
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+body:not(.dark) .context-tokens {
+  color: rgba(0, 0, 0, 0.5);
+}
+
+body:not(.dark) .token-label {
+  color: rgba(0, 0, 0, 0.4);
+}
+
+body:not(.dark) .token-divider {
+  color: rgba(0, 0, 0, 0.2);
+}
+
+body:not(.dark) .context-remaining.normal {
+  color: rgba(0, 0, 0, 0.6);
+}
+
+/* 进度条容器 - 浅色主题 */
+body:not(.dark) .context-progress {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+body:not(.dark) .context-fill {
+  background: rgba(0, 0, 0, 0.3);
+}
+
+body:not(.dark) .context-fill.normal {
+  background: rgba(0, 0, 0, 0.3);
+}
+
+/* 选项块 - 浅色主题 */
+body:not(.dark) .options-container {
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+body:not(.dark) .option-item {
+  background: rgba(0, 0, 0, 0.06);
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  color: rgba(0, 0, 0, 0.9);
+}
+
+body:not(.dark) .option-item:hover {
+  background: rgba(0, 0, 0, 0.12);
+  border-color: rgba(0, 0, 0, 0.2);
+}
+
+body:not(.dark) .option-item:active {
+  background: rgba(0, 0, 0, 0.08);
+}
+
+/* 对话首页 - 浅色主题 */
+body:not(.dark) .chat-home {
+  background: #fff;
+}
+
+body:not(.dark) .chat-home-welcome {
+  background: linear-gradient(135deg, #000000 0%, #4f4f4f 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+body:not(.dark) .chat-home-title {
+  background: linear-gradient(135deg, #000000 0%, #5c5c5c 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-shadow: 0 0 40px rgba(0, 0, 0, 0.2);
+}
+
+body:not(.dark) .chat-home-title .typewriter-cursor {
+  background: linear-gradient(135deg, #000000 0%, #5c5c5c 100%);
+}
+
+body:not(.dark) .chat-home-input {
+  background: rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  color: black;
+}
+
+body:not(.dark) .chat-home-input::placeholder {
+  color: rgba(0, 0, 0, 0.4);
+}
+
+body:not(.dark) .chat-home-input:hover {
+  background: rgba(0, 0, 0, 0.08);
+  border-color: rgba(0, 0, 0, 0.2);
+}
+
+body:not(.dark) .chat-home-input:focus {
+  background: rgba(0, 0, 0, 0.1);
+  border-color: rgba(0, 0, 0, 0.3);
+  box-shadow: 0 0 0 4px rgba(0, 0, 0, 0.05),
+              0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+body:not(.dark) .chat-home-send-btn {
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  background: rgba(0, 0, 0, 0.1);
+  color: black;
+}
+
+body:not(.dark) .chat-home-send-btn:hover:not(:disabled) {
+  background: rgba(0, 0, 0, 0.2);
+  border-color: rgba(0, 0, 0, 0.3);
+}
+
+body:not(.dark) .chat-home-send-btn:disabled {
+  background: rgba(0, 0, 0, 0.03);
+  border-color: rgba(0, 0, 0, 0.08);
+  color: rgba(0, 0, 0, 0.25);
+}

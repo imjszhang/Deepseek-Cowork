@@ -3,6 +3,7 @@
  * 为文件预览面板提供全息球体和数据海洋动画效果
  * 
  * @created 2026-01-17
+ * @updated 2026-02-02 - 添加深色/浅色主题支持
  * @module features/explorer/PreviewBackground
  */
 
@@ -32,6 +33,8 @@ class PreviewBackground {
     this.sphereGroup = null;
     this.coreSphere = null;
     this.outerShell = null;
+    this.innerSphere = null;
+    this.particleCloud = null;
     this.rings = [];
     
     // 动画状态
@@ -44,6 +47,40 @@ class PreviewBackground {
     // 容器尺寸
     this.width = 0;
     this.height = 0;
+    
+    // 主题状态
+    this.isDarkTheme = document.body.classList.contains('dark');
+  }
+  
+  /**
+   * 获取主题颜色配置
+   * @returns {Object} 颜色配置对象
+   */
+  getThemeColors() {
+    if (this.isDarkTheme) {
+      return {
+        background: 0x000000,
+        fog: 0x000000,
+        particles: 0x444444,
+        coreSphere: 0xffffff,
+        innerSphere: 0xffffff,
+        outerShell: 0x888888,
+        rings: 0xffffff,
+        particleCloud: 0x666666
+      };
+    } else {
+      // 浅色主题 - 使用深色元素在浅色背景上
+      return {
+        background: 0xf8f8f8,
+        fog: 0xf8f8f8,
+        particles: 0xbbbbbb,
+        coreSphere: 0x333333,
+        innerSphere: 0x333333,
+        outerShell: 0x777777,
+        rings: 0x333333,
+        particleCloud: 0x999999
+      };
+    }
   }
 
   /**
@@ -74,6 +111,7 @@ class PreviewBackground {
    */
   setupScene() {
     const THREE = window.THREE;
+    const colors = this.getThemeColors();
     
     this.width = this.container.offsetWidth || 800;
     this.height = this.container.offsetHeight || 600;
@@ -85,7 +123,7 @@ class PreviewBackground {
     
     // 创建场景
     this.scene = new THREE.Scene();
-    this.scene.fog = new THREE.FogExp2(0x000000, 0.0012);
+    this.scene.fog = new THREE.FogExp2(colors.fog, 0.0012);
   }
 
   /**
@@ -93,6 +131,7 @@ class PreviewBackground {
    */
   createParticles() {
     const THREE = window.THREE;
+    const colors = this.getThemeColors();
     
     const SEPARATION = 60;
     const AMOUNTX = 50;
@@ -119,7 +158,7 @@ class PreviewBackground {
     geometry.setAttribute('scale', new THREE.BufferAttribute(scales, 1));
     
     const material = new THREE.PointsMaterial({
-      color: 0x444444,
+      color: colors.particles,
       size: 2,
       transparent: true,
       opacity: 0.4,
@@ -139,6 +178,7 @@ class PreviewBackground {
    */
   createHolographicSphere() {
     const THREE = window.THREE;
+    const colors = this.getThemeColors();
     
     this.sphereGroup = new THREE.Group();
     this.sphereGroup.position.y = 100;
@@ -147,7 +187,7 @@ class PreviewBackground {
     // A. 核心线框球
     const coreGeo = new THREE.IcosahedronGeometry(140, 2);
     const coreMat = new THREE.MeshBasicMaterial({ 
-      color: 0xffffff, 
+      color: colors.coreSphere, 
       wireframe: true, 
       transparent: true, 
       opacity: 0.25 
@@ -158,13 +198,13 @@ class PreviewBackground {
     // B. 内部发光核
     const innerGeo = new THREE.IcosahedronGeometry(80, 4);
     const innerMat = new THREE.MeshBasicMaterial({
-      color: 0xffffff,
+      color: colors.innerSphere,
       wireframe: true,
       transparent: true,
       opacity: 0.08
     });
-    const innerSphere = new THREE.Mesh(innerGeo, innerMat);
-    this.sphereGroup.add(innerSphere);
+    this.innerSphere = new THREE.Mesh(innerGeo, innerMat);
+    this.sphereGroup.add(this.innerSphere);
     
     // C. 外部点阵壳
     const shellGeo = new THREE.IcosahedronGeometry(180, 3);
@@ -173,7 +213,7 @@ class PreviewBackground {
     shellPointsGeo.setAttribute('position', shellPos);
     
     const shellMat = new THREE.PointsMaterial({
-      color: 0x888888,
+      color: colors.outerShell,
       size: 2,
       transparent: true,
       opacity: 0.5,
@@ -196,10 +236,11 @@ class PreviewBackground {
    */
   createRing(radius, tube, radialSegments, tubularSegments, arc, rotation) {
     const THREE = window.THREE;
+    const colors = this.getThemeColors();
     
     const ringGeo = new THREE.TorusGeometry(radius, tube, radialSegments, tubularSegments, arc);
     const ringMat = new THREE.MeshBasicMaterial({ 
-      color: 0xffffff, 
+      color: colors.rings, 
       wireframe: true,
       transparent: true,
       opacity: 0.15
@@ -215,6 +256,7 @@ class PreviewBackground {
    */
   createParticleCloud() {
     const THREE = window.THREE;
+    const colors = this.getThemeColors();
     
     const cloudGeo = new THREE.BufferGeometry();
     const cloudCount = 150;
@@ -232,13 +274,13 @@ class PreviewBackground {
     
     cloudGeo.setAttribute('position', new THREE.BufferAttribute(cloudPos, 3));
     const cloudMat = new THREE.PointsMaterial({
-      color: 0x666666,
+      color: colors.particleCloud,
       size: 1.5,
       transparent: true,
       opacity: 0.35
     });
-    const cloud = new THREE.Points(cloudGeo, cloudMat);
-    this.sphereGroup.add(cloud);
+    this.particleCloud = new THREE.Points(cloudGeo, cloudMat);
+    this.sphereGroup.add(this.particleCloud);
   }
 
   /**
@@ -246,6 +288,7 @@ class PreviewBackground {
    */
   setupRenderer() {
     const THREE = window.THREE;
+    const colors = this.getThemeColors();
     
     this.renderer = new THREE.WebGLRenderer({ 
       antialias: true, 
@@ -253,7 +296,7 @@ class PreviewBackground {
     });
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     this.renderer.setSize(this.width, this.height);
-    this.renderer.setClearColor(0x000000, 1);
+    this.renderer.setClearColor(colors.background, 1);
     
     this.container.appendChild(this.renderer.domElement);
   }
@@ -275,6 +318,89 @@ class PreviewBackground {
       this._resizeObserver = new ResizeObserver(() => this.onResize());
       this._resizeObserver.observe(this.container);
     }
+    
+    // 监听主题变化
+    this._onThemeChange = this.onThemeChange.bind(this);
+    window.addEventListener('themeChanged', this._onThemeChange);
+    
+    // 使用 MutationObserver 监听 body 的 class 变化
+    this._bodyObserver = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        if (mutation.attributeName === 'class') {
+          const newIsDark = document.body.classList.contains('dark');
+          if (newIsDark !== this.isDarkTheme) {
+            this.isDarkTheme = newIsDark;
+            this.updateThemeColors();
+          }
+        }
+      });
+    });
+    this._bodyObserver.observe(document.body, { attributes: true });
+  }
+  
+  /**
+   * 主题变化事件处理
+   */
+  onThemeChange() {
+    const newIsDark = document.body.classList.contains('dark');
+    if (newIsDark !== this.isDarkTheme) {
+      this.isDarkTheme = newIsDark;
+      this.updateThemeColors();
+    }
+  }
+  
+  /**
+   * 更新所有元素的主题颜色
+   */
+  updateThemeColors() {
+    const THREE = window.THREE;
+    if (!THREE) return;
+    
+    const colors = this.getThemeColors();
+    
+    // 更新渲染器背景色
+    if (this.renderer) {
+      this.renderer.setClearColor(colors.background, 1);
+    }
+    
+    // 更新场景雾颜色
+    if (this.scene && this.scene.fog) {
+      this.scene.fog.color.setHex(colors.fog);
+    }
+    
+    // 更新底部粒子颜色
+    if (this.particles && this.particles.material) {
+      this.particles.material.color.setHex(colors.particles);
+    }
+    
+    // 更新核心球颜色
+    if (this.coreSphere && this.coreSphere.material) {
+      this.coreSphere.material.color.setHex(colors.coreSphere);
+    }
+    
+    // 更新内部发光核颜色
+    if (this.innerSphere && this.innerSphere.material) {
+      this.innerSphere.material.color.setHex(colors.innerSphere);
+    }
+    
+    // 更新外部点阵壳颜色
+    if (this.outerShell && this.outerShell.material) {
+      this.outerShell.material.color.setHex(colors.outerShell);
+    }
+    
+    // 更新轨道环颜色
+    this.rings.forEach((ring) => {
+      if (ring && ring.material) {
+        ring.material.color.setHex(colors.rings);
+      }
+    });
+    
+    // 更新浮动粒子云颜色
+    if (this.particleCloud && this.particleCloud.material) {
+      this.particleCloud.material.color.setHex(colors.particleCloud);
+    }
+    
+    console.log('[PreviewBackground] Theme colors updated:', this.isDarkTheme ? 'dark' : 'light');
   }
 
   /**
@@ -418,8 +544,14 @@ class PreviewBackground {
     if (this._onResize) {
       window.removeEventListener('resize', this._onResize);
     }
+    if (this._onThemeChange) {
+      window.removeEventListener('themeChanged', this._onThemeChange);
+    }
     if (this._resizeObserver) {
       this._resizeObserver.disconnect();
+    }
+    if (this._bodyObserver) {
+      this._bodyObserver.disconnect();
     }
     
     // 清理 Three.js 资源
@@ -452,7 +584,9 @@ class PreviewBackground {
     this.particles = null;
     this.sphereGroup = null;
     this.coreSphere = null;
+    this.innerSphere = null;
     this.outerShell = null;
+    this.particleCloud = null;
     this.rings = [];
     
     console.log('[PreviewBackground] Destroyed');

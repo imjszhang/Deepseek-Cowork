@@ -157,12 +157,31 @@ try {
     );
     console.log('✓ lib/ directory copied (CommonJS mode)');
     
-    // 3. 复制 server/modules/ 目录
-    console.log('\n📁 Copying server/modules/ directory...');
+    // 3. 复制 server/ 目录（modules、utils、modulesManager、modulesConfig）
+    console.log('\n📁 Copying server/ directory...');
+    
+    // 3.1 复制 server/modules/ 子目录
     copyDirSync(
         join(PROJECT_ROOT, 'server/modules'),
         join(DIST_DIR, 'server/modules'),
         { exclude: ['*.md'] }
+    );
+    
+    // 3.2 复制 server/utils/ 子目录
+    copyDirSync(
+        join(PROJECT_ROOT, 'server/utils'),
+        join(DIST_DIR, 'server/utils'),
+        { exclude: ['*.md'] }
+    );
+    
+    // 3.3 复制 modulesManager.js 和 modulesConfig.js
+    copyFileSync(
+        join(PROJECT_ROOT, 'server/modulesManager.js'),
+        join(DIST_DIR, 'server/modulesManager.js')
+    );
+    copyFileSync(
+        join(PROJECT_ROOT, 'server/modulesConfig.js'),
+        join(DIST_DIR, 'server/modulesConfig.js')
     );
     
     // 在 server/ 目录创建 package.json 声明 CommonJS 模式
@@ -171,7 +190,7 @@ try {
         JSON.stringify({ type: "commonjs" }, null, 2),
         'utf8'
     );
-    console.log('✓ server/modules/ directory copied (CommonJS mode)');
+    console.log('✓ server/ directory copied (CommonJS mode)');
     
     // 4. 复制 config/ 目录
     console.log('\n📁 Copying config/ directory...');

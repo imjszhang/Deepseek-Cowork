@@ -350,3 +350,107 @@
         gap: 12px;
     }
 }
+
+/* ===== 浅色主题样式 - 颜色反转 ===== */
+
+/* 连接指引遮罩层 - 浅色主题 */
+body:not(.dark) .connection-guide-overlay {
+    background: rgba(255, 255, 255, 0.85);
+}
+
+/* 连接指引卡片 - 浅色主题 */
+body:not(.dark) .connection-guide-card {
+    background: #fafafa;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+}
+
+/* 标题区域 - 浅色主题 */
+body:not(.dark) .connection-guide-header h2 {
+    color: var(--foreground);
+}
+
+body:not(.dark) .connection-guide-header p {
+    color: var(--muted-foreground);
+}
+
+/* 状态指示器 - 浅色主题 */
+body:not(.dark) .connection-status {
+    background: rgba(0, 0, 0, 0.03);
+}
+
+body:not(.dark) .connection-status-text {
+    color: var(--muted-foreground);
+}
+
+/* 安装步骤 - 浅色主题 */
+body:not(.dark) .installation-step {
+    background: rgba(0, 0, 0, 0.03);
+}
+
+body:not(.dark) .installation-step:hover {
+    border-color: rgba(0, 0, 0, 0.15);
+}
+
+body:not(.dark) .step-content h4 {
+    color: var(--foreground);
+}
+
+body:not(.dark) .step-content p {
+    color: var(--muted-foreground);
+}
+
+/* 代码块 - 浅色主题 */
+body:not(.dark) .code-block {
+    background: rgba(0, 0, 0, 0.05);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    color: var(--foreground);
+}
+
+body:not(.dark) .code-block .copy-btn {
+    background: rgba(0, 0, 0, 0.05);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    color: var(--muted-foreground);
+}
+
+body:not(.dark) .code-block .copy-btn:hover {
+    background: rgba(0, 0, 0, 0.1);
+    color: var(--foreground);
+}
+
+/* 次要按钮 - 浅色主题 */
+body:not(.dark) .btn-secondary {
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    color: var(--foreground);
+}
+
+body:not(.dark) .btn-secondary:hover {
+    background: rgba(0, 0, 0, 0.05);
+}
+
+/* 帮助链接 - 浅色主题 */
+body:not(.dark) .help-links {
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+body:not(.dark) .help-links a {
+    color: var(--muted-foreground);
+}
+
+/* 平台选择标签 - 浅色主题 */
+body:not(.dark) .platform-tabs {
+    background: rgba(0, 0, 0, 0.03);
+}
+
+body:not(.dark) .platform-tab {
+    color: var(--muted-foreground);
+}
+
+body:not(.dark) .platform-tab.active {
+    background: rgba(0, 0, 0, 0.08);
+    color: var(--foreground);
+}
+
+body:not(.dark) .platform-tab:hover:not(.active) {
+    color: var(--foreground);
+}

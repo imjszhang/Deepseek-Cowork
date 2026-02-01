@@ -178,3 +178,86 @@
 .hover-lift:hover {
   transform: translateY(-2px);
 }
+
+/* ===== 浅色主题样式 - 颜色反转 ===== */
+body:not(.dark) .glass-card {
+  background: rgba(0, 0, 0, 0.03);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+body:not(.dark) .glass-card:hover {
+  background: rgba(0, 0, 0, 0.08);
+  border-color: rgba(0, 0, 0, 0.2);
+}
+
+body:not(.dark) .glass-card-accent {
+  border-left: 4px solid rgba(0, 0, 0, 0.2);
+}
+
+body:not(.dark) .glass-card-accent:hover {
+  border-left-color: rgba(0, 0, 0, 0.4);
+}
+
+/* 浅色玻璃容器 - 浅色主题 */
+body:not(.dark) .glass-dark {
+  background: rgba(255, 255, 255, 0.5);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+body:not(.dark) .glass-light {
+  background: rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(0, 0, 0, 0.2);
+}
+
+/* 模糊遮罩 - 浅色主题 */
+body:not(.dark) .glass-overlay {
+  background: rgba(255, 255, 255, 0.6);
+}
+
+/* 玻璃态导航栏 - 浅色主题 */
+body:not(.dark) .glass-navbar {
+  background: rgba(255, 255, 255, 0.5);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+/* 玻璃态模态框 - 浅色主题 */
+body:not(.dark) .glass-modal {
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  box-shadow: 0 16px 70px rgba(0, 0, 0, 0.15);
+}
+
+/* 玻璃态输入框 - 浅色主题 */
+body:not(.dark) .glass-input {
+  background: rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  color: black;
+}
+
+body:not(.dark) .glass-input:focus {
+  background: rgba(0, 0, 0, 0.08);
+  border-color: rgba(0, 0, 0, 0.3);
+}
+
+body:not(.dark) .glass-input::placeholder {
+  color: rgba(0, 0, 0, 0.4);
+}
+
+/* 代码块 - 浅色主题 */
+body:not(.dark) .glass-code {
+  background: rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+/* 渐变文字 - 浅色主题（黑到灰） */
+body:not(.dark) .gradient-text {
+  background: linear-gradient(135deg, #000000 0%, #5c5c5c 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* 悬停发光效果 - 浅色主题 */
+body:not(.dark) .hover-glow:hover {
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+}

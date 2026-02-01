@@ -567,3 +567,87 @@
     grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
   }
 }
+
+/* ===== 浅色主题样式 - 颜色反转 ===== */
+
+/* 右侧菜单栏 - 浅色主题 */
+body:not(.dark) .browser-menu-pane {
+  background: rgba(0, 0, 0, 0.03);
+}
+
+/* 菜单操作按钮 - 浅色主题 */
+body:not(.dark) .browser-menu-action:hover {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+body:not(.dark) .browser-menu-action:active {
+  background: rgba(0, 0, 0, 0.15);
+}
+
+/* 菜单项 - 浅色主题 */
+body:not(.dark) .browser-menu-item:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+body:not(.dark) .browser-menu-item .menu-badge {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+/* 左侧展示区 - 浅色主题 */
+body:not(.dark) .browser-display-pane {
+  background: #f8f8f8;
+}
+
+/* Three.js 动态背景容器 - 浅色主题 */
+body:not(.dark) .browser-threejs-bg {
+  background: #f0f0f0;
+}
+
+/* 毛玻璃卡片 - 浅色主题 */
+body:not(.dark) .glass-card {
+  background: rgba(0, 0, 0, 0.03);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+body:not(.dark) .glass-card:hover {
+  background: rgba(0, 0, 0, 0.06);
+  border-color: rgba(0, 0, 0, 0.15);
+}
+
+/* Tab 卡片图标 - 浅色主题 */
+body:not(.dark) .tab-card-icon img {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+/* Tab 信息网格 - 浅色主题 */
+body:not(.dark) .tab-card-info-item {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+/* Tab 操作按钮容器边框 - 浅色主题 */
+body:not(.dark) .tab-card-actions {
+  border-top: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+/* Tab 卡片操作按钮 - 浅色主题 */
+body:not(.dark) .tab-card-actions .tab-action-btn {
+  background: rgba(0, 0, 0, 0.1);
+  color: var(--foreground);
+}
+
+body:not(.dark) .tab-card-actions .tab-action-btn:hover {
+  background: rgba(0, 0, 0, 0.2);
+}
+
+body:not(.dark) .tab-card-actions .tab-action-btn:focus-visible {
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.3);
+}
+
+body:not(.dark) .tab-card-actions .tab-action-btn:active {
+  background: rgba(0, 0, 0, 0.25);
+}
+
+/* 加载状态 - 浅色主题 */
+body:not(.dark) .browser-loading-overlay {
+  background: rgba(255, 255, 255, 0.6);
+}

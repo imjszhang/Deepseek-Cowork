@@ -624,3 +624,189 @@
     display: none;
   }
 }
+
+/* ===== 浅色主题样式 - 颜色反转 ===== */
+
+/* 展示区容器 - 浅色主题 */
+body:not(.dark) .chat-showcase {
+  background: #f8f8f8;
+  border-left: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+/* 展示区头部 - 浅色主题 */
+body:not(.dark) .showcase-header {
+  background: rgba(0, 0, 0, 0.02);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+/* 关闭按钮 - 浅色主题 */
+body:not(.dark) .showcase-close-btn {
+  color: rgba(0, 0, 0, 0.5);
+}
+
+body:not(.dark) .showcase-close-btn:hover {
+  background: rgba(0, 0, 0, 0.1);
+  color: rgba(0, 0, 0, 0.9);
+}
+
+/* Tab 标签 - 浅色主题 */
+body:not(.dark) .showcase-tab {
+  background: rgba(0, 0, 0, 0.03);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  color: rgba(0, 0, 0, 0.6);
+}
+
+body:not(.dark) .showcase-tab:hover {
+  background: rgba(0, 0, 0, 0.08);
+  border-color: rgba(0, 0, 0, 0.15);
+  color: rgba(0, 0, 0, 0.9);
+}
+
+body:not(.dark) .showcase-tab.active {
+  background: rgba(0, 0, 0, 0.1);
+  border-color: rgba(0, 0, 0, 0.2);
+  color: rgba(0, 0, 0, 1);
+}
+
+body:not(.dark) .showcase-tab-close {
+  color: rgba(0, 0, 0, 0.4);
+}
+
+body:not(.dark) .showcase-tab-close:hover {
+  background: rgba(0, 0, 0, 0.15);
+  color: rgba(0, 0, 0, 0.9);
+}
+
+/* 预览头部 - 浅色主题 */
+body:not(.dark) .showcase-preview-header {
+  background: rgba(0, 0, 0, 0.02);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+body:not(.dark) .showcase-preview-title {
+  color: rgba(0, 0, 0, 0.9);
+}
+
+/* 预览内容区 - 浅色主题 */
+body:not(.dark) .showcase-preview-content {
+  background: rgba(0, 0, 0, 0.03);
+}
+
+body:not(.dark) #showcase-preview-code {
+  color: rgba(0, 0, 0, 0.8);
+}
+
+body:not(.dark) #showcase-markdown-preview {
+  color: rgba(0, 0, 0, 0.9);
+}
+
+/* 预览状态栏 - 浅色主题 */
+body:not(.dark) .showcase-preview-status {
+  background: rgba(0, 0, 0, 0.02);
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+  color: rgba(0, 0, 0, 0.4);
+}
+
+/* 视图切换按钮 - 浅色主题 */
+body:not(.dark) .showcase-preview-actions .preview-view-toggle {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+body:not(.dark) .showcase-preview-actions .view-toggle-btn {
+  color: rgba(0, 0, 0, 0.4);
+}
+
+body:not(.dark) .showcase-preview-actions .view-toggle-btn:hover {
+  color: rgba(0, 0, 0, 0.7);
+}
+
+body:not(.dark) .showcase-preview-actions .view-toggle-btn.active {
+  background: rgba(0, 0, 0, 0.1);
+  color: rgba(0, 0, 0, 0.9);
+}
+
+/* 空状态 - 浅色主题 */
+body:not(.dark) .showcase-empty {
+  color: rgba(0, 0, 0, 0.4);
+}
+
+/* 操作按钮 - 浅色主题 */
+body:not(.dark) .showcase-action-btn {
+  background: rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  color: rgba(0, 0, 0, 0.7);
+}
+
+body:not(.dark) .showcase-action-btn:hover {
+  background: rgba(0, 0, 0, 0.12);
+  border-color: rgba(0, 0, 0, 0.2);
+  color: rgba(0, 0, 0, 0.95);
+}
+
+/* 编辑区 textarea - 浅色主题 */
+body:not(.dark) .showcase-edit-area {
+  background: rgba(0, 0, 0, 0.04);
+  color: rgba(0, 0, 0, 0.9);
+}
+
+body:not(.dark) .showcase-edit-area:focus {
+  background: rgba(0, 0, 0, 0.06);
+}
+
+/* 会话文件侧边栏 - 浅色主题 */
+body:not(.dark) .session-files-sidebar {
+  background: rgba(0, 0, 0, 0.02);
+  border-left: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+/* 侧边栏头部 - 浅色主题 */
+body:not(.dark) .session-files-header {
+  background: rgba(0, 0, 0, 0.02);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+body:not(.dark) .session-files-title {
+  color: rgba(0, 0, 0, 0.5);
+}
+
+body:not(.dark) .session-files-toggle {
+  color: rgba(0, 0, 0, 0.4);
+}
+
+body:not(.dark) .session-files-toggle:hover {
+  background: rgba(0, 0, 0, 0.1);
+  color: rgba(0, 0, 0, 0.8);
+}
+
+/* 文件列表滚动条 - 浅色主题 */
+body:not(.dark) .session-files-list::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.15);
+}
+
+/* 空状态 - 浅色主题 */
+body:not(.dark) .session-files-empty {
+  color: rgba(0, 0, 0, 0.3);
+}
+
+/* 文件项 - 浅色主题 */
+body:not(.dark) .session-file-item {
+  background: rgba(0, 0, 0, 0.02);
+}
+
+body:not(.dark) .session-file-item:hover {
+  background: rgba(0, 0, 0, 0.08);
+  border-color: rgba(0, 0, 0, 0.1);
+}
+
+body:not(.dark) .session-file-item.active {
+  background: rgba(0, 0, 0, 0.1);
+  border-color: rgba(0, 0, 0, 0.15);
+}
+
+body:not(.dark) .session-file-name {
+  color: rgba(0, 0, 0, 0.85);
+}
+
+body:not(.dark) .session-file-action {
+  color: rgba(0, 0, 0, 0.4);
+}

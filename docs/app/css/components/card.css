@@ -1279,3 +1279,348 @@
 .file-tags-group .file-tag-name {
   max-width: 150px;
 }
+
+/* ===== 浅色主题样式 - 颜色反转 ===== */
+
+/* 基础卡片 - 浅色主题 */
+body:not(.dark) .card:hover {
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1), 0 0 15px rgba(0, 0, 0, 0.05);
+}
+
+body:not(.dark) .card-accent {
+  border-left: 4px solid rgba(0, 0, 0, 0.2);
+}
+
+body:not(.dark) .card-accent:hover {
+  border-left-color: rgba(0, 0, 0, 0.4);
+}
+
+/* 工具卡片 - 浅色主题 */
+body:not(.dark) .tool-card:hover {
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1), 0 0 10px rgba(0, 0, 0, 0.03);
+}
+
+body:not(.dark) .tool-header {
+  background: rgba(0, 0, 0, 0.02);
+}
+
+body:not(.dark) .tool-header:hover {
+  background: rgba(0, 0, 0, 0.06);
+}
+
+/* Sidechain 子任务 - 浅色主题 */
+body:not(.dark) .sidechain-tool-item {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+body:not(.dark) .sidechain-more {
+  color: rgba(0, 0, 0, 0.4);
+}
+
+/* Bash 终端视图 - 浅色主题 */
+body:not(.dark) .tool-bash-command {
+  background: rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+body:not(.dark) .tool-bash-prompt {
+  color: rgba(34, 197, 94, 0.9);
+}
+
+body:not(.dark) .tool-bash-cmd code {
+  color: rgba(0, 0, 0, 0.85);
+}
+
+body:not(.dark) .tool-bash-output {
+  background: rgba(0, 0, 0, 0.04);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+body:not(.dark) .tool-bash-stdout code {
+  color: rgba(0, 0, 0, 0.7);
+}
+
+body:not(.dark) .tool-bash-stderr {
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+body:not(.dark) .tool-bash-stderr code {
+  color: rgba(239, 68, 68, 0.9);
+}
+
+body:not(.dark) .tool-bash-error {
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  color: rgba(239, 68, 68, 0.9);
+}
+
+/* Diff 视图 - 浅色主题 */
+body:not(.dark) .tool-diff-path {
+  background: rgba(0, 0, 0, 0.03);
+}
+
+body:not(.dark) .tool-diff-content {
+  background: rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+body:not(.dark) .tool-diff-section:not(:last-child) {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+body:not(.dark) .tool-diff-line.removed {
+  background: rgba(239, 68, 68, 0.08);
+}
+
+body:not(.dark) .tool-diff-line.added {
+  background: rgba(34, 197, 94, 0.08);
+}
+
+body:not(.dark) .tool-diff-line.removed .tool-diff-sign {
+  color: rgba(239, 68, 68, 0.9);
+}
+
+body:not(.dark) .tool-diff-line.added .tool-diff-sign {
+  color: rgba(34, 197, 94, 0.9);
+}
+
+body:not(.dark) .tool-diff-line.removed .tool-diff-text {
+  color: rgba(239, 68, 68, 0.85);
+}
+
+body:not(.dark) .tool-diff-line.added .tool-diff-text {
+  color: rgba(34, 197, 94, 0.85);
+}
+
+/* Write 写入文件视图 - 浅色主题 */
+body:not(.dark) .tool-write-path {
+  background: rgba(0, 0, 0, 0.03);
+}
+
+body:not(.dark) .tool-write-content {
+  background: rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+body:not(.dark) .tool-write-line {
+  background: rgba(34, 197, 94, 0.04);
+}
+
+body:not(.dark) .tool-write-line:hover {
+  background: rgba(34, 197, 94, 0.08);
+}
+
+body:not(.dark) .tool-write-number {
+  color: rgba(0, 0, 0, 0.3);
+}
+
+body:not(.dark) .tool-write-text {
+  color: rgba(34, 197, 94, 0.85);
+}
+
+body:not(.dark) .tool-write-more {
+  color: rgba(0, 0, 0, 0.4);
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+/* Read 读取文件视图 - 浅色主题 */
+body:not(.dark) .tool-read-path {
+  color: rgba(0, 0, 0, 0.6);
+}
+
+body:not(.dark) .tool-read-content {
+  background: rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+body:not(.dark) .tool-read-line:hover {
+  background: rgba(0, 0, 0, 0.03);
+}
+
+body:not(.dark) .tool-read-number {
+  color: rgba(0, 0, 0, 0.3);
+}
+
+body:not(.dark) .tool-read-text {
+  color: rgba(0, 0, 0, 0.7);
+}
+
+body:not(.dark) .tool-read-more {
+  color: rgba(0, 0, 0, 0.4);
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+/* Question 问答视图 - 浅色主题 */
+body:not(.dark) .tool-question-header {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+body:not(.dark) .tool-question-text {
+  color: rgba(0, 0, 0, 0.9);
+}
+
+body:not(.dark) .tool-question-option {
+  background: rgba(0, 0, 0, 0.03);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+body:not(.dark) .tool-question-option:hover:not(.disabled) {
+  background: rgba(0, 0, 0, 0.08);
+  border-color: rgba(0, 0, 0, 0.2);
+}
+
+body:not(.dark) .tool-question-option.selected {
+  background: rgba(0, 0, 0, 0.1);
+  border-color: rgba(0, 0, 0, 0.3);
+}
+
+body:not(.dark) .tool-question-indicator {
+  border: 2px solid rgba(0, 0, 0, 0.4);
+}
+
+body:not(.dark) .tool-question-option.selected .tool-question-indicator {
+  border-color: rgba(0, 0, 0, 0.8);
+  background: rgba(0, 0, 0, 0.8);
+}
+
+body:not(.dark) .tool-question-option-label {
+  color: rgba(0, 0, 0, 0.9);
+}
+
+body:not(.dark) .tool-question-option-desc {
+  color: rgba(0, 0, 0, 0.5);
+}
+
+body:not(.dark) .tool-question-actions {
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+body:not(.dark) .tool-question-submit {
+  color: black;
+  background: rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(0, 0, 0, 0.2);
+}
+
+body:not(.dark) .tool-question-submit:hover:not(:disabled) {
+  background: rgba(0, 0, 0, 0.2);
+  border-color: rgba(0, 0, 0, 0.3);
+}
+
+/* Search 搜索通用样式 - 浅色主题 */
+body:not(.dark) .tool-search-query {
+  background: rgba(0, 0, 0, 0.03);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+body:not(.dark) .tool-search-label {
+  color: rgba(0, 0, 0, 0.5);
+}
+
+body:not(.dark) .tool-search-value {
+  color: rgba(0, 0, 0, 0.8);
+  background: rgba(0, 0, 0, 0.05);
+}
+
+/* Glob 文件搜索结果 - 浅色主题 */
+body:not(.dark) .tool-glob-results {
+  background: rgba(0, 0, 0, 0.04);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+body:not(.dark) .tool-glob-file {
+  color: rgba(0, 0, 0, 0.7);
+}
+
+body:not(.dark) .tool-glob-file:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+body:not(.dark) .tool-glob-more {
+  color: rgba(0, 0, 0, 0.4);
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+/* Grep 内容搜索结果 - 浅色主题 */
+body:not(.dark) .tool-grep-results {
+  background: rgba(0, 0, 0, 0.04);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+body:not(.dark) .tool-grep-line {
+  color: rgba(0, 0, 0, 0.7);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+body:not(.dark) .tool-grep-line:hover {
+  background: rgba(0, 0, 0, 0.03);
+}
+
+body:not(.dark) .tool-grep-more {
+  color: rgba(0, 0, 0, 0.4);
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+/* WebSearch 网络搜索结果 - 浅色主题 */
+body:not(.dark) .tool-websearch-item {
+  background: rgba(0, 0, 0, 0.03);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+body:not(.dark) .tool-websearch-item:hover {
+  background: rgba(0, 0, 0, 0.06);
+  border-color: rgba(0, 0, 0, 0.12);
+}
+
+body:not(.dark) .tool-websearch-title {
+  color: rgba(0, 0, 0, 0.9);
+}
+
+body:not(.dark) .tool-websearch-url {
+  color: rgba(59, 130, 246, 0.9);
+}
+
+body:not(.dark) .tool-websearch-snippet {
+  color: rgba(0, 0, 0, 0.5);
+}
+
+body:not(.dark) .tool-websearch-summary {
+  background: rgba(0, 0, 0, 0.04);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  color: rgba(0, 0, 0, 0.6);
+}
+
+body:not(.dark) .tool-websearch-more {
+  color: rgba(0, 0, 0, 0.4);
+}
+
+/* 文件引用标签 - 浅色主题 */
+body:not(.dark) .file-tag-container {
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+body:not(.dark) .file-tag-action {
+  color: rgba(0, 0, 0, 0.4);
+}
+
+body:not(.dark) .file-tag {
+  background: rgba(0, 0, 0, 0.06);
+  border: 1px solid rgba(0, 0, 0, 0.12);
+}
+
+body:not(.dark) .file-tag:hover {
+  background: rgba(0, 0, 0, 0.12);
+  border-color: rgba(0, 0, 0, 0.2);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+body:not(.dark) .file-tag:active {
+  background: rgba(0, 0, 0, 0.08);
+}
+
+body:not(.dark) .file-tag-name {
+  color: rgba(0, 0, 0, 0.85);
+}
+
+body:not(.dark) .file-tags-group {
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+}
