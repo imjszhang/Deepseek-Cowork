@@ -669,3 +669,96 @@
 .icon-loader svg {
   animation: spin 1s linear infinite;
 }
+
+/* ===== 浅色主题样式 - 颜色反转 ===== */
+
+/* 向导容器 - 浅色主题 */
+body:not(.dark) .wizard-container {
+  background: var(--glass-bg, rgba(255, 255, 255, 0.95));
+  border: 1px solid var(--glass-border, rgba(0, 0, 0, 0.1));
+  box-shadow: var(--shadow-glass, 0 8px 32px rgba(0, 0, 0, 0.15));
+}
+
+/* 向导头部 - 浅色主题 */
+body:not(.dark) .wizard-header {
+  border-bottom: 1px solid var(--glass-border, rgba(0, 0, 0, 0.1));
+  background: var(--glass-bg, rgba(0, 0, 0, 0.02));
+}
+
+/* 步骤指示器 - 浅色主题 */
+body:not(.dark) .wizard-steps {
+  background: var(--glass-bg, rgba(0, 0, 0, 0.02));
+  border-bottom: 1px solid var(--glass-border, rgba(0, 0, 0, 0.1));
+}
+
+body:not(.dark) .wizard-step {
+  background: var(--glass-bg, rgba(0, 0, 0, 0.03));
+  border: 1px solid var(--glass-border, rgba(0, 0, 0, 0.1));
+}
+
+body:not(.dark) .wizard-step.clickable:hover {
+  background: var(--glass-bg-hover, rgba(0, 0, 0, 0.08));
+  border-color: var(--glass-border-hover, rgba(0, 0, 0, 0.2));
+}
+
+body:not(.dark) .wizard-step.active {
+  background: rgba(0, 0, 0, 0.1);
+  border-color: rgba(0, 0, 0, 0.25);
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+}
+
+body:not(.dark) .step-number {
+  background: var(--glass-bg-hover, rgba(0, 0, 0, 0.08));
+}
+
+body:not(.dark) .wizard-step.active .step-number {
+  background: var(--foreground);
+  color: var(--background);
+  box-shadow: 0 0 12px rgba(0, 0, 0, 0.3);
+}
+
+/* 需求列表 - 浅色主题 */
+body:not(.dark) .requirement-item {
+  background: var(--glass-bg, rgba(0, 0, 0, 0.03));
+  border: 1px solid var(--glass-border, rgba(0, 0, 0, 0.1));
+}
+
+body:not(.dark) .requirement-item:hover {
+  background: var(--glass-bg-hover, rgba(0, 0, 0, 0.06));
+}
+
+/* 安装指南 - 浅色主题 */
+body:not(.dark) .install-status {
+  background: var(--glass-bg, rgba(0, 0, 0, 0.03));
+  border: 1px solid var(--glass-border, rgba(0, 0, 0, 0.1));
+}
+
+body:not(.dark) .install-method {
+  background: var(--glass-bg, rgba(0, 0, 0, 0.03));
+  border: 1px solid var(--glass-border, rgba(0, 0, 0, 0.1));
+}
+
+body:not(.dark) .install-method:hover {
+  border-color: rgba(0, 0, 0, 0.25);
+  background: var(--glass-bg-hover, rgba(0, 0, 0, 0.06));
+}
+
+body:not(.dark) .install-method.selected {
+  border-color: rgba(0, 0, 0, 0.3);
+  background: rgba(0, 0, 0, 0.1);
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+}
+
+/* 配置摘要 - 浅色主题 */
+body:not(.dark) .config-summary {
+  background: var(--glass-bg, rgba(0, 0, 0, 0.03));
+  border: 1px solid var(--glass-border, rgba(0, 0, 0, 0.1));
+}
+
+body:not(.dark) .summary-item {
+  border-bottom: 1px solid var(--glass-border, rgba(0, 0, 0, 0.1));
+}
+
+body:not(.dark) .summary-item:hover {
+  background: var(--glass-bg-hover, rgba(0, 0, 0, 0.03));
+}

@@ -142,5 +142,29 @@ module.exports = {
     logging: {
       level: 'INFO'
     }
+  },
+  
+  // Process 进程管理服务配置
+  process: {
+    // 是否启用 Process 服务
+    enabled: true,
+    
+    // 最大并发进程数
+    maxConcurrentProcesses: 5,
+    
+    // 进程超时时间（毫秒，默认8小时）
+    processTimeout: 8 * 60 * 60 * 1000,
+    
+    // 是否启用日志
+    enableLogging: true,
+    
+    // 是否启用自动清理
+    enableCleanup: true,
+    
+    // 清理间隔（毫秒，默认1小时）
+    cleanupInterval: 60 * 60 * 1000,
+    
+    // 每个进程最大日志数
+    maxLogsPerProcess: 1000
   }
 };

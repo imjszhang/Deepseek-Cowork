@@ -1,0 +1,2681 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>进程管理器 - Process Manager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    colors: {
+                        primary: '#f5f5f5',
+                        secondary: '#a3a3a3',
+                        dark: {
+                            900: '#171717',
+                            950: '#0a0a0a',
+                        },
+                        accent: {
+                            cyan: '#ffffff',
+                            purple: '#d4d4d4',
+                        }
+                    },
+                    animation: {
+                        'blob': 'blob 7s infinite',
+                        'spin-slow': 'spin 8s linear infinite',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* 玻璃态效果 */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .glass-card:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+        
+        /* 按钮样式 */
+        .btn {
+            transition: all 0.2s ease;
+        }
+        .btn-primary {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+        }
+        .btn-primary:hover {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.3);
+            transform: scale(1.05);
+        }
+        .btn-success {
+            background: rgba(34, 197, 94, 0.2);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+            color: rgb(134, 239, 172);
+        }
+        .btn-success:hover {
+            background: rgba(34, 197, 94, 0.3);
+            border-color: rgba(34, 197, 94, 0.4);
+        }
+        .btn-warning {
+            background: rgba(234, 179, 8, 0.2);
+            border: 1px solid rgba(234, 179, 8, 0.3);
+            color: rgb(253, 224, 71);
+        }
+        .btn-warning:hover {
+            background: rgba(234, 179, 8, 0.3);
+            border-color: rgba(234, 179, 8, 0.4);
+        }
+        .btn-danger {
+            background: rgba(239, 68, 68, 0.2);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: rgb(252, 165, 165);
+        }
+        .btn-danger:hover {
+            background: rgba(239, 68, 68, 0.3);
+            border-color: rgba(239, 68, 68, 0.4);
+        }
+        
+        /* 状态徽章 */
+        .status-badge {
+            font-size: 0.75rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.375rem;
+        }
+        
+        .status-running {
+            background: rgba(34, 197, 94, 0.2);
+            color: rgb(134, 239, 172);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+        }
+        
+        .status-completed {
+            background: rgba(59, 130, 246, 0.2);
+            color: rgb(147, 197, 253);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+        }
+        
+        .status-failed {
+            background: rgba(239, 68, 68, 0.2);
+            color: rgb(252, 165, 165);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+        
+        .status-timeout {
+            background: rgba(234, 179, 8, 0.2);
+            color: rgb(253, 224, 71);
+            border: 1px solid rgba(234, 179, 8, 0.3);
+        }
+        
+        .status-queued {
+            background: rgba(163, 163, 163, 0.2);
+            color: rgb(212, 212, 212);
+            border: 1px solid rgba(163, 163, 163, 0.3);
+        }
+        
+        /* 优化的实时日志样式 - 增加高度并优化显示 */
+        .log-container {
+            height: 70vh; /* 增加高度到视窗的70% */
+            min-height: 500px; /* 设置最小高度 */
+            overflow-y: auto;
+            background: linear-gradient(135deg, #1e1e1e 0%, #2c2c2c 100%);
+            color: #ffffff;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 0.8rem;
+            line-height: 1.4;
+            padding: 0;
+            border-radius: 0.5rem;
+            border: 1px solid #495057;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.3);
+            position: relative;
+        }
+        
+        /* 进程列表容器优化 */
+        .process-list-container {
+            max-height: 70vh;
+            overflow-y: auto;
+        }
+        
+        .log-container::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        .log-container::-webkit-scrollbar-track {
+            background: rgba(255,255,255,0.1);
+            border-radius: 4px;
+        }
+        
+        .log-container::-webkit-scrollbar-thumb {
+            background: rgba(255,255,255,0.3);
+            border-radius: 4px;
+        }
+        
+        .log-container::-webkit-scrollbar-thumb:hover {
+            background: rgba(255,255,255,0.5);
+        }
+        
+        .log-entry {
+            margin: 0;
+            padding: 0.4rem 1rem;
+            white-space: pre-wrap;
+            word-break: break-word;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            transition: background-color 0.2s ease;
+            position: relative;
+        }
+        
+        .log-entry:hover {
+            background-color: rgba(255,255,255,0.05);
+        }
+        
+        .log-entry:last-child {
+            border-bottom: none;
+        }
+        
+        .log-timestamp {
+            color: #6c757d;
+            font-weight: 500;
+            margin-right: 0.5rem;
+            font-size: 0.75rem;
+            opacity: 0.8;
+        }
+        
+        .log-level-info {
+            color: #61dafb;
+            text-shadow: 0 0 2px rgba(97, 218, 251, 0.3);
+        }
+        
+        .log-level-error {
+            color: #ff6b6b;
+            font-weight: 500;
+            text-shadow: 0 0 2px rgba(255, 107, 107, 0.3);
+        }
+        
+        .log-level-warn {
+            color: #feca57;
+            font-weight: 500;
+            text-shadow: 0 0 2px rgba(254, 202, 87, 0.3);
+        }
+        
+        .log-level-success {
+            color: #48dbfb;
+            font-weight: 500;
+            text-shadow: 0 0 2px rgba(72, 219, 251, 0.3);
+        }
+        
+        /* 特殊日志类型样式 */
+        .log-entry[data-type="start"] {
+            background: linear-gradient(90deg, rgba(72, 219, 251, 0.1) 0%, transparent 100%);
+            border-left: 3px solid #48dbfb;
+        }
+        
+        .log-entry[data-type="exit"] {
+            border-left: 3px solid #48dbfb;
+        }
+        
+        .log-entry[data-type="error"] {
+            background: linear-gradient(90deg, rgba(255, 107, 107, 0.1) 0%, transparent 100%);
+            border-left: 3px solid #ff6b6b;
+        }
+        
+        .log-entry[data-type="timeout"] {
+            background: linear-gradient(90deg, rgba(254, 202, 87, 0.1) 0%, transparent 100%);
+            border-left: 3px solid #feca57;
+        }
+        
+        .log-entry[data-type="stdout"] {
+            background: rgba(108, 117, 125, 0.05);
+            border-left: 2px solid #6c757d;
+        }
+        
+        .log-entry[data-type="stderr"] {
+            background: linear-gradient(90deg, rgba(255, 107, 107, 0.08) 0%, transparent 100%);
+            border-left: 2px solid #ff6b6b;
+        }
+        
+        .log-entry[data-type="queue"] {
+            background: linear-gradient(90deg, rgba(254, 202, 87, 0.08) 0%, transparent 100%);
+            border-left: 2px solid #feca57;
+        }
+        
+        /* 进程ID标识 */
+        .process-id-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 0.15rem 0.4rem;
+            border-radius: 0.25rem;
+            font-size: 0.7rem;
+            font-weight: 600;
+            margin-right: 0.5rem;
+            text-shadow: none;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+        }
+        
+        /* 消息内容样式 */
+        .log-message {
+            position: relative;
+        }
+        
+        .log-message.indent {
+            margin-left: 1.5rem;
+            color: rgba(255,255,255,0.85);
+        }
+        
+        .log-message.indent::before {
+            content: "└─";
+            position: absolute;
+            left: -1.2rem;
+            color: #6c757d;
+            font-weight: normal;
+        }
+        
+        /* 系统日志样式 */
+        .log-entry.system-log {
+            background: linear-gradient(90deg, rgba(108, 117, 125, 0.1) 0%, transparent 100%);
+            border-left: 2px solid #6c757d;
+            font-style: italic;
+        }
+        
+        /* WebSocket状态日志 */
+        .log-entry.websocket-log .log-level-success,
+        .log-entry.websocket-log .log-level-warn {
+            font-weight: 600;
+        }
+        
+        .log-entry.websocket-log {
+            background: linear-gradient(90deg, rgba(32, 201, 151, 0.08) 0%, transparent 100%);
+            border-left: 2px solid #20c997;
+        }
+        
+        /* 动画效果 */
+        .log-entry.new-entry {
+            animation: slideInLog 0.3s ease-out;
+        }
+        
+        @keyframes slideInLog {
+            0% {
+                opacity: 0;
+                transform: translateX(-10px);
+            }
+            100% {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+        
+        /* 日志容器头部信息 */
+        .log-header {
+            position: sticky;
+            top: 0;
+            background: linear-gradient(135deg, #2c2c2c 0%, #3c3c3c 100%);
+            padding: 0.5rem 1rem;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            font-size: 0.75rem;
+            color: #adb5bd;
+            z-index: 10;
+        }
+        
+        .log-stats {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .log-count {
+            display: flex;
+            gap: 1rem;
+        }
+        
+        .log-count-item {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+        
+        .log-count-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+        
+        .log-count-dot.info { background-color: #61dafb; }
+        .log-count-dot.error { background-color: #ff6b6b; }
+        .log-count-dot.warn { background-color: #feca57; }
+        .log-count-dot.success { background-color: #48dbfb; }
+        
+        /* 统计卡片优化 */
+        .stats-overview {
+            margin-bottom: 1rem;
+        }
+        
+        .stats-overview .card-body {
+            padding: 1rem;
+        }
+        
+        /* 表格行样式 */
+        .process-row {
+            transition: background-color 0.2s ease;
+        }
+        
+        .process-row:hover {
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+        
+        /* 刷新指示器 */
+        .refresh-indicator {
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* 模态框样式 */
+        .modal {
+            display: none;
+        }
+        .modal.show {
+            display: flex;
+        }
+        
+        /* 脚本选择器样式 */
+        .script-tree-item {
+            border-radius: 0.25rem;
+        }
+
+        .script-file:hover {
+            background-color: rgba(255, 255, 255, 0.05) !important;
+        }
+
+        .script-folder:hover {
+            background-color: rgba(255, 255, 255, 0.05);
+            cursor: pointer;
+        }
+
+        .toggle-icon {
+            transition: transform 0.2s ease;
+        }
+
+        .script-file.selected {
+            background-color: rgba(59, 130, 246, 0.1) !important;
+            border-left: 3px solid rgb(59, 130, 246) !important;
+        }
+
+        #scriptContentCode {
+            font-family: 'JetBrains Mono', 'Courier New', 'Monaco', 'Menlo', monospace;
+            font-size: 0.875rem;
+            line-height: 1.4;
+            white-space: pre;
+            background-color: rgba(0, 0, 0, 0.5);
+            color: rgb(229, 229, 229);
+        }
+
+        .script-loading {
+            min-height: 200px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        /* 自定义滚动条 */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #000000; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #333333; 
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #555555; 
+        }
+        
+        /* 进程列表表格样式优化 */
+        .process-table {
+            min-width: 800px;
+            table-layout: auto;
+            width: 100%;
+        }
+        
+        .process-table th,
+        .process-table td {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        /* 设置各列最小宽度 */
+        .process-table th:nth-child(1),
+        .process-table td:nth-child(1) {
+            min-width: 100px; /* 进程ID */
+        }
+        
+        .process-table th:nth-child(2),
+        .process-table td:nth-child(2) {
+            min-width: 120px; /* 类型 */
+        }
+        
+        .process-table th:nth-child(3),
+        .process-table td:nth-child(3) {
+            min-width: 80px; /* 状态 */
+        }
+        
+        .process-table th:nth-child(4),
+        .process-table td:nth-child(4) {
+            min-width: 160px; /* 开始时间 */
+        }
+        
+        .process-table th:nth-child(5),
+        .process-table td:nth-child(5) {
+            min-width: 60px; /* 耗时 */
+        }
+        
+        .process-table th:nth-child(6),
+        .process-table td:nth-child(6) {
+            min-width: 100px; /* 操作 */
+        }
+        
+        /* 文本截断工具类 */
+        .truncate {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+    </style>
+</head>
+<body class="bg-black min-h-screen font-sans text-neutral-200 relative overflow-x-hidden selection:bg-white/20 selection:text-white">
+    <!-- Three.js Background Container -->
+    <div class="fixed inset-0 -z-10 bg-black" id="canvas-container"></div>
+    <!-- 导航栏 -->
+    <nav class="glass-card border-b border-white/10 sticky top-0 z-50 backdrop-blur-xl">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <a class="flex items-center gap-2 text-white font-semibold text-lg hover:text-neutral-300 transition-colors" href="/">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"></path>
+                    </svg>
+                    进程管理器
+                </a>
+                <div class="flex items-center gap-4">
+                    <a class="flex items-center gap-1 text-neutral-300 hover:text-white transition-colors" href="/">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+                        </svg>
+                        首页
+                    </a>
+                    <button class="btn btn-primary px-4 py-2 rounded-lg text-sm font-semibold flex items-center gap-2" id="refreshBtn">
+                        <svg class="w-5 h-5" id="refreshIcon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                        </svg>
+                        刷新
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 relative z-10">
+        <!-- 服务状态概览 -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <div class="glass-card rounded-2xl p-6 border-l-4 border-l-green-500/50">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <div class="text-sm text-neutral-400 mb-1">运行中进程</div>
+                        <div class="text-3xl font-bold text-white font-mono" id="runningCount">0</div>
+                    </div>
+                    <div class="flex-shrink-0">
+                        <svg class="w-12 h-12 text-green-500/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+            <div class="glass-card rounded-2xl p-6 border-l-4 border-l-yellow-500/50">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <div class="text-sm text-neutral-400 mb-1">队列中进程</div>
+                        <div class="text-3xl font-bold text-white font-mono" id="queuedCount">0</div>
+                    </div>
+                    <div class="flex-shrink-0">
+                        <svg class="w-12 h-12 text-yellow-500/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+            <div class="glass-card rounded-2xl p-6 border-l-4 border-l-blue-500/50">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <div class="text-sm text-neutral-400 mb-1">历史总数</div>
+                        <div class="text-3xl font-bold text-white font-mono" id="totalHistoryCount">0</div>
+                    </div>
+                    <div class="flex-shrink-0">
+                        <svg class="w-12 h-12 text-blue-500/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"></path>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+            <div class="glass-card rounded-2xl p-6 border-l-4 border-l-neutral-500/50" id="serviceStatusCard">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <div class="text-sm text-neutral-400 mb-1">服务状态</div>
+                        <div class="text-lg font-semibold text-white" id="serviceStatus">检查中...</div>
+                    </div>
+                    <div class="flex-shrink-0">
+                        <svg class="w-12 h-12 text-neutral-500/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01"></path>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 快速操作 -->
+        <div class="glass-card rounded-2xl p-4 mb-6">
+            <div class="flex items-center justify-between mb-4">
+                <h6 class="text-lg font-semibold text-white flex items-center gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                    </svg>
+                    快速操作
+                </h6>
+            </div>
+            <div class="flex flex-wrap gap-3">
+                <button type="button" class="btn btn-primary px-4 py-2 rounded-lg text-sm font-semibold flex items-center gap-2" onclick="openModal('executeScriptModal')">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path>
+                    </svg>
+                    执行脚本
+                </button>
+                <button type="button" class="btn btn-warning px-4 py-2 rounded-lg text-sm font-semibold flex items-center gap-2" id="terminateAllBtn">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 10h6m-3-3v6"></path>
+                    </svg>
+                    终止所有进程
+                </button>
+                <button type="button" class="btn btn-danger px-4 py-2 rounded-lg text-sm font-semibold flex items-center gap-2" id="clearHistoryBtn">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                    </svg>
+                    清理历史
+                </button>
+            </div>
+        </div>
+
+        <!-- 进程列表 -->
+        <div class="mb-6">
+            <div class="glass-card rounded-2xl overflow-hidden">
+                <div class="px-6 py-4 border-b border-white/10 flex justify-between items-center">
+                    <h6 class="text-lg font-semibold text-white flex items-center gap-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                        </svg>
+                        进程列表
+                    </h6>
+                    <div class="flex gap-2">
+                        <input type="radio" class="hidden" name="processFilter" id="filterAll" autocomplete="off" checked>
+                        <label class="px-3 py-1 rounded-lg text-xs font-semibold cursor-pointer transition-all bg-white text-black" for="filterAll">全部</label>
+                        
+                        <input type="radio" class="hidden" name="processFilter" id="filterRunning" autocomplete="off">
+                        <label class="px-3 py-1 rounded-lg text-xs font-semibold cursor-pointer transition-all bg-neutral-900/50 text-neutral-400 hover:bg-neutral-800 hover:text-white border border-white/5" for="filterRunning">运行中</label>
+                        
+                        <input type="radio" class="hidden" name="processFilter" id="filterQueued" autocomplete="off">
+                        <label class="px-3 py-1 rounded-lg text-xs font-semibold cursor-pointer transition-all bg-neutral-900/50 text-neutral-400 hover:bg-neutral-800 hover:text-white border border-white/5" for="filterQueued">队列中</label>
+                        
+                        <input type="radio" class="hidden" name="processFilter" id="filterHistory" autocomplete="off">
+                        <label class="px-3 py-1 rounded-lg text-xs font-semibold cursor-pointer transition-all bg-neutral-900/50 text-neutral-400 hover:bg-neutral-800 hover:text-white border border-white/5" for="filterHistory">历史</label>
+                    </div>
+                </div>
+                <div class="process-list-container max-h-[50vh] overflow-y-auto">
+                    <div class="overflow-x-auto">
+                        <table class="w-full process-table">
+                            <thead class="bg-black/30 border-b border-white/10">
+                                <tr>
+                                    <th class="px-4 py-3 text-left text-xs font-semibold text-neutral-400 uppercase tracking-wider">进程ID</th>
+                                    <th class="px-4 py-3 text-left text-xs font-semibold text-neutral-400 uppercase tracking-wider">类型</th>
+                                    <th class="px-4 py-3 text-left text-xs font-semibold text-neutral-400 uppercase tracking-wider">状态</th>
+                                    <th class="px-4 py-3 text-left text-xs font-semibold text-neutral-400 uppercase tracking-wider">开始时间</th>
+                                    <th class="px-4 py-3 text-left text-xs font-semibold text-neutral-400 uppercase tracking-wider">耗时</th>
+                                    <th class="px-4 py-3 text-left text-xs font-semibold text-neutral-400 uppercase tracking-wider">操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="processTableBody" class="divide-y divide-white/5">
+                                <!-- 进程列表将通过JavaScript动态填充 -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 实时日志 -->
+        <div>
+                <div class="glass-card rounded-2xl overflow-hidden">
+                    <div class="px-6 py-4 border-b border-white/10 flex justify-between items-center">
+                        <h6 class="text-lg font-semibold text-white flex items-center gap-2">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                            </svg>
+                            实时日志
+                        </h6>
+                        <div class="flex gap-2">
+                            <!-- 进程选择下拉菜单 -->
+                            <div class="relative">
+                                <button class="btn btn-primary px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1" type="button" id="logProcessSelector">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                                    </svg>
+                                    <span id="currentLogProcess">全部进程</span>
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                    </svg>
+                                </button>
+                                <div class="hidden absolute right-0 mt-2 w-64 bg-neutral-900/95 backdrop-blur-xl border border-white/10 rounded-lg shadow-xl z-50" id="logProcessDropdown">
+                                    <ul class="py-2" id="logProcessList">
+                                        <li data-keep><a class="px-4 py-2 block text-sm text-white hover:bg-white/10 bg-white/20" href="#" data-process-id="all">
+                                            <div class="flex items-center gap-2">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+                                                </svg>
+                                                全部进程
+                                            </div>
+                                        </a></li>
+                                        <li data-keep><hr class="my-2 border-white/10"></li>
+                                        <li data-keep><h6 class="px-4 py-2 text-xs font-semibold text-neutral-400 uppercase">运行中进程</h6></li>
+                                        <!-- 运行中进程列表将动态填充 -->
+                                        <li data-keep><h6 class="px-4 py-2 text-xs font-semibold text-neutral-400 uppercase">历史进程</h6></li>
+                                        <!-- 历史进程列表将动态填充 -->
+                                    </ul>
+                                </div>
+                            </div>
+                            <button type="button" class="btn btn-primary px-3 py-1.5 rounded-lg text-xs font-semibold" id="clearLogBtn">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                </svg>
+                            </button>
+                            <button type="button" class="btn btn-primary px-3 py-1.5 rounded-lg text-xs font-semibold" id="autoScrollBtn" data-enabled="true">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="p-0">
+                        <div class="log-container" id="logContainer">
+                            <!-- 移除硬编码的初始日志 -->
+                        </div>
+                    </div>
+                </div>
+        </div>
+    </div>
+
+    <!-- 执行脚本模态框 -->
+    <div class="modal fixed z-[2000] left-0 top-0 w-full h-full bg-black/60 backdrop-blur-sm hidden" id="executeScriptModal">
+        <div class="modal-content bg-neutral-900/95 backdrop-blur-xl border border-white/10 rounded-2xl my-[2%] mx-auto p-0 w-[95%] max-w-7xl max-h-[90vh] overflow-y-auto shadow-2xl">
+            <div class="modal-header px-6 py-5 border-b border-white/10 flex justify-between items-center rounded-t-2xl">
+                <h3 class="text-xl font-bold text-white flex items-center gap-2">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path>
+                    </svg>
+                    执行自定义脚本
+                </h3>
+                <span class="close text-3xl font-bold cursor-pointer text-white/80 hover:text-white transition-opacity" onclick="closeModal('executeScriptModal')">&times;</span>
+            </div>
+            <div class="modal-body px-6 py-5">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- 左侧：脚本选择器 -->
+                    <div class="lg:col-span-1">
+                        <h6 class="text-sm font-semibold text-white mb-3 flex items-center gap-2">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path>
+                            </svg>
+                            选择脚本文件
+                            <button type="button" class="btn btn-primary px-2 py-1 rounded text-xs" id="refreshScriptsBtn">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                                </svg>
+                            </button>
+                        </h6>
+                        <div class="glass-card rounded-lg p-2 max-h-[500px] overflow-y-auto">
+                            <div id="scriptFileTree">
+                                <div class="script-loading">
+                                    <div class="text-center text-neutral-500 py-8">
+                                        <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
+                                        <div class="mt-2 text-sm">准备加载脚本列表...</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 右侧：脚本配置 -->
+                    <div class="lg:col-span-2">
+                        <form id="scriptForm">
+                            <div class="space-y-4">
+                                <div>
+                                    <label for="scriptPath" class="block text-sm font-medium text-neutral-300 mb-2">脚本文件路径 *</label>
+                                    <input type="text" class="w-full px-4 py-3 bg-black/50 border border-white/10 rounded-lg text-white placeholder-neutral-500 focus:outline-none focus:ring-1 focus:ring-white/30 focus:border-white/30" id="scriptPath" placeholder="脚本文件路径" required readonly>
+                                    <p class="mt-1 text-xs text-neutral-500">请从左侧选择脚本文件</p>
+                                </div>
+                                
+                                <!-- 脚本信息展示 -->
+                                <div id="scriptInfoPanel" class="hidden">
+                                    <div class="glass-card rounded-lg p-4 border-l-4 border-l-blue-500/50">
+                                        <h6 class="text-sm font-semibold text-white mb-2 flex items-center gap-2">
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                            </svg>
+                                            脚本信息
+                                        </h6>
+                                        <div id="scriptDescription" class="text-neutral-400 mb-2 text-sm"></div>
+                                        <div id="scriptUsage" class="text-green-400 text-xs mb-2"></div>
+                                        <div id="scriptExamples" class="mt-2"></div>
+                                    </div>
+                                </div>
+                                
+                                <div>
+                                    <label for="scriptArgs" class="block text-sm font-medium text-neutral-300 mb-2">命令行参数（支持多种格式）</label>
+                                    <textarea class="w-full px-4 py-3 bg-black/50 border border-white/10 rounded-lg text-white placeholder-neutral-500 focus:outline-none focus:ring-1 focus:ring-white/30 focus:border-white/30 font-mono text-sm" id="scriptArgs" placeholder="支持两种格式：&#10;1. 每行一个参数&#10;2. 单行命令（支持 \\ 续行符）" rows="5"></textarea>
+                                    <p class="mt-1 text-xs text-neutral-500">
+                                        支持格式：每行一个参数、单行命令、多行命令（支持 \ 续行符）
+                                    </p>
+                                </div>
+                                
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label for="scriptCwd" class="block text-sm font-medium text-neutral-300 mb-2">工作目录</label>
+                                        <input type="text" class="w-full px-4 py-3 bg-black/50 border border-white/10 rounded-lg text-white placeholder-neutral-500 focus:outline-none focus:ring-1 focus:ring-white/30 focus:border-white/30" id="scriptCwd" placeholder="工作目录">
+                                    </div>
+                                    <div>
+                                        <label for="scriptTimeout" class="block text-sm font-medium text-neutral-300 mb-2">超时时间（秒）</label>
+                                        <input type="number" class="w-full px-4 py-3 bg-black/50 border border-white/10 rounded-lg text-white placeholder-neutral-500 focus:outline-none focus:ring-1 focus:ring-white/30 focus:border-white/30" id="scriptTimeout" placeholder="超时时间（秒）" min="1" max="3600" value="1800">
+                                    </div>
+                                </div>
+                                
+                                <div class="flex items-center gap-2">
+                                    <input type="checkbox" class="w-4 h-4 rounded border-white/20 bg-black/50 text-blue-500 focus:ring-1 focus:ring-blue-500" id="scriptUseFork" checked>
+                                    <label for="scriptUseFork" class="text-sm text-neutral-300 cursor-pointer">
+                                        使用Fork模式（推荐用于Node.js脚本）
+                                    </label>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer px-6 py-5 border-t border-white/10 flex justify-end gap-3 rounded-b-2xl">
+                <button type="button" class="btn btn-primary px-6 py-2 rounded-lg text-sm font-semibold" onclick="closeModal('executeScriptModal')">取消</button>
+                <button type="button" class="btn btn-success px-6 py-2 rounded-lg text-sm font-semibold flex items-center gap-2" id="viewScriptContentBtn" disabled>
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                    </svg>
+                    查看代码
+                </button>
+                <button type="button" class="btn btn-success px-6 py-2 rounded-lg text-sm font-semibold flex items-center gap-2" id="executeScriptBtn" disabled>
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    执行脚本
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 脚本内容查看模态框 -->
+    <div class="modal fixed z-[2000] left-0 top-0 w-full h-full bg-black/60 backdrop-blur-sm hidden" id="scriptContentModal">
+        <div class="modal-content bg-neutral-900/95 backdrop-blur-xl border border-white/10 rounded-2xl my-[3%] mx-auto p-0 w-[90%] max-w-7xl max-h-[85vh] overflow-y-auto shadow-2xl">
+            <div class="modal-header px-6 py-5 border-b border-white/10 flex justify-between items-center rounded-t-2xl">
+                <h3 class="text-xl font-bold text-white flex items-center gap-2">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path>
+                    </svg>
+                    脚本内容 - <span id="scriptContentTitle"></span>
+                </h3>
+                <span class="close text-3xl font-bold cursor-pointer text-white/80 hover:text-white transition-opacity" onclick="closeModal('scriptContentModal')">&times;</span>
+            </div>
+            <div class="modal-body p-0">
+                <pre class="mb-0 p-6 max-h-[70vh] overflow-y-auto bg-black/50"><code id="scriptContentCode" class="font-mono text-sm text-neutral-200"></code></pre>
+            </div>
+            <div class="modal-footer px-6 py-5 border-t border-white/10 flex justify-end rounded-b-2xl">
+                <button type="button" class="btn btn-primary px-6 py-2 rounded-lg text-sm font-semibold" onclick="closeModal('scriptContentModal')">关闭</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 进程详情模态框 -->
+    <div class="modal fixed z-[2000] left-0 top-0 w-full h-full bg-black/60 backdrop-blur-sm hidden" id="processDetailModal">
+        <div class="modal-content bg-neutral-900/95 backdrop-blur-xl border border-white/10 rounded-2xl my-[3%] mx-auto p-0 w-[90%] max-w-7xl max-h-[85vh] overflow-y-auto shadow-2xl">
+            <div class="modal-header px-6 py-5 border-b border-white/10 flex justify-between items-center rounded-t-2xl">
+                <h3 class="text-xl font-bold text-white flex items-center gap-2">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    进程详情
+                </h3>
+                <span class="close text-3xl font-bold cursor-pointer text-white/80 hover:text-white transition-opacity" onclick="closeModal('processDetailModal')">&times;</span>
+            </div>
+            <div class="modal-body px-6 py-5">
+                <div id="processDetailContent">
+                    <!-- 进程详情内容将通过JavaScript动态填充 -->
+                </div>
+            </div>
+            <div class="modal-footer px-6 py-5 border-t border-white/10 flex justify-end rounded-b-2xl">
+                <button type="button" class="btn btn-primary px-6 py-2 rounded-lg text-sm font-semibold" onclick="closeModal('processDetailModal')">关闭</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <script>
+        // 模态框控制函数
+        function openModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                modal.classList.remove('hidden');
+                modal.classList.add('show');
+            }
+        }
+        
+        function closeModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                modal.classList.add('hidden');
+                modal.classList.remove('show');
+            }
+        }
+        
+        // 点击模态框外部关闭
+        document.addEventListener('click', (e) => {
+            if (e.target.classList.contains('modal')) {
+                closeModal(e.target.id);
+            }
+        });
+        
+        // 下拉菜单控制
+        document.addEventListener('DOMContentLoaded', () => {
+            const logProcessSelector = document.getElementById('logProcessSelector');
+            const logProcessDropdown = document.getElementById('logProcessDropdown');
+            
+            if (logProcessSelector && logProcessDropdown) {
+                logProcessSelector.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    logProcessDropdown.classList.toggle('hidden');
+                });
+                
+                document.addEventListener('click', (e) => {
+                    if (!logProcessSelector.contains(e.target) && !logProcessDropdown.contains(e.target)) {
+                        logProcessDropdown.classList.add('hidden');
+                    }
+                });
+            }
+        });
+        
+        class ProcessManager {
+            constructor() {
+                this.refreshInterval = null;
+                this.logAutoScroll = true;
+                this.currentFilter = 'all';
+                this.currentScriptContent = null;
+                this.socket = null;
+                this.currentLogProcess = 'all'; // 当前查看的进程ID
+                this.processLogs = new Map(); // 存储每个进程的日志
+                this.logCounts = { 
+                    all: { info: 0, error: 0, warn: 0, success: 0 }
+                };
+                this.processData = {
+                    running: [],
+                    queued: [],
+                    history: [],
+                    stats: {}
+                };
+                this.logRefreshTimeout = null; // 日志刷新防抖定时器
+                
+                // 使用异步初始化，确保 DOM 元素创建完成后再初始化 WebSocket
+                this._initAsync();
+            }
+
+            /**
+             * 异步初始化入口
+             */
+            async _initAsync() {
+                await this.init();
+                this.initWebSocket();
+                this.startPeriodicRefresh();
+            }
+
+            async init() {
+                this.bindEvents();
+                this.setupLogHeader(); // 先设置日志头部，确保 DOM 元素存在
+                await this.loadProcessData();
+                await this.loadHistoryLogs(); // 然后加载历史日志
+            }
+
+            /**
+             * 设置日志头部
+             */
+            setupLogHeader() {
+                const logContainer = document.getElementById('logContainer');
+                const header = document.createElement('div');
+                header.className = 'log-header';
+                header.innerHTML = `
+                    <div class="log-stats">
+                        <div class="log-count">
+                            <div class="log-count-item">
+                                <div class="log-count-dot info"></div>
+                                <span id="logCountInfo">0</span>
+                            </div>
+                            <div class="log-count-item">
+                                <div class="log-count-dot success"></div>
+                                <span id="logCountSuccess">0</span>
+                            </div>
+                            <div class="log-count-item">
+                                <div class="log-count-dot warn"></div>
+                                <span id="logCountWarn">0</span>
+                            </div>
+                            <div class="log-count-item">
+                                <div class="log-count-dot error"></div>
+                                <span id="logCountError">0</span>
+                            </div>
+                        </div>
+                        <div class="log-status">
+                            <span id="logStatus">实时日志</span>
+                        </div>
+                    </div>
+                `;
+                logContainer.appendChild(header);
+            }
+
+            /**
+             * 更新日志统计
+             */
+            updateLogCounts() {
+                const currentCounts = this.logCounts[this.currentLogProcess] || { info: 0, error: 0, warn: 0, success: 0 };
+                
+                // 添加DOM元素存在性检查
+                const logCountInfo = document.getElementById('logCountInfo');
+                const logCountSuccess = document.getElementById('logCountSuccess');
+                const logCountWarn = document.getElementById('logCountWarn');
+                const logCountError = document.getElementById('logCountError');
+                
+                if (logCountInfo) logCountInfo.textContent = currentCounts.info;
+                if (logCountSuccess) logCountSuccess.textContent = currentCounts.success;
+                if (logCountWarn) logCountWarn.textContent = currentCounts.warn;
+                if (logCountError) logCountError.textContent = currentCounts.error;
+            }
+
+            /**
+             * 更新进程选择器
+             */
+            updateProcessSelector() {
+                const dropdown = document.getElementById('logProcessList');
+                
+                // 清空现有进程项（保留固定项）
+                const processItems = dropdown.querySelectorAll('li:not([data-keep])');
+                processItems.forEach(item => {
+                    if (!item.querySelector('[data-process-id="all"]') && 
+                        !item.querySelector('hr') && 
+                        !item.querySelector('h6')) {
+                        item.remove();
+                    }
+                });
+                
+                // 获取头部元素
+                const runningHeader = Array.from(dropdown.querySelectorAll('h6')).find(h => h.textContent.trim() === '运行中进程');
+                const historyHeader = Array.from(dropdown.querySelectorAll('h6')).find(h => h.textContent.trim() === '历史进程');
+                
+                // 添加运行中进程
+                if (this.processData.running && this.processData.running.length > 0) {
+                    this.processData.running.forEach(process => {
+                        const shortId = process.processId.substring(0, 8);
+                        const processType = process.metadata?.type || '通用脚本';
+                        
+                        const li = document.createElement('li');
+                        li.innerHTML = `
+                            <a class="px-4 py-2 block text-sm text-white hover:bg-white/10 transition-colors" href="#" data-process-id="${process.processId}">
+                                <div class="flex items-center gap-2">
+                                    <svg class="w-4 h-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path>
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                    </svg>
+                                    <span class="font-medium">${shortId}</span>
+                                    <span class="text-neutral-500 text-xs">${processType}</span>
+                                </div>
+                            </a>
+                        `;
+                        
+                        // 插入到运行中进程头部之后
+                        if (runningHeader && runningHeader.parentNode) {
+                            const nextSibling = runningHeader.parentNode.nextSibling;
+                            if (nextSibling) {
+                                dropdown.insertBefore(li, nextSibling);
+                            } else {
+                                dropdown.appendChild(li);
+                            }
+                        }
+                    });
+                }
+                
+                // 添加最近的历史进程（最多显示5个）
+                if (this.processData.history && this.processData.history.length > 0) {
+                    const recentHistory = this.processData.history.slice(-5);
+                    
+                    recentHistory.forEach(process => {
+                        const shortId = process.processId.substring(0, 8);
+                        const processType = process.metadata?.type || '通用脚本';
+                        const iconColor = process.status === 'completed' ? 'text-green-400' : 'text-red-400';
+                        
+                        const li = document.createElement('li');
+                        li.innerHTML = `
+                            <a class="px-4 py-2 block text-sm text-white hover:bg-white/10 transition-colors" href="#" data-process-id="${process.processId}">
+                                <div class="flex items-center gap-2">
+                                    <svg class="w-4 h-4 ${iconColor}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        ${process.status === 'completed' ? 
+                                            '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>' :
+                                            '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path>'
+                                        }
+                                    </svg>
+                                    <span class="font-medium">${shortId}</span>
+                                    <span class="text-neutral-500 text-xs">${processType}</span>
+                                </div>
+                            </a>
+                        `;
+                        
+                        // 添加到历史进程部分
+                        dropdown.appendChild(li);
+                    });
+                }
+            }
+
+            /**
+             * 切换日志查看进程
+             */
+            async switchLogProcess(processId) {
+                // 更新当前选择的进程
+                this.currentLogProcess = processId;
+                
+                // 更新UI显示
+                const processName = processId === 'all' ? '全部进程' : processId.substring(0, 8);
+                const currentLogProcessElement = document.getElementById('currentLogProcess');
+                if (currentLogProcessElement) {
+                    currentLogProcessElement.textContent = processName;
+                }
+                
+                // 更新下拉菜单的活跃状态
+                document.querySelectorAll('#logProcessList a').forEach(item => {
+                    item.classList.remove('bg-white/20');
+                });
+                
+                // 找到对应的菜单项并设置为活跃
+                const targetItem = document.querySelector(`#logProcessList [data-process-id="${processId}"]`);
+                if (targetItem) {
+                    targetItem.classList.add('bg-white/20');
+                }
+                
+                // 关闭下拉菜单
+                const dropdown = document.getElementById('logProcessDropdown');
+                if (dropdown) {
+                    dropdown.classList.add('hidden');
+                }
+                
+                // 如果选择了特定进程且该进程日志不存在，尝试从服务器加载
+                if (processId !== 'all' && !this.processLogs.has(processId)) {
+                    try {
+                        const response = await fetch(`/api/process/process/${processId}/logs`);
+                        const data = await response.json();
+                        
+                        if (data.success && data.data.logs.length > 0) {
+                            data.data.logs.forEach(logEntry => {
+                                this.storeProcessLog(logEntry);
+                            });
+                            
+                            // 添加系统日志通知
+                            this.addLog('info', `已加载进程 ${processName} 的 ${data.data.logs.length} 条历史日志`, null, 'system');
+                        }
+                    } catch (error) {
+                        console.error('加载进程日志失败:', error);
+                        // 只有在日志容器存在时才添加错误日志
+                        if (document.getElementById('logContainer')) {
+                            this.addLog('error', `加载进程 ${processName} 日志失败: ${error.message}`, null, 'system');
+                        }
+                    }
+                }
+                
+                // 重新渲染日志
+                this.renderCurrentProcessLogs();
+                
+                // 更新统计
+                this.updateLogCounts();
+                
+                // 只有在日志容器存在时才添加日志
+                if (document.getElementById('logContainer')) {
+                    this.addLog('info', `切换到查看进程: ${processName}`, null, 'system');
+                }
+            }
+
+            /**
+             * 渲染当前选择进程的日志 - 添加安全检查
+             */
+            renderCurrentProcessLogs() {
+                const logContainer = document.getElementById('logContainer');
+                if (!logContainer) {
+                    console.warn('日志容器不存在，无法渲染日志');
+                    return;
+                }
+                
+                // 保留头部，清空其他内容
+                const header = logContainer.querySelector('.log-header');
+                logContainer.innerHTML = '';
+                if (header) {
+                    logContainer.appendChild(header);
+                }
+                
+                // 获取当前进程的日志
+                if (this.currentLogProcess === 'all') {
+                    // 显示所有日志，按时间排序
+                    const allLogs = [];
+                    this.processLogs.forEach((logs, processId) => {
+                        allLogs.push(...logs);
+                    });
+                    
+                    allLogs.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+                    
+                    allLogs.forEach(log => {
+                        this.renderLogEntry(log);
+                    });
+                } else {
+                    // 显示特定进程的日志
+                    const processLogs = this.processLogs.get(this.currentLogProcess) || [];
+                    processLogs.forEach(log => {
+                        this.renderLogEntry(log);
+                    });
+                }
+                
+                // 滚动到底部
+                if (this.logAutoScroll) {
+                    logContainer.scrollTop = logContainer.scrollHeight;
+                }
+            }
+
+            /**
+             * 渲染单个日志条目
+             */
+            renderLogEntry(logData) {
+                const logContainer = document.getElementById('logContainer');
+                const logEntry = document.createElement('div');
+                
+                // 设置基本类名和属性
+                logEntry.className = `log-entry`;
+                if (logData.logType !== 'general') {
+                    logEntry.setAttribute('data-type', logData.logType);
+                }
+                
+                // 添加特殊样式类
+                if (logData.logType === 'system') {
+                    logEntry.classList.add('system-log');
+                } else if (logData.logType === 'websocket') {
+                    logEntry.classList.add('websocket-log');
+                }
+                
+                // 构建日志内容
+                const timeString = new Date(logData.timestamp).toLocaleTimeString();
+                let logContent = `<span class="log-timestamp">[${timeString}]</span>`;
+                
+                // 添加进程ID标识
+                if (logData.processId && this.currentLogProcess === 'all') {
+                    logContent += `<span class="process-id-badge">${logData.processId}</span>`;
+                }
+                
+                // 添加消息内容
+                const messageClass = logData.isIndented ? 'log-message indent' : 'log-message';
+                logContent += `<span class="${messageClass} log-level-${logData.level}">${logData.message}</span>`;
+                
+                logEntry.innerHTML = logContent;
+                logContainer.appendChild(logEntry);
+            }
+
+            /**
+             * 安全更新日志状态显示
+             * @param {string} status 状态类型：connected, disconnected, reconnecting, error
+             * @param {string} text 显示文本
+             */
+            updateLogStatusDisplay(status, text) {
+                const logStatus = document.getElementById('logStatus');
+                if (!logStatus) {
+                    console.warn('logStatus 元素不存在，跳过更新');
+                    return;
+                }
+                
+                const icons = {
+                    connected: '<svg class="w-4 h-4 inline text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.141 0M1.394 9.393c5.857-5.857 15.355-5.857 21.213 0"></path></svg>',
+                    disconnected: '<svg class="w-4 h-4 inline text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"></path></svg>',
+                    reconnecting: '<svg class="w-4 h-4 inline text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636a9 9 0 010 12.728m0 0l-2.829-2.829m2.829 2.829L21 21M15.536 8.464a5 5 0 010 7.072m0 0l-2.829-2.829m-4.243 2.829a4.978 4.978 0 01-1.414-2.83m-1.414 5.658a9 9 0 01-2.167-9.238m7.824 2.167a1 1 0 111.414 1.414m-1.414-1.414L3 3m8.293 8.293l1.414 1.414"></path></svg>',
+                    error: '<svg class="w-4 h-4 inline text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"></path></svg>'
+                };
+                
+                logStatus.innerHTML = `${icons[status] || icons.error} ${text}`;
+            }
+
+            /**
+             * 初始化WebSocket连接
+             */
+            initWebSocket() {
+                // 检查 Socket.IO 是否可用
+                if (typeof io === 'undefined') {
+                    console.error('Socket.IO 库未加载');
+                    this.addLog('error', 'WebSocket 不可用（Socket.IO 库未加载）', null, 'system');
+                    this.updateLogStatusDisplay('disconnected', '未连接');
+                    return;
+                }
+
+                try {
+                    this.socket = io('/process', {
+                        transports: ['websocket', 'polling'],
+                        reconnectionAttempts: 5,
+                        reconnectionDelay: 1000,
+                        timeout: 10000
+                    });
+                    
+                    this.socket.on('connect', () => {
+                        this.addLog('success', 'WebSocket连接已建立，开始接收实时日志', null, 'websocket');
+                        this.updateLogStatusDisplay('connected', '已连接');
+                        console.log('WebSocket连接已建立');
+                    });
+                    
+                    this.socket.on('connect_error', (error) => {
+                        console.error('WebSocket连接错误:', error.message);
+                        this.addLog('error', `WebSocket连接失败: ${error.message}`, null, 'system');
+                        this.updateLogStatusDisplay('error', '连接失败');
+                    });
+                    
+                    this.socket.on('disconnect', () => {
+                        this.addLog('warn', 'WebSocket连接已断开，正在尝试重连...', null, 'websocket');
+                        this.updateLogStatusDisplay('reconnecting', '重连中');
+                        console.log('WebSocket连接已断开');
+                    });
+                    
+                    this.socket.on('reconnect', () => {
+                        this.addLog('success', 'WebSocket连接已重新建立', null, 'websocket');
+                        this.updateLogStatusDisplay('connected', '已连接');
+                        console.log('WebSocket连接已重新建立');
+                    });
+                    
+                    // 监听实时日志
+                    this.socket.on('processLog', (logData) => {
+                        this.handleRealtimeLog(logData);
+                    });
+                    
+                    // 监听进程状态更新
+                    this.socket.on('processStatus', (statusData) => {
+                        this.processData = statusData;
+                        this.updateStats();
+                        this.renderProcessList();
+                        this.updateProcessSelector(); // 更新进程选择器
+                    });
+                    
+                    // 监听服务状态更新
+                    this.socket.on('serviceStatus', (statusData) => {
+                        this.updateServiceStatus(statusData);
+                    });
+                    
+                } catch (error) {
+                    console.error('WebSocket连接失败:', error);
+                    this.addLog('error', `WebSocket连接失败: ${error.message}`, null, 'system');
+                    this.updateLogStatusDisplay('error', '连接失败');
+                }
+            }
+
+            /**
+             * 处理实时日志
+             */
+            handleRealtimeLog(logData) {
+                const { timestamp, level, message, metadata } = logData;
+                
+                // 提取进程ID（如果存在）
+                let processId = null;
+                let logType = 'general';
+                
+                if (metadata && metadata.processId) {
+                    processId = metadata.processId;
+                    logType = metadata.type || 'general';
+                }
+                
+                // 格式化消息
+                let formattedMessage = message;
+                let isIndented = false;
+                
+                // 处理缩进消息
+                if (message.includes('└─')) {
+                    isIndented = true;
+                    formattedMessage = message.replace('└─', '').trim();
+                }
+                
+                // 存储主要日志到对应进程
+                const mainLogEntry = {
+                    timestamp,
+                    level,
+                    message: formattedMessage,
+                    logType,
+                    processId: processId ? processId.substring(0, 8) : null,
+                    isIndented,
+                    originalProcessId: processId
+                };
+                this.storeProcessLog(mainLogEntry);
+                
+                // 存储额外的日志信息（如果有）
+                const extraLogs = [];
+                if (metadata && metadata.processId) {
+                    switch (metadata.type) {
+                        case 'start':
+                            if (metadata.metadata?.scriptPath) {
+                                extraLogs.push({
+                                    timestamp,
+                                    level: 'info',
+                                    message: `脚本路径: ${metadata.metadata.scriptPath}`,
+                                    logType: 'start',
+                                    processId: processId.substring(0, 8),
+                                    isIndented: true,
+                                    originalProcessId: processId
+                                });
+                            }
+                            if (metadata.metadata?.args && metadata.metadata.args.length > 0) {
+                                extraLogs.push({
+                                    timestamp,
+                                    level: 'info',
+                                    message: `参数: ${metadata.metadata.args.join(' ')}`,
+                                    logType: 'start',
+                                    processId: processId.substring(0, 8),
+                                    isIndented: true,
+                                    originalProcessId: processId
+                                });
+                            }
+                            break;
+                        case 'exit':
+                            const exitMessage = metadata.exitCode === 0 ? '进程正常退出' : `进程异常退出，退出码: ${metadata.exitCode}`;
+                            const exitLevel = metadata.exitCode === 0 ? 'success' : 'error';
+                            extraLogs.push({
+                                timestamp,
+                                level: exitLevel,
+                                message: exitMessage,
+                                logType: 'exit',
+                                processId: processId.substring(0, 8),
+                                isIndented: true,
+                                originalProcessId: processId
+                            });
+                            break;
+                    }
+                }
+                
+                // 存储额外日志
+                extraLogs.forEach(extraLog => {
+                    this.storeProcessLog(extraLog);
+                });
+                
+                // 如果当前查看的是该进程或全部进程，则刷新显示
+                if (this.currentLogProcess === 'all' || 
+                    (processId && this.currentLogProcess === processId)) {
+                    
+                    // 使用防抖机制，避免频繁刷新
+                    if (this.logRefreshTimeout) {
+                        clearTimeout(this.logRefreshTimeout);
+                    }
+                    
+                    this.logRefreshTimeout = setTimeout(() => {
+                        this.refreshCurrentProcessLogs();
+                    }, 100); // 100ms防抖
+                }
+            }
+
+            /**
+             * 刷新当前进程的日志显示（用于实时更新）
+             */
+            refreshCurrentProcessLogs() {
+                const logContainer = document.getElementById('logContainer');
+                if (!logContainer) return;
+                
+                // 保存当前滚动位置
+                const wasAtBottom = logContainer.scrollTop >= (logContainer.scrollHeight - logContainer.clientHeight - 50);
+                
+                // 保留头部，清空其他内容
+                const header = logContainer.querySelector('.log-header');
+                const existingLogs = Array.from(logContainer.children).filter(child => 
+                    child.classList.contains('log-entry')
+                );
+                
+                // 获取当前应该显示的日志
+                let currentLogs = [];
+                if (this.currentLogProcess === 'all') {
+                    // 显示所有日志，按时间排序
+                    this.processLogs.forEach((logs, processId) => {
+                        currentLogs.push(...logs);
+                    });
+                    currentLogs.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+                } else {
+                    // 显示特定进程的日志
+                    currentLogs = this.processLogs.get(this.currentLogProcess) || [];
+                }
+                
+                // 只有当日志数量发生变化时才重新渲染
+                if (existingLogs.length !== currentLogs.length) {
+                    // 清空并重新渲染
+                    logContainer.innerHTML = '';
+                    if (header) {
+                        logContainer.appendChild(header);
+                    }
+                    
+                    currentLogs.forEach(log => {
+                        this.renderLogEntry(log);
+                    });
+                    
+                    // 更新计数显示
+                    this.updateLogCounts();
+                    
+                    // 恢复滚动位置
+                    if (wasAtBottom && this.logAutoScroll) {
+                        logContainer.scrollTop = logContainer.scrollHeight;
+                    }
+                } else {
+                    // 即使日志数量没变，也要更新计数显示
+                    this.updateLogCounts();
+                }
+            }
+
+            /**
+             * 存储进程日志
+             */
+            storeProcessLog(logData) {
+                const targetProcessId = logData.originalProcessId || 'system';
+                
+                // 存储到对应进程
+                if (!this.processLogs.has(targetProcessId)) {
+                    this.processLogs.set(targetProcessId, []);
+                }
+                this.processLogs.get(targetProcessId).push(logData);
+                
+                // 限制每个进程的日志数量
+                const maxLogsPerProcess = 500;
+                const logs = this.processLogs.get(targetProcessId);
+                if (logs.length > maxLogsPerProcess) {
+                    logs.splice(0, logs.length - maxLogsPerProcess);
+                }
+                
+                // 更新计数（只在这里更新一次）
+                if (!this.logCounts[targetProcessId]) {
+                    this.logCounts[targetProcessId] = { info: 0, error: 0, warn: 0, success: 0 };
+                }
+                this.logCounts[targetProcessId][logData.level] = (this.logCounts[targetProcessId][logData.level] || 0) + 1;
+                this.logCounts.all[logData.level] = (this.logCounts.all[logData.level] || 0) + 1;
+            }
+
+            bindEvents() {
+                // 刷新按钮
+                document.getElementById('refreshBtn').addEventListener('click', () => {
+                    this.loadProcessData();
+                    // 通过WebSocket请求刷新
+                    if (this.socket && this.socket.connected) {
+                        this.socket.emit('requestRefresh');
+                    }
+                });
+
+                // 过滤器
+                document.querySelectorAll('input[name="processFilter"]').forEach(radio => {
+                    radio.addEventListener('change', (e) => {
+                        this.currentFilter = e.target.id.replace('filter', '').toLowerCase();
+                        this.renderProcessList();
+                    });
+                });
+
+                // 进程选择器事件
+                document.getElementById('logProcessList').addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const link = e.target.closest('[data-process-id]');
+                    if (link) {
+                        const processId = link.getAttribute('data-process-id');
+                        this.switchLogProcess(processId);
+                    }
+                });
+
+                // 日志控制
+                document.getElementById('clearLogBtn').addEventListener('click', () => {
+                    if (this.currentLogProcess === 'all') {
+                        // 清空所有进程日志
+                        this.processLogs.clear();
+                        this.logCounts = { all: { info: 0, error: 0, warn: 0, success: 0 } };
+                    } else {
+                        // 清空当前进程日志
+                        this.processLogs.delete(this.currentLogProcess);
+                        if (this.logCounts[this.currentLogProcess]) {
+                            delete this.logCounts[this.currentLogProcess];
+                        }
+                        // 如果删除的不是'all'，确保'all'计数器存在
+                        if (!this.logCounts.all) {
+                            this.logCounts.all = { info: 0, error: 0, warn: 0, success: 0 };
+                        }
+                    }
+                    
+                    // 重新渲染日志
+                    this.renderCurrentProcessLogs();
+                    
+                    // 重新设置头部
+                    const logContainer = document.getElementById('logContainer');
+                    if (!logContainer.querySelector('.log-header')) {
+                        this.setupLogHeader();
+                    }
+                    
+                    // 更新统计
+                    this.updateLogCounts();
+                    
+                    this.addLog('info', '日志已清空', null, 'system');
+                });
+
+                document.getElementById('autoScrollBtn').addEventListener('click', (e) => {
+                    this.logAutoScroll = !this.logAutoScroll;
+                    const btn = e.target.closest('button');
+                    btn.dataset.enabled = this.logAutoScroll;
+                    btn.innerHTML = this.logAutoScroll ? 
+                        '<svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>' : 
+                        '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path></svg>';
+                    this.addLog('info', `自动滚动已${this.logAutoScroll ? '启用' : '禁用'}`, null, 'system');
+                });
+
+                // 快速操作
+                document.getElementById('terminateAllBtn').addEventListener('click', () => {
+                    this.terminateAllProcesses();
+                });
+
+                document.getElementById('clearHistoryBtn').addEventListener('click', () => {
+                    this.clearHistory();
+                });
+
+                // 执行脚本
+                document.getElementById('executeScriptBtn').addEventListener('click', () => {
+                    this.executeScript();
+                });
+
+                // 新增的脚本相关事件绑定
+                document.getElementById('refreshScriptsBtn').addEventListener('click', () => {
+                    this.addLog('info', '手动刷新脚本列表...');
+                    this.loadScriptList();
+                });
+
+                document.getElementById('viewScriptContentBtn').addEventListener('click', () => {
+                    this.viewScriptContent();
+                });
+
+                // 监听模态框显示事件，在显示时加载脚本列表
+                const executeScriptModal = document.getElementById('executeScriptModal');
+                let scriptModalWasHidden = executeScriptModal.classList.contains('hidden');
+                const observer = new MutationObserver((mutations) => {
+                    const isNowHidden = executeScriptModal.classList.contains('hidden');
+                    if (scriptModalWasHidden && !isNowHidden) {
+                        this.addLog('info', '打开脚本选择面板，加载脚本列表...');
+                        this.loadScriptList();
+                    }
+                    scriptModalWasHidden = isNowHidden;
+                });
+                observer.observe(executeScriptModal, { attributes: true, attributeFilter: ['class'] });
+            }
+
+            // 加载脚本列表
+            async loadScriptList() {
+                const container = document.getElementById('scriptFileTree');
+                
+                try {
+                    // 显示加载状态
+                    container.innerHTML = `
+                        <div class="script-loading">
+                            <div class="text-center text-muted">
+                                <div class="spinner-border spinner-border-sm" role="status">
+                                    <span class="visually-hidden">加载中...</span>
+                                </div>
+                                <div class="mt-2">正在加载脚本列表...</div>
+                            </div>
+                        </div>
+                    `;
+                    
+                    this.addLog('info', '开始请求脚本列表...');
+                    console.log('开始请求脚本列表...');
+                    
+                    const response = await fetch('/api/process/scripts');
+                    console.log('请求响应状态:', response.status);
+                    
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+                    
+                    const data = await response.json();
+                    console.log('响应数据:', data);
+                    
+                    if (data.success) {
+                        this.renderScriptTree(container, data.data.scripts);
+                        this.addLog('success', `已加载 ${data.data.totalFiles} 个脚本文件`);
+                        
+                        if (data.data.debug) {
+                            console.log('调试信息:', data.data.debug);
+                        }
+                    } else {
+                        throw new Error(data.error || '未知错误');
+                    }
+                } catch (error) {
+                    console.error('加载脚本列表失败:', error);
+                    container.innerHTML = `
+                        <div class="script-loading">
+                            <div class="text-center text-red-400 py-8">
+                                <svg class="w-12 h-12 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                                </svg>
+                                <div class="mt-2 text-sm">加载失败</div>
+                                <div class="mt-1 text-xs text-neutral-500">${error.message}</div>
+                                <button class="btn btn-danger px-4 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 mx-auto mt-4" onclick="processManager.loadScriptList()">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                                    </svg>
+                                    重试
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                    this.addLog('error', `加载脚本列表失败: ${error.message}`);
+                }
+            }
+
+            // 渲染脚本树
+            renderScriptTree(container, scripts, level = 0) {
+                if (level === 0) {
+                    container.innerHTML = '';
+                }
+                
+                if (scripts.length === 0) {
+                    if (level === 0) {
+                        container.innerHTML = `
+                            <div class="script-loading">
+                                <div class="text-center text-neutral-500 py-8">
+                                    <svg class="w-12 h-12 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path>
+                                    </svg>
+                                    <div class="mt-2 text-sm">没有找到脚本文件</div>
+                                </div>
+                            </div>
+                        `;
+                    }
+                    return;
+                }
+                
+                scripts.forEach(script => {
+                    const item = document.createElement('div');
+                    item.className = 'script-tree-item mb-1';
+                    
+                    if (script.isDirectory) {
+                        item.innerHTML = `
+                            <div class="flex items-center p-2 border-b border-white/10 script-folder hover:bg-white/5 transition-colors cursor-pointer" 
+                                 style="padding-left: ${(level * 20) + 8}px !important;">
+                                <svg class="w-5 h-5 text-yellow-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path>
+                                </svg>
+                                <span class="flex-grow-1 text-neutral-200">${script.name}</span>
+                                <span class="text-xs text-neutral-500 mr-2">${script.children ? script.children.length : 0} 项</span>
+                                <svg class="w-4 h-4 text-neutral-400 toggle-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                </svg>
+                            </div>
+                            <div class="script-folder-content hidden"></div>
+                        `;
+                        
+                        const folderHeader = item.querySelector('.script-folder');
+                        const folderContent = item.querySelector('.script-folder-content');
+                        const toggleIcon = item.querySelector('.toggle-icon');
+                        
+                        folderHeader.addEventListener('click', () => {
+                            const isExpanded = !folderContent.classList.contains('hidden');
+                            if (isExpanded) {
+                                folderContent.classList.add('hidden');
+                                toggleIcon.style.transform = 'rotate(0deg)';
+                            } else {
+                                folderContent.classList.remove('hidden');
+                                toggleIcon.style.transform = 'rotate(180deg)';
+                            }
+                            
+                            if (!isExpanded && folderContent.children.length === 0) {
+                                this.renderScriptTree(folderContent, script.children || [], level + 1);
+                            }
+                        });
+                    } else {
+                        const fileSize = this.formatFileSize(script.size);
+                        const isMultiAgent = script.name.includes('MultiAgent') || script.name.includes('runMultiAgent');
+                        
+                        item.innerHTML = `
+                            <div class="flex items-center p-2 border-b border-white/10 script-file hover:bg-white/5 transition-colors cursor-pointer" 
+                                 style="padding-left: ${(level * 20) + 8}px !important;"
+                                 data-script-path="${script.path}">
+                                <svg class="w-5 h-5 text-blue-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path>
+                                </svg>
+                                <div class="flex-grow-1">
+                                    <div class="font-medium text-neutral-200">${script.name}</div>
+                                    <span class="text-xs text-neutral-500">${fileSize}</span>
+                                    ${isMultiAgent ? '<span class="ml-2 px-2 py-0.5 rounded text-xs font-semibold bg-blue-500/20 text-blue-300 border border-blue-500/30">多Agent</span>' : ''}
+                                </div>
+                                <svg class="w-5 h-5 text-neutral-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                                </svg>
+                            </div>
+                        `;
+                        
+                        const fileElement = item.querySelector('.script-file');
+                        fileElement.addEventListener('click', () => {
+                            this.selectScript(script);
+                        });
+                    }
+                    
+                    container.appendChild(item);
+                });
+            }
+
+            // 选择脚本
+            async selectScript(script) {
+                try {
+                    this.addLog('info', `正在选择脚本: ${script.name}`);
+                    
+                    // 更新UI状态
+                    document.querySelectorAll('.script-file').forEach(el => {
+                        el.classList.remove('selected', 'bg-blue-500/10', 'border-l-blue-500');
+                    });
+                    
+                    const selectedElement = document.querySelector(`[data-script-path="${script.path}"]`);
+                    if (selectedElement) {
+                        selectedElement.classList.add('selected', 'bg-blue-500/10', 'border-l-4', 'border-l-blue-500');
+                    }
+                    
+                    // 设置脚本路径
+                    document.getElementById('scriptPath').value = script.path;
+                    
+                    // 启用按钮
+                    document.getElementById('executeScriptBtn').disabled = false;
+                    document.getElementById('viewScriptContentBtn').disabled = false;
+                    
+                    // 加载脚本信息
+                    const response = await fetch(`/api/process/scripts/${encodeURIComponent(script.path)}`);
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        this.displayScriptInfo(data.data.info);
+                        this.currentScriptContent = data.data.content;
+                        this.addLog('success', `脚本信息已加载: ${script.name}`);
+                    } else {
+                        this.addLog('error', `获取脚本信息失败: ${data.error}`);
+                    }
+                } catch (error) {
+                    this.addLog('error', `选择脚本失败: ${error.message}`);
+                }
+            }
+
+            // 显示脚本信息
+            displayScriptInfo(info) {
+                const panel = document.getElementById('scriptInfoPanel');
+                const description = document.getElementById('scriptDescription');
+                const usage = document.getElementById('scriptUsage');
+                const examples = document.getElementById('scriptExamples');
+                
+                if (info.description || info.usage || info.examples.length > 0) {
+                    panel.classList.remove('hidden');
+                    
+                    description.textContent = info.description || '暂无描述';
+                    usage.textContent = info.usage || '';
+                    
+                    if (info.examples.length > 0) {
+                        examples.innerHTML = `
+                            <strong class="text-xs font-semibold text-neutral-300 block mb-2">使用示例：</strong>
+                            ${info.examples.slice(0, 3).map(example => `
+                                <div class="bg-black/50 p-2 rounded mt-1 border border-white/10">
+                                    <code class="text-xs text-neutral-300 font-mono">${example}</code>
+                                </div>
+                            `).join('')}
+                        `;
+                    } else {
+                        examples.innerHTML = '';
+                    }
+                    
+                    // 设置脚本信息标题
+                    const card = panel.querySelector('.glass-card');
+                    const cardTitle = panel.querySelector('h6');
+                    card.className = 'glass-card rounded-lg p-4 border-l-4 border-l-blue-500/50';
+                    cardTitle.innerHTML = `
+                        <svg class="w-5 h-5 inline text-blue-400 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>脚本信息
+                    `;
+                } else {
+                    panel.classList.add('hidden');
+                }
+            }
+
+            // 查看脚本内容
+            viewScriptContent() {
+                if (!this.currentScriptContent) {
+                    this.addLog('error', '脚本内容未加载');
+                    return;
+                }
+                
+                const scriptPath = document.getElementById('scriptPath').value;
+                document.getElementById('scriptContentTitle').textContent = scriptPath.split('/').pop();
+                document.getElementById('scriptContentCode').textContent = this.currentScriptContent;
+                
+                openModal('scriptContentModal');
+                
+                this.addLog('info', '已打开脚本内容查看器');
+            }
+
+            // 格式化文件大小
+            formatFileSize(bytes) {
+                if (bytes === 0) return '0 B';
+                const k = 1024;
+                const sizes = ['B', 'KB', 'MB', 'GB'];
+                const i = Math.floor(Math.log(bytes) / Math.log(k));
+                return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+            }
+
+            startPeriodicRefresh() {
+                // 降低刷新频率，因为现在有WebSocket实时更新
+                this.refreshInterval = setInterval(() => {
+                    // 只在WebSocket未连接时才进行HTTP轮询
+                    if (!this.socket || !this.socket.connected) {
+                    this.loadProcessData();
+                    }
+                }, 10000); // 10秒刷新一次，而不是3秒
+            }
+
+            stopPeriodicRefresh() {
+                if (this.refreshInterval) {
+                    clearInterval(this.refreshInterval);
+                    this.refreshInterval = null;
+                }
+            }
+
+            async loadProcessData() {
+                try {
+                    const refreshIcon = document.getElementById('refreshIcon');
+                    refreshIcon.classList.add('refresh-indicator');
+
+                    const statusResponse = await fetch('/api/process/status');
+                    const statusData = await statusResponse.json();
+
+                    if (statusData.success) {
+                        this.updateServiceStatus(statusData.data);
+                    }
+
+                    const processResponse = await fetch('/api/process/processes');
+                    const processData = await processResponse.json();
+
+                    if (processData.success) {
+                        this.processData = processData.data;
+                        this.updateStats();
+                        this.renderProcessList();
+                    }
+
+                    refreshIcon.classList.remove('refresh-indicator');
+                } catch (error) {
+                    console.error('获取进程数据失败:', error);
+                    this.addLog('error', `获取进程数据失败: ${error.message}`);
+                }
+            }
+
+            updateServiceStatus(statusData) {
+                const statusElement = document.getElementById('serviceStatus');
+                const statusCard = document.getElementById('serviceStatusCard');
+                
+                if (statusData.isRunning) {
+                    statusElement.textContent = '运行中';
+                    statusCard.className = 'glass-card rounded-2xl p-6 border-l-4 border-l-green-500/50';
+                } else {
+                    statusElement.textContent = '已停止';
+                    statusCard.className = 'glass-card rounded-2xl p-6 border-l-4 border-l-red-500/50';
+                }
+
+                // 修改：添加有效性检查，避免显示 NaN
+                if (statusData.performance && 
+                    statusData.performance.memoryUsage && 
+                    typeof statusData.performance.memoryUsage.used === 'number' && 
+                    !isNaN(statusData.performance.memoryUsage.used)) {
+                    this.addLog('info', `内存使用: ${(statusData.performance.memoryUsage.used / 1024 / 1024).toFixed(2)}MB`);
+                }
+            }
+
+            updateStats() {
+                document.getElementById('runningCount').textContent = this.processData.stats.runningCount || 0;
+                document.getElementById('queuedCount').textContent = this.processData.stats.queuedCount || 0;
+                document.getElementById('totalHistoryCount').textContent = this.processData.stats.totalHistoryCount || 0;
+            }
+
+            renderProcessList() {
+                const tbody = document.getElementById('processTableBody');
+                tbody.innerHTML = '';
+
+                let processes = [];
+                
+                switch (this.currentFilter) {
+                    case 'running':
+                        processes = this.processData.running || [];
+                        break;
+                    case 'queued':
+                        processes = this.processData.queued || [];
+                        break;
+                    case 'history':
+                        processes = this.processData.history || [];
+                        break;
+                    default:
+                        processes = [
+                            ...(this.processData.running || []),
+                            ...(this.processData.queued || []),
+                            ...(this.processData.history || []).slice(0, 10)
+                        ];
+                }
+
+                if (processes.length === 0) {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="6" class="text-center text-neutral-500 py-8">
+                                <svg class="w-12 h-12 mx-auto mb-2 text-neutral-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path>
+                                </svg>
+                                <div class="text-sm">暂无进程数据</div>
+                            </td>
+                        </tr>
+                    `;
+                    return;
+                }
+
+                processes.forEach(process => {
+                    const row = this.createProcessRow(process);
+                    tbody.appendChild(row);
+                });
+            }
+
+            /**
+             * 格式化开始时间（短格式）
+             */
+            formatStartTime(startTime) {
+                if (!startTime) return '-';
+                const date = new Date(startTime);
+                const month = (date.getMonth() + 1).toString().padStart(2, '0');
+                const day = date.getDate().toString().padStart(2, '0');
+                const hours = date.getHours().toString().padStart(2, '0');
+                const minutes = date.getMinutes().toString().padStart(2, '0');
+                return `${month}/${day} ${hours}:${minutes}`;
+            }
+
+            createProcessRow(process) {
+                const row = document.createElement('tr');
+                row.className = 'process-row hover:bg-white/5 transition-colors';
+                
+                const statusBadge = this.getStatusBadge(process.status);
+                const duration = this.calculateDuration(process);
+                const processType = process.metadata?.type || '通用脚本';
+                
+                // 格式化时间
+                const startTimeDisplay = this.formatStartTime(process.startTime);
+                const startTimeFull = process.startTime ? new Date(process.startTime).toLocaleString() : '-';
+                
+                row.innerHTML = `
+                    <td class="px-4 py-3">
+                        <code class="text-blue-400 font-mono text-sm">${process.processId.substring(0, 8)}</code>
+                    </td>
+                    <td class="px-4 py-3">
+                        <span class="px-2 py-1 rounded text-xs font-semibold bg-neutral-800 text-neutral-300 truncate" title="${processType}">${processType}</span>
+                    </td>
+                    <td class="px-4 py-3">${statusBadge}</td>
+                    <td class="px-4 py-3">
+                        <span class="text-xs text-neutral-400 truncate" title="${startTimeFull}">
+                            ${startTimeDisplay}
+                        </span>
+                    </td>
+                    <td class="px-4 py-3">
+                        <span class="text-xs text-neutral-400">${duration}</span>
+                    </td>
+                    <td class="px-4 py-3">
+                        <div class="flex gap-2">
+                            <button type="button" class="btn btn-primary px-2 py-1 rounded text-xs" onclick="processManager.showProcessDetail('${process.processId}')">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                </svg>
+                            </button>
+                            ${process.status === 'running' ? `
+                                <button type="button" class="btn btn-danger px-2 py-1 rounded text-xs" onclick="processManager.terminateProcess('${process.processId}')">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 10h6v4H9z"></path>
+                                    </svg>
+                                </button>
+                            ` : ''}
+                        </div>
+                    </td>
+                `;
+                
+                return row;
+            }
+
+            getStatusBadge(status) {
+                const badges = {
+                    running: '<span class="badge status-badge status-running">运行中</span>',
+                    completed: '<span class="badge status-badge status-completed">已完成</span>',
+                    failed: '<span class="badge status-badge status-failed">失败</span>',
+                    timeout: '<span class="badge status-badge status-timeout">超时</span>',
+                    queued: '<span class="badge status-badge status-queued">队列中</span>',
+                    error: '<span class="badge status-badge status-failed">错误</span>'
+                };
+                return badges[status] || `<span class="badge status-badge">${status}</span>`;
+            }
+
+            calculateDuration(process) {
+                if (!process.startTime) return '-';
+                
+                const start = new Date(process.startTime);
+                const end = process.endTime ? new Date(process.endTime) : new Date();
+                const duration = end - start;
+                
+                if (duration < 1000) return `${duration}ms`;
+                if (duration < 60000) return `${(duration / 1000).toFixed(1)}s`;
+                if (duration < 3600000) return `${(duration / 60000).toFixed(1)}m`;
+                return `${(duration / 3600000).toFixed(1)}h`;
+            }
+
+            async showProcessDetail(processId) {
+                try {
+                    const response = await fetch(`/api/process/process/${processId}`);
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        this.renderProcessDetail(data.data);
+                        openModal('processDetailModal');
+                    } else {
+                        this.addLog('error', `获取进程详情失败: ${data.error}`);
+                    }
+                } catch (error) {
+                    this.addLog('error', `获取进程详情失败: ${error.message}`);
+                }
+            }
+
+            renderProcessDetail(processData) {
+                const content = document.getElementById('processDetailContent');
+                const statusBadge = this.getStatusBadge(processData.status);
+                
+                content.innerHTML = `
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <h6 class="text-lg font-semibold text-white mb-4">基本信息</h6>
+                            <div class="space-y-2">
+                                <div class="flex justify-between py-2 border-b border-white/10">
+                                    <span class="text-neutral-400 font-medium">进程ID:</span>
+                                    <code class="text-blue-400 font-mono">${processData.processId}</code>
+                                </div>
+                                <div class="flex justify-between py-2 border-b border-white/10">
+                                    <span class="text-neutral-400 font-medium">状态:</span>
+                                    ${statusBadge}
+                                </div>
+                                <div class="flex justify-between py-2 border-b border-white/10">
+                                    <span class="text-neutral-400 font-medium">PID:</span>
+                                    <span class="text-neutral-300">${processData.pid || '-'}</span>
+                                </div>
+                                <div class="flex justify-between py-2 border-b border-white/10">
+                                    <span class="text-neutral-400 font-medium">类型:</span>
+                                    <span class="text-neutral-300">${processData.metadata?.type || '-'}</span>
+                                </div>
+                                <div class="flex justify-between py-2 border-b border-white/10">
+                                    <span class="text-neutral-400 font-medium">开始时间:</span>
+                                    <span class="text-neutral-300 text-sm">${processData.startTime ? new Date(processData.startTime).toLocaleString() : '-'}</span>
+                                </div>
+                                <div class="flex justify-between py-2 border-b border-white/10">
+                                    <span class="text-neutral-400 font-medium">结束时间:</span>
+                                    <span class="text-neutral-300 text-sm">${processData.endTime ? new Date(processData.endTime).toLocaleString() : '-'}</span>
+                                </div>
+                                <div class="flex justify-between py-2 border-b border-white/10">
+                                    <span class="text-neutral-400 font-medium">耗时:</span>
+                                    <span class="text-neutral-300">${this.calculateDuration(processData)}</span>
+                                </div>
+                                <div class="flex justify-between py-2">
+                                    <span class="text-neutral-400 font-medium">退出码:</span>
+                                    <span class="text-neutral-300">${processData.exitCode ?? '-'}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div>
+                            <h6 class="text-lg font-semibold text-white mb-4">元数据</h6>
+                            <pre class="bg-black/50 p-4 rounded-lg border border-white/10 overflow-x-auto"><code class="text-neutral-300 font-mono text-sm">${JSON.stringify(processData.metadata || {}, null, 2)}</code></pre>
+                        </div>
+                    </div>
+                `;
+            }
+
+            async terminateProcess(processId) {
+                if (!confirm('确定要终止这个进程吗？')) return;
+                
+                try {
+                    const response = await fetch(`/api/process/process/${processId}`, {
+                        method: 'DELETE',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ signal: 'SIGTERM' })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        this.addLog('warn', `进程 ${processId.substring(0, 8)} 终止信号已发送`);
+                        this.loadProcessData();
+                    } else {
+                        this.addLog('error', `终止进程失败: ${data.error}`);
+                    }
+                } catch (error) {
+                    this.addLog('error', `终止进程失败: ${error.message}`);
+                }
+            }
+
+            async terminateAllProcesses() {
+                if (!confirm('确定要终止所有运行中的进程吗？这是一个危险操作！')) return;
+                
+                try {
+                    const response = await fetch('/api/process/processes', {
+                        method: 'DELETE',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ signal: 'SIGTERM' })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        this.addLog('warn', `${data.terminatedCount} 个进程的终止信号已发送`);
+                        this.loadProcessData();
+                    } else {
+                        this.addLog('error', `终止所有进程失败: ${data.error}`);
+                    }
+                } catch (error) {
+                    this.addLog('error', `终止所有进程失败: ${error.message}`);
+                }
+            }
+
+            async clearHistory() {
+                if (!confirm('确定要清理历史记录吗？')) return;
+                this.addLog('info', '历史记录清理功能暂未实现');
+            }
+
+            async executeScript() {
+                const form = document.getElementById('scriptForm');
+                
+                const scriptPath = document.getElementById('scriptPath').value.trim();
+                if (!scriptPath) {
+                    alert('请选择脚本文件');
+                    return;
+                }
+
+                const argsText = document.getElementById('scriptArgs').value.trim();
+                let args = [];
+
+                if (argsText) {
+                    // 处理反斜杠续行符
+                    const processedText = argsText
+                        .replace(/\\\s*\n/g, ' ')  // 将 \ + 换行符替换为空格
+                        .replace(/\s+/g, ' ')      // 将多个空白字符合并为单个空格
+                        .trim();
+                    
+                    // 如果处理后的文本包含空格，说明是单行命令格式，需要按空格分割
+                    if (processedText.includes(' ')) {
+                        // 智能分割：处理引号内的参数
+                        args = parseCommandLine(processedText);
+                    } else {
+                        // 原有的每行一个参数的格式
+                        args = argsText.split('\n').map(arg => arg.trim()).filter(arg => arg);
+                    }
+                }
+
+                const requestData = {
+                    scriptPath: scriptPath,
+                    args: args,
+                    cwd: document.getElementById('scriptCwd').value.trim() || undefined,
+                    timeout: (parseInt(document.getElementById('scriptTimeout').value) || 1800) * 1000,
+                    useFork: document.getElementById('scriptUseFork').checked
+                };
+
+                try {
+                    const response = await fetch('/api/process/execute', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(requestData)
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        this.addLog('success', `脚本已启动: ${data.data.processId.substring(0, 8)}`);
+                        closeModal('executeScriptModal');
+                        form.reset();
+                        // 重置脚本选择状态
+                        document.getElementById('executeScriptBtn').disabled = true;
+                        document.getElementById('viewScriptContentBtn').disabled = true;
+                        document.getElementById('scriptInfoPanel').classList.add('hidden');
+                        this.currentScriptContent = null;
+                        this.loadProcessData();
+                    } else {
+                        this.addLog('error', `启动脚本失败: ${data.error}`);
+                    }
+                } catch (error) {
+                    this.addLog('error', `启动脚本失败: ${error.message}`);
+                }
+            }
+
+            addLog(level, message, timestamp = null, logType = 'general', processId = null, isIndented = false) {
+                const logContainer = document.getElementById('logContainer');
+                
+                // 安全检查：如果日志容器不存在，只输出到控制台
+                if (!logContainer) {
+                    console.warn(`[${level}] ${message}`);
+                    return;
+                }
+                
+                const logTime = timestamp || new Date();
+                const timeString = logTime.toLocaleTimeString();
+                const logEntry = document.createElement('div');
+                
+                // 设置基本类名和属性
+                logEntry.className = `log-entry new-entry`;
+                if (logType !== 'general') {
+                    logEntry.setAttribute('data-type', logType);
+                }
+                
+                // 添加特殊样式类
+                if (logType === 'system') {
+                    logEntry.classList.add('system-log');
+                } else if (logType === 'websocket') {
+                    logEntry.classList.add('websocket-log');
+                }
+                
+                // 构建日志内容
+                let logContent = `<span class="log-timestamp">[${timeString}]</span>`;
+                
+                // 添加进程ID标识（只在查看全部进程时显示）
+                if (processId && this.currentLogProcess === 'all') {
+                    logContent += `<span class="process-id-badge">${processId}</span>`;
+                }
+                
+                // 添加消息内容
+                const messageClass = isIndented ? 'log-message indent' : 'log-message';
+                logContent += `<span class="${messageClass} log-level-${level}">${message}</span>`;
+                
+                logEntry.innerHTML = logContent;
+                
+                // 添加到容器
+                logContainer.appendChild(logEntry);
+                
+                // 只在直接添加日志时更新计数（不在渲染历史日志时重复计数）
+                if (!timestamp) { // timestamp为null表示是新的日志
+                    const currentCounts = this.logCounts[this.currentLogProcess] || { info: 0, error: 0, warn: 0, success: 0 };
+                    if (!this.logCounts[this.currentLogProcess]) {
+                        this.logCounts[this.currentLogProcess] = currentCounts;
+                    }
+                    this.logCounts[this.currentLogProcess][level] = (this.logCounts[this.currentLogProcess][level] || 0) + 1;
+                    this.updateLogCounts();
+                }
+                
+                // 限制日志条数，避免内存占用过大
+                const maxLogEntries = 1000;
+                const logEntries = Array.from(logContainer.children).filter(child => child.classList.contains('log-entry'));
+                if (logEntries.length > maxLogEntries) {
+                    const removeCount = logEntries.length - maxLogEntries;
+                    for (let i = 0; i < removeCount; i++) {
+                        if (logEntries[i]) {
+                            logContainer.removeChild(logEntries[i]);
+                        }
+                    }
+                }
+                
+                // 移除动画类
+                setTimeout(() => {
+                    logEntry.classList.remove('new-entry');
+                }, 300);
+                
+                if (this.logAutoScroll) {
+                    logContainer.scrollTop = logContainer.scrollHeight;
+                }
+            }
+
+            /**
+             * 加载历史日志
+             */
+            async loadHistoryLogs() {
+                try {
+                    // 检查日志容器是否存在
+                    const logContainer = document.getElementById('logContainer');
+                    if (!logContainer) {
+                        console.error('日志容器不存在，跳过历史日志加载');
+                        return;
+                    }
+                    
+                    this.addLog('info', '正在加载历史日志...', null, 'system');
+                    
+                    const response = await fetch('/api/process/logs?limit=500');
+                    const data = await response.json();
+                    
+                    if (data.success && data.data.logs.length > 0) {
+                        // 清空现有日志和计数
+                        this.processLogs.clear();
+                        this.logCounts = { all: { info: 0, error: 0, warn: 0, success: 0 } };
+                        
+                        // 重新加载历史日志（storeProcessLog会自动处理计数）
+                        data.data.logs.forEach(logEntry => {
+                            this.storeProcessLog(logEntry);
+                        });
+                        
+                        // 重新渲染当前查看的日志
+                        this.renderCurrentProcessLogs();
+                        
+                        // 更新计数显示
+                        this.updateLogCounts();
+                        
+                        this.addLog('success', `已加载 ${data.data.logs.length} 条历史日志`, null, 'system');
+                    } else {
+                        this.addLog('info', '没有找到历史日志', null, 'system');
+                    }
+                } catch (error) {
+                    console.error('加载历史日志失败:', error);
+                    // 只有在日志容器存在时才添加错误日志
+                    if (document.getElementById('logContainer')) {
+                        this.addLog('error', `加载历史日志失败: ${error.message}`, null, 'system');
+                    }
+                }
+            }
+        }
+
+        // Three.js 背景动画
+        function initThreeJSBackground() {
+            const container = document.getElementById('canvas-container');
+            if (!container) return;
+
+            let camera, scene, renderer;
+            let particles, count = 0;
+            let sphereGroup, coreSphere, outerShell, rings = [];
+            let mouseX = 0, mouseY = 0;
+            let windowHalfX = window.innerWidth / 2;
+            let windowHalfY = window.innerHeight / 2;
+
+            init();
+            animate();
+
+            function init() {
+                camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 10000);
+                camera.position.z = 1000;
+                camera.position.y = 200;
+
+                scene = new THREE.Scene();
+                scene.fog = new THREE.FogExp2(0x000000, 0.001);
+
+                // 底部数据海洋
+                const SEPARATION = 80, AMOUNTX = 60, AMOUNTY = 60;
+                const numParticles = AMOUNTX * AMOUNTY;
+                const positions = new Float32Array(numParticles * 3);
+                const scales = new Float32Array(numParticles);
+
+                let i = 0, j = 0;
+                for (let ix = 0; ix < AMOUNTX; ix++) {
+                    for (let iy = 0; iy < AMOUNTY; iy++) {
+                        positions[i] = ix * SEPARATION - ((AMOUNTX * SEPARATION) / 2);
+                        positions[i + 1] = 0;
+                        positions[i + 2] = iy * SEPARATION - ((AMOUNTY * SEPARATION) / 2);
+                        scales[j] = 1;
+                        i += 3;
+                        j++;
+                    }
+                }
+
+                const geometry = new THREE.BufferGeometry();
+                geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+                geometry.setAttribute('scale', new THREE.BufferAttribute(scales, 1));
+
+                const material = new THREE.PointsMaterial({
+                    color: 0x555555,
+                    size: 2,
+                    transparent: true,
+                    opacity: 0.5,
+                    sizeAttenuation: true
+                });
+
+                particles = new THREE.Points(geometry, material);
+                particles.position.y = -300;
+                scene.add(particles);
+
+                // 全息球体
+                sphereGroup = new THREE.Group();
+                sphereGroup.position.y = 150;
+                scene.add(sphereGroup);
+
+                // 核心线框球
+                const coreGeo = new THREE.IcosahedronGeometry(180, 2);
+                const coreMat = new THREE.MeshBasicMaterial({ 
+                    color: 0xffffff, 
+                    wireframe: true, 
+                    transparent: true, 
+                    opacity: 0.3 
+                });
+                coreSphere = new THREE.Mesh(coreGeo, coreMat);
+                sphereGroup.add(coreSphere);
+
+                // 内部发光核
+                const innerGeo = new THREE.IcosahedronGeometry(100, 4);
+                const innerMat = new THREE.MeshBasicMaterial({
+                    color: 0xffffff,
+                    wireframe: true,
+                    transparent: true,
+                    opacity: 0.1
+                });
+                const innerSphere = new THREE.Mesh(innerGeo, innerMat);
+                sphereGroup.add(innerSphere);
+
+                // 外部点阵壳
+                const shellGeo = new THREE.IcosahedronGeometry(240, 3);
+                const shellPos = shellGeo.attributes.position;
+                const shellPointsGeo = new THREE.BufferGeometry();
+                shellPointsGeo.setAttribute('position', shellPos);
+                
+                const shellMat = new THREE.PointsMaterial({
+                    color: 0xaaaaaa,
+                    size: 3,
+                    transparent: true,
+                    opacity: 0.6,
+                    sizeAttenuation: true
+                });
+                outerShell = new THREE.Points(shellPointsGeo, shellMat);
+                sphereGroup.add(outerShell);
+
+                // 旋转轨道环
+                const createRing = (radius, tube, radialSegments, tubularSegments, arc, rotation) => {
+                    const ringGeo = new THREE.TorusGeometry(radius, tube, radialSegments, tubularSegments, arc);
+                    const ringMat = new THREE.MeshBasicMaterial({ 
+                        color: 0xffffff, 
+                        wireframe: true,
+                        transparent: true,
+                        opacity: 0.2
+                    });
+                    const ring = new THREE.Mesh(ringGeo, ringMat);
+                    ring.rotation.set(rotation.x, rotation.y, rotation.z);
+                    sphereGroup.add(ring);
+                    rings.push(ring);
+                };
+
+                createRing(280, 2, 16, 100, Math.PI * 2, { x: Math.PI / 2, y: 0, z: 0 });
+                createRing(320, 1, 16, 100, Math.PI * 2, { x: Math.PI / 3, y: Math.PI / 6, z: 0 });
+                createRing(350, 1, 16, 100, Math.PI * 2, { x: -Math.PI / 4, y: 0, z: Math.PI / 6 });
+
+                // 浮动粒子云
+                const cloudGeo = new THREE.BufferGeometry();
+                const cloudCount = 200;
+                const cloudPos = new Float32Array(cloudCount * 3);
+                
+                for(let k=0; k<cloudCount*3; k+=3) {
+                    const r = 300 + Math.random() * 200;
+                    const theta = Math.random() * Math.PI * 2;
+                    const phi = Math.acos(2 * Math.random() - 1);
+                    
+                    cloudPos[k] = r * Math.sin(phi) * Math.cos(theta);
+                    cloudPos[k+1] = r * Math.sin(phi) * Math.sin(theta);
+                    cloudPos[k+2] = r * Math.cos(phi);
+                }
+                
+                cloudGeo.setAttribute('position', new THREE.BufferAttribute(cloudPos, 3));
+                const cloudMat = new THREE.PointsMaterial({
+                    color: 0x888888,
+                    size: 2,
+                    transparent: true,
+                    opacity: 0.4
+                });
+                const cloud = new THREE.Points(cloudGeo, cloudMat);
+                sphereGroup.add(cloud);
+
+                // 渲染器
+                renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+                renderer.setPixelRatio(window.devicePixelRatio);
+                renderer.setSize(window.innerWidth, window.innerHeight);
+                container.appendChild(renderer.domElement);
+
+                // 事件监听
+                document.addEventListener('mousemove', onDocumentMouseMove);
+                window.addEventListener('resize', onWindowResize);
+            }
+
+            function onWindowResize() {
+                windowHalfX = window.innerWidth / 2;
+                windowHalfY = window.innerHeight / 2;
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            }
+
+            function onDocumentMouseMove(event) {
+                mouseX = event.clientX - windowHalfX;
+                mouseY = event.clientY - windowHalfY;
+            }
+
+            function animate() {
+                requestAnimationFrame(animate);
+                render();
+            }
+
+            function render() {
+                // 摄像机跟随鼠标缓慢移动
+                camera.position.x += (mouseX - camera.position.x) * 0.02;
+                camera.position.y += (-mouseY + 200 - camera.position.y) * 0.02;
+                camera.lookAt(scene.position);
+
+                // 粒子波浪动画
+                const positions = particles.geometry.attributes.position.array;
+                let i = 0;
+                const SEPARATION = 80, AMOUNTX = 60, AMOUNTY = 60;
+                for (let ix = 0; ix < AMOUNTX; ix++) {
+                    for (let iy = 0; iy < AMOUNTY; iy++) {
+                        positions[i + 1] = (Math.sin((ix + count) * 0.3) * 50) +
+                                           (Math.sin((iy + count) * 0.5) * 50);
+                        i += 3;
+                    }
+                }
+                particles.geometry.attributes.position.needsUpdate = true;
+                count += 0.1;
+
+                // 全息球动画
+                if (sphereGroup) {
+                    sphereGroup.position.y = 150 + Math.sin(count * 0.2) * 20;
+                    coreSphere.rotation.y += 0.005;
+                    coreSphere.rotation.z += 0.002;
+                    outerShell.rotation.y -= 0.003;
+                    rings.forEach((ring, idx) => {
+                        ring.rotation.x += 0.002 * (idx + 1);
+                        ring.rotation.y += 0.002 * (idx + 1);
+                    });
+                    sphereGroup.rotation.x = mouseY * 0.0005;
+                    sphereGroup.rotation.y = mouseX * 0.0005;
+                }
+
+                renderer.render(scene, camera);
+            }
+        }
+
+        // 全局实例
+        let processManager;
+
+        // 页面加载完成后初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            initThreeJSBackground();
+            processManager = new ProcessManager();
+        });
+
+        // 页面关闭时清理
+        window.addEventListener('beforeunload', () => {
+            if (processManager) {
+                processManager.stopPeriodicRefresh();
+                if (processManager.socket) {
+                    processManager.socket.disconnect();
+                }
+            }
+        });
+
+        // 添加命令行解析函数
+        function parseCommandLine(commandLine) {
+            const args = [];
+            let current = '';
+            let inQuotes = false;
+            let quoteChar = '';
+            
+            for (let i = 0; i < commandLine.length; i++) {
+                const char = commandLine[i];
+                
+                if ((char === '"' || char === "'") && !inQuotes) {
+                    inQuotes = true;
+                    quoteChar = char;
+                } else if (char === quoteChar && inQuotes) {
+                    inQuotes = false;
+                    quoteChar = '';
+                } else if (char === ' ' && !inQuotes) {
+                    if (current.trim()) {
+                        args.push(current.trim());
+                        current = '';
+                    }
+                } else {
+                    current += char;
+                }
+            }
+            
+            if (current.trim()) {
+                args.push(current.trim());
+            }
+            
+            return args;
+        }
+    </script>
+</body>
+</html> 
+</html> 

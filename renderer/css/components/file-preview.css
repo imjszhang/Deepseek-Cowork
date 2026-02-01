@@ -1361,3 +1361,92 @@ body.dark .markdown-preview pre {
     min-height: 200px;
   }
 }
+
+/* ===== 浅色主题样式 ===== */
+body:not(.dark) .file-preview-container {
+  background: var(--background);
+}
+
+body:not(.dark) #file-preview-code {
+  background: hsl(0 0% 97%);
+}
+
+body:not(.dark) #file-edit-area {
+  background: hsl(0 0% 97%);
+}
+
+body:not(.dark) .markdown-preview {
+  background: var(--card);
+}
+
+body:not(.dark) .markdown-preview pre {
+  background: hsl(0 0% 95%);
+}
+
+/* 文件预览面板背景 - 浅色主题 */
+body:not(.dark) .file-preview-pane {
+  background: #fff;
+}
+
+/* 多文件标签栏 - 浅色主题 */
+body:not(.dark) .file-tabs-bar {
+  background: var(--glass-bg, rgba(0, 0, 0, 0.03));
+  border-bottom: 1px solid var(--glass-border, rgba(0, 0, 0, 0.1));
+}
+
+body:not(.dark) .file-tab {
+  border-right: 1px solid var(--glass-border, rgba(0, 0, 0, 0.05));
+}
+
+body:not(.dark) .file-tab:hover {
+  background: var(--glass-bg-hover, rgba(0, 0, 0, 0.05));
+}
+
+body:not(.dark) .file-tab.active {
+  background: var(--glass-bg-hover, rgba(0, 0, 0, 0.08));
+}
+
+body:not(.dark) .tab-close:hover {
+  background: var(--glass-bg-hover, rgba(0, 0, 0, 0.15));
+}
+
+/* 图片工具栏 - 浅色主题 */
+body:not(.dark) .image-toolbar {
+  background: var(--glass-bg, rgba(255, 255, 255, 0.7));
+  border: 1px solid var(--glass-border, rgba(0, 0, 0, 0.1));
+}
+
+body:not(.dark) .image-toolbar button:hover {
+  background: var(--glass-bg-hover, rgba(0, 0, 0, 0.1));
+}
+
+/* PDF 工具栏 - 浅色主题 */
+body:not(.dark) .pdf-toolbar {
+  background: var(--glass-bg, rgba(255, 255, 255, 0.7));
+  border: 1px solid var(--glass-border, rgba(0, 0, 0, 0.1));
+}
+
+body:not(.dark) .pdf-toolbar button:hover {
+  background: var(--glass-bg-hover, rgba(0, 0, 0, 0.1));
+}
+
+body:not(.dark) .pdf-page-input {
+  border: 1px solid var(--border);
+  background: rgba(0, 0, 0, 0.1);
+}
+
+/* Markdown 内联代码 - 浅色主题 */
+body:not(.dark) .markdown-preview code {
+  background: var(--glass-bg, rgba(0, 0, 0, 0.05));
+  border: 1px solid var(--glass-border, rgba(0, 0, 0, 0.1));
+}
+
+/* Markdown 引用块 - 浅色主题 */
+body:not(.dark) .markdown-preview blockquote {
+  background: var(--glass-bg, rgba(0, 0, 0, 0.03));
+}
+
+/* Markdown 表格 - 浅色主题 */
+body:not(.dark) .markdown-preview tr:nth-child(even) {
+  background: var(--glass-bg, rgba(0, 0, 0, 0.02));
+}

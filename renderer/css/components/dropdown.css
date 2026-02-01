@@ -184,3 +184,16 @@
 .permission-decided .perm-btn:not(.selected) {
   opacity: 0.3;
 }
+
+/* ===== 浅色主题样式 - 颜色反转 ===== */
+
+/* 允许所有编辑按钮 - 浅色主题 */
+body:not(.dark) .perm-allow-all:hover:not(:disabled),
+body:not(.dark) .perm-allow-session:hover:not(:disabled) {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+body:not(.dark) .perm-allow-all.selected,
+body:not(.dark) .perm-allow-session.selected {
+  background: rgba(0, 0, 0, 0.1);
+}

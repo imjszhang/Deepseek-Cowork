@@ -968,3 +968,222 @@
     display: none;
   }
 }
+
+/* ===== 浅色主题样式 - 颜色反转 ===== */
+
+/* Chat Panel Header - 浅色主题 */
+body:not(.dark) .chat-panel-header {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  background: rgba(0, 0, 0, 0.02);
+}
+
+body:not(.dark) .chat-header-btn:hover {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+body:not(.dark) .chat-header-btn:active {
+  background: rgba(0, 0, 0, 0.15);
+}
+
+/* Session Hub Panel - 浅色主题 */
+body:not(.dark) .session-hub-panel {
+  background: rgba(0, 0, 0, 0.02);
+  border-left: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: -4px 0 20px rgba(0, 0, 0, 0.1);
+}
+
+/* Session Hub Header - 浅色主题 */
+body:not(.dark) .session-hub-header {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+body:not(.dark) .session-hub-logo {
+  background: rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+body:not(.dark) .session-hub-logo svg {
+  stroke: rgba(0, 0, 0, 0.7);
+}
+
+/* 搜索框 - 浅色主题 */
+body:not(.dark) .session-hub-search-input {
+  background: rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+body:not(.dark) .session-hub-search-input:focus {
+  border-color: rgba(0, 0, 0, 0.2);
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.05);
+}
+
+/* 视图切换 - 浅色主题 */
+body:not(.dark) .session-hub-view-toggle {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+body:not(.dark) .view-toggle-btn:hover:not(.active) {
+  background: rgba(0, 0, 0, 0.03);
+}
+
+body:not(.dark) .view-toggle-btn.active {
+  background: rgba(0, 0, 0, 0.08);
+  border-color: rgba(0, 0, 0, 0.1);
+}
+
+/* 关闭按钮 - 浅色主题 */
+body:not(.dark) .session-hub-close {
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+body:not(.dark) .session-hub-close:hover {
+  background: rgba(0, 0, 0, 0.05);
+  border-color: rgba(0, 0, 0, 0.15);
+}
+
+/* Stats Bar - 浅色主题 */
+body:not(.dark) .session-hub-stats {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  background: rgba(0, 0, 0, 0.02);
+}
+
+/* 新增目录按钮 - 浅色主题 */
+body:not(.dark) .session-hub-new-dir-btn {
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  background: rgba(0, 0, 0, 0.05);
+}
+
+body:not(.dark) .session-hub-new-dir-btn:hover {
+  background: rgba(0, 0, 0, 0.1);
+  border-color: rgba(0, 0, 0, 0.2);
+}
+
+/* Session Card - 浅色主题 */
+body:not(.dark) .session-card {
+  background: rgba(0, 0, 0, 0.03);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+body:not(.dark) .session-card:hover {
+  background: rgba(0, 0, 0, 0.08);
+  border-color: rgba(0, 0, 0, 0.2);
+}
+
+body:not(.dark) .session-card.current {
+  border-color: rgba(0, 0, 0, 0.1);
+  background: rgba(0, 0, 0, 0.03);
+}
+
+body:not(.dark) .session-card.current:hover {
+  background: rgba(0, 0, 0, 0.08);
+  border-color: rgba(0, 0, 0, 0.2);
+}
+
+/* 当前会话标签 - 浅色主题 */
+body:not(.dark) .session-card-current-badge {
+  background: rgba(0, 0, 0, 0.1);
+  color: rgba(0, 0, 0, 0.8);
+  border: 1px solid rgba(0, 0, 0, 0.2);
+}
+
+/* Switch Button - 浅色主题 */
+body:not(.dark) .switch-btn {
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+body:not(.dark) .switch-btn:hover {
+  background: rgba(0, 0, 0, 0.05);
+  border-color: rgba(0, 0, 0, 0.15);
+}
+
+/* Terminal Preview - 浅色主题 */
+body:not(.dark) .terminal-preview {
+  background: rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+body:not(.dark) .terminal-header {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+body:not(.dark) .terminal-body::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+body:not(.dark) .terminal-line.user .prefix {
+  color: rgba(0, 0, 0, 0.9);
+}
+
+body:not(.dark) .terminal-line.user .content {
+  color: rgba(0, 0, 0, 0.7);
+}
+
+body:not(.dark) .terminal-line.assistant .prefix {
+  color: rgba(0, 0, 0, 0.5);
+}
+
+body:not(.dark) .terminal-line.assistant .content {
+  color: rgba(0, 0, 0, 0.5);
+}
+
+body:not(.dark) .terminal-line.processing .content {
+  color: rgba(0, 0, 0, 0.6);
+}
+
+/* Card Footer - 浅色主题 */
+body:not(.dark) .session-card-footer {
+  border-top: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+body:not(.dark) .session-card-typing {
+  color: rgba(0, 0, 0, 0.6);
+}
+
+/* Session Hub Footer - 浅色主题 */
+body:not(.dark) .session-hub-footer {
+  border-top: 1px solid rgba(0, 0, 0, 0.05);
+  background: rgba(0, 0, 0, 0.02);
+}
+
+body:not(.dark) .session-hub-footer-right kbd {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+/* Add New Card - 浅色主题 */
+body:not(.dark) .session-card-add {
+  background: rgba(0, 0, 0, 0.02);
+  border: 1px dashed rgba(0, 0, 0, 0.1);
+}
+
+body:not(.dark) .session-card-add:hover {
+  background: rgba(0, 0, 0, 0.05);
+  border-color: rgba(0, 0, 0, 0.2);
+}
+
+body:not(.dark) .session-card-add-icon {
+  background: rgba(0, 0, 0, 0.05);
+  border: 1px dashed rgba(0, 0, 0, 0.2);
+}
+
+body:not(.dark) .session-card-add-icon svg {
+  stroke: var(--muted-foreground);
+}
+
+/* Loading State - 浅色主题 */
+body:not(.dark) .session-hub-loading .loading-spinner {
+  border: 3px solid rgba(0, 0, 0, 0.1);
+  border-top-color: var(--primary);
+}
+
+/* Scrollbar - 浅色主题 */
+body:not(.dark) .session-hub-list::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.02);
+}
+
+body:not(.dark) .session-hub-list::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+body:not(.dark) .session-hub-list::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.2);
+}

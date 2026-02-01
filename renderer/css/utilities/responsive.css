@@ -545,3 +545,20 @@
 .mobile-drawer-content .browser-menu-item .menu-label {
   display: block !important;
 }
+
+/* ===== 浅色主题 - 全局抽屉样式 ===== */
+body:not(.dark) .mobile-drawer-header {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+body:not(.dark) .mobile-drawer-close:hover {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+body:not(.dark) .mobile-drawer-content .settings-nav-item:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+body:not(.dark) .mobile-drawer-content .browser-menu-header {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}

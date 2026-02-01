@@ -131,3 +131,23 @@
   /* 响应式过渡 */
   transition: opacity var(--duration-fast, 150ms) var(--ease-smooth);
 }
+
+/* ===== 浅色主题样式 - 颜色反转 ===== */
+
+/* 侧边栏 - 浅色主题 */
+body:not(.dark) #sidebar {
+  background: rgba(255, 255, 255, 0.5);
+  border-right: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+/* 导航按钮悬停 - 浅色主题 */
+body:not(.dark) .nav-btn:hover {
+  background: rgba(0, 0, 0, 0.05);
+  color: black;
+}
+
+/* 导航按钮激活 - 浅色主题 */
+body:not(.dark) .nav-btn.active {
+  background: rgba(0, 0, 0, 0.1);
+  color: black;
+}

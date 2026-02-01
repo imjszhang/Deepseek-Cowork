@@ -359,7 +359,7 @@ function setupModuleEvents(instance, moduleConfig) {
  * @param {Object} context 启动上下文
  */
 async function bootstrapModule(instance, moduleConfig, context) {
-    const { app } = context;
+    const { app, io } = context;
     
     try {
         // 初始化
@@ -370,6 +370,12 @@ async function bootstrapModule(instance, moduleConfig, context) {
         // 设置路由
         if (moduleConfig.features?.hasRoutes && instance.setupRoutes) {
             instance.setupRoutes(app);
+        }
+        
+        // 设置 Socket.IO（如果模块支持）
+        if (io && instance.setupSocketIO) {
+            instance.setupSocketIO(io);
+            logger.debug(`Module ${moduleConfig.name} Socket.IO setup completed`);
         }
         
         // 启动服务

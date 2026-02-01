@@ -2609,3 +2609,93 @@ textarea,
 .tool-card:hover {
   box-shadow: var(--shadow-glass, 0 8px 32px rgba(0, 0, 0, 0.3));
 }
+
+/* ===== 浅色主题状态指示器 ===== */
+body:not(.dark) .status-indicator.running .status-dot,
+body:not(.dark) .ai-status.connected .ai-status-dot,
+body:not(.dark) .daemon-status-dot.running,
+body:not(.dark) .status-dot-sm.connected {
+  box-shadow: 0 0 8px var(--success), 0 0 16px hsla(142, 76%, 36%, 0.3);
+}
+
+/* ===== 浅色主题补充样式 ===== */
+
+/* 全屏加载遮罩 - 浅色主题 */
+body:not(.dark) .global-loading-overlay .loading-spinner {
+  border: 4px solid rgba(0, 0, 0, 0.3);
+  border-top-color: #000;
+}
+
+body:not(.dark) .global-loading-overlay .loading-text {
+  color: #000;
+  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.5);
+}
+
+/* 代码复制按钮 - 浅色主题 */
+body:not(.dark) .code-copy-btn {
+  background: rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  color: rgba(0, 0, 0, 0.6);
+}
+
+body:not(.dark) .code-copy-btn:hover {
+  background: rgba(0, 0, 0, 0.1);
+  color: rgba(0, 0, 0, 0.9);
+  border-color: rgba(0, 0, 0, 0.2);
+}
+
+body:not(.dark) .code-copy-btn.copied {
+  background: rgba(34, 197, 94, 0.1);
+  color: hsl(142 76% 30%);
+  border-color: rgba(34, 197, 94, 0.2);
+}
+
+/* 中止按钮 - 浅色主题 */
+body:not(.dark) .abort-btn {
+  color: hsl(0 84% 40%);
+}
+
+/* 上下文使用量状态栏 - 浅色主题 */
+body:not(.dark) .context-bar {
+  background: rgba(255, 255, 255, 0.2);
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+body:not(.dark) .context-tokens {
+  color: rgba(0, 0, 0, 0.5);
+}
+
+body:not(.dark) .token-label {
+  color: rgba(0, 0, 0, 0.4);
+}
+
+body:not(.dark) .token-divider {
+  color: rgba(0, 0, 0, 0.2);
+}
+
+body:not(.dark) .context-model .model-badge {
+  background: rgba(0, 0, 0, 0.05);
+  color: rgba(0, 0, 0, 0.7);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+body:not(.dark) .context-remaining.normal {
+  color: rgba(0, 0, 0, 0.6);
+}
+
+body:not(.dark) .context-progress {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+body:not(.dark) .context-fill {
+  background: rgba(0, 0, 0, 0.3);
+}
+
+body:not(.dark) .context-fill.normal {
+  background: rgba(0, 0, 0, 0.3);
+}
+
+/* 标签页项激活 - 浅色主题 */
+body:not(.dark) .tab-item.active {
+  background: rgba(0, 0, 0, 0.08);
+}

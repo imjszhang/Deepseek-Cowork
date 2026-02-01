@@ -158,6 +158,65 @@ const modules = [
                 logger.info(`Memory saved: ${memoryName} (${messageCount} messages)`);
             }
         }
+    },
+    
+    {
+        // Process 进程管理服务
+        name: 'process',
+        module: './modules/process',
+        setupFunction: 'setupProcessService',
+        enabled: true,
+        
+        // 启用条件（通过配置控制）
+        enabledCondition: (config) => config.process?.enabled !== false,
+        
+        // 服务特性
+        features: {
+            hasRoutes: true,
+            emitsEvents: true
+        },
+        
+        // 生成初始化参数（支持 runtimeContext）
+        getOptions: (config, runtimeContext) => {
+            // 使用 runtimeContext 中的 workspaceDir，如果没有则使用默认值
+            const workspaceDir = runtimeContext?.workspaceDir || global.rootDir || process.cwd();
+            
+            return {
+                workDir: workspaceDir,
+                maxConcurrentProcesses: config.process?.maxConcurrentProcesses || 5,
+                processTimeout: config.process?.processTimeout || 8 * 60 * 60 * 1000, // 8小时
+                enableLogging: config.process?.enableLogging !== false,
+                enableCleanup: config.process?.enableCleanup !== false,
+                cleanupInterval: config.process?.cleanupInterval || 60 * 60 * 1000, // 1小时
+                maxLogsPerProcess: config.process?.maxLogsPerProcess || 1000
+            };
+        },
+        
+        // 事件监听配置
+        events: {
+            started: ({ serviceName, startTime, config }) => {
+                logger.info('Process service started');
+                logger.info('Process config:', JSON.stringify(config, null, 2));
+            },
+            stopped: ({ serviceName, stopTime }) => {
+                logger.info('Process service stopped');
+            },
+            error: ({ type, error }) => {
+                logger.error(`Process service error (${type}):`, error);
+            },
+            processStarted: ({ processId, pid, metadata }) => {
+                logger.info(`Process started: ${processId} (PID: ${pid})`);
+            },
+            processCompleted: ({ processId, exitCode, duration }) => {
+                logger.info(`Process completed: ${processId} (exit: ${exitCode}, duration: ${duration}ms)`);
+            },
+            processError: ({ processId, error }) => {
+                logger.error(`Process error: ${processId} - ${error.message}`);
+            },
+            processTimeout: ({ processId }) => {
+                logger.warn(`Process timeout: ${processId}`);
+            }
+        }
     }
 ];
 
