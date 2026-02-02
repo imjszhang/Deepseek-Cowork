@@ -8,6 +8,44 @@
  */
 
 module.exports = {
+    // ============================================================
+    // 模块业务配置
+    // 在此处配置各模块的业务参数（如凭证、策略等）
+    // ============================================================
+    moduleConfigs: {
+        'feishu-module': {
+            // 是否启用飞书连接（模块启动后自动连接）
+            enabled: true,
+            
+            // 飞书应用凭证（从飞书开放平台获取）
+            appId: 'cli_xxxxxxxxxx',
+            appSecret: 'xxxxxxxxxxxxxx',
+            
+            // 域名：feishu（飞书）或 lark（海外版）
+            domain: 'feishu',
+            
+            // 连接模式：websocket（推荐）或 webhook
+            connectionMode: 'websocket',
+            
+            // 私聊策略：open（允许所有）或 allowlist（白名单）
+            dmPolicy: 'open',
+            // 私聊白名单（dmPolicy 为 allowlist 时生效）
+            allowFrom: [],
+            
+            // 群聊策略：open | allowlist | disabled
+            groupPolicy: 'allowlist',
+            // 群聊白名单（groupPolicy 为 allowlist 时生效）
+            groupAllowFrom: [],
+            
+            // 群聊是否需要 @机器人 才触发回复
+            requireMention: true
+        }
+    },
+    
+    // ============================================================
+    // 模块注册配置
+    // 定义要加载的用户模块及其初始化方式
+    // ============================================================
     modules: [
         {
             name: 'feishu-module',
@@ -26,8 +64,10 @@ module.exports = {
                 MessageStore: runtimeContext?.services?.MessageStore,
                 secureSettings: runtimeContext?.services?.secureSettings,
                 
-                // 飞书配置（从 config/local.js 或 config/default.js 读取）
-                feishuConfig: config.feishu || {}
+                // 飞书配置：优先从 moduleConfigs 读取，兼容旧方式从 config.feishu 读取
+                feishuConfig: runtimeContext?.userConfig?.moduleConfigs?.['feishu-module'] 
+                    || config.feishu 
+                    || {}
             }),
             
             // 事件监听（可选）

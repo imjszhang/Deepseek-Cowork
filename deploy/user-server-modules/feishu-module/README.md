@@ -51,37 +51,59 @@ npm install
 
 ### 模块配置
 
-在 `config/local.js` 中添加飞书配置：
+在 `userServerModulesConfig.js` 的 `moduleConfigs` 中配置飞书凭证和策略：
+
+**配置文件路径**：
+- Windows: `%APPDATA%\deepseek-cowork\userServerModulesConfig.js`
+- macOS: `~/Library/Application Support/deepseek-cowork/userServerModulesConfig.js`
+- Linux: `~/.config/deepseek-cowork/userServerModulesConfig.js`
 
 ```javascript
 module.exports = {
-  feishu: {
-    enabled: true,
-    appId: 'cli_xxxx',           // 或使用环境变量 FEISHU_APP_ID
-    appSecret: 'xxxx',           // 建议使用 secureSettings
-    domain: 'feishu',            // feishu 或 lark
-    connectionMode: 'websocket', // 推荐使用 websocket
+    // 模块业务配置
+    moduleConfigs: {
+        'feishu-module': {
+            enabled: true,
+            appId: 'cli_xxxx',           // 飞书应用 App ID
+            appSecret: 'xxxx',           // 飞书应用 App Secret
+            domain: 'feishu',            // feishu 或 lark（海外版）
+            connectionMode: 'websocket', // 推荐使用 websocket
+            
+            // 私聊策略
+            dmPolicy: 'open',            // open | allowlist
+            allowFrom: [],               // 白名单用户 ID
+            
+            // 群聊策略
+            groupPolicy: 'allowlist',    // open | allowlist | disabled
+            groupAllowFrom: [],          // 白名单群聊 ID
+            requireMention: true         // 群聊是否需要 @机器人
+        }
+    },
     
-    // 私聊策略
-    dmPolicy: 'open',            // open | allowlist
-    allowFrom: [],               // 白名单用户 ID
-    
-    // 群聊策略
-    groupPolicy: 'allowlist',    // open | allowlist | disabled
-    groupAllowFrom: [],          // 白名单群聊 ID
-    requireMention: true         // 群聊是否需要 @机器人
-  }
+    // 模块注册（参见 userServerModulesConfig.example.js）
+    modules: [...]
 };
 ```
 
-### 环境变量
+完整配置示例请参考模块目录中的 `userServerModulesConfig.example.js` 文件。
 
-支持通过环境变量配置敏感信息：
+### 其他配置方式
+
+**方式二：环境变量**（适用于敏感信息）
 
 ```bash
+# Linux/macOS
 export FEISHU_APP_ID=cli_xxxx
 export FEISHU_APP_SECRET=xxxx
+
+# Windows PowerShell
+$env:FEISHU_APP_ID = "cli_xxxx"
+$env:FEISHU_APP_SECRET = "xxxx"
 ```
+
+**方式三：管理页面**
+
+启动服务后访问 `http://localhost:3333/feishu/`，通过 Web 界面配置凭证。
 
 ## 使用
 

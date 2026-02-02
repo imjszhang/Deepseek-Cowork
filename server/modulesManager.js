@@ -104,6 +104,9 @@ let runtimeOptions = {};
 // 存储运行时上下文（用于热加载）
 let runtimeContext = null;
 
+// 存储用户配置（包含 moduleConfigs 等）
+let cachedUserConfig = null;
+
 /**
  * 清理模块缓存
  * @param {string} modulePath 模块路径
@@ -166,6 +169,9 @@ function loadAllConfigs() {
     const builtinConfigs = loadBuiltinConfig();
     const userConfig = loadUserConfig();
     
+    // 保存用户配置（包含 moduleConfigs 等），供 getOptions 使用
+    cachedUserConfig = userConfig;
+    
     // 创建配置映射（按模块名）
     const configMap = new Map();
     
@@ -201,6 +207,12 @@ function loadAllConfigs() {
                     logger.debug(`Added user module: ${userModule.name}`);
                 }
             }
+        }
+        
+        // 日志：记录 moduleConfigs 中配置的模块
+        if (userConfig.moduleConfigs) {
+            const configuredModules = Object.keys(userConfig.moduleConfigs);
+            logger.info(`User moduleConfigs found for: ${configuredModules.join(', ')}`);
         }
     }
     
@@ -266,6 +278,7 @@ function reset() {
     mergedModuleConfigs = [];
     bootOrder = [];
     runtimeOptions = {};
+    cachedUserConfig = null;
     logger.debug('Module manager state reset');
 }
 
@@ -282,17 +295,22 @@ function initModules(config, options = {}) {
     // 保存运行时选项
     runtimeOptions = options;
     
-    // 构建增强的 runtimeContext，注入核心服务
+    // 构建增强的 runtimeContext，注入核心服务和用户配置
     const enhancedRuntimeContext = {
         ...options.runtimeContext,
         // 注入核心服务注册表，模块可通过 runtimeContext.services.XXX 访问
-        services: getCoreServices()
+        services: getCoreServices(),
+        // 注入用户配置，模块可通过 runtimeContext.userConfig.moduleConfigs 访问模块专用配置
+        userConfig: cachedUserConfig
     };
     
     // 保存增强后的 runtimeContext（用于热加载）
     options.runtimeContext = enhancedRuntimeContext;
     
     logger.info('Injected core services to runtimeContext:', Object.keys(coreServices).join(', '));
+    if (cachedUserConfig?.moduleConfigs) {
+        logger.info('Injected userConfig.moduleConfigs to runtimeContext');
+    }
     
     const enabledModules = getEnabledModules(config);
     
@@ -503,10 +521,16 @@ async function loadSingleModule(moduleName) {
             return { success: false, error: `Module ${moduleName} setup function not found: ${moduleConfig.setupFunction}` };
         }
         
+        // 构建增强的 runtimeContext（包含最新的 userConfig）
+        const hotloadRuntimeContext = {
+            ...runtimeOptions.runtimeContext,
+            userConfig: userConfig  // 使用最新读取的 userConfig
+        };
+        
         // 生成初始化参数
         let moduleOptions = {};
         if (typeof moduleConfig.getOptions === 'function') {
-            moduleOptions = moduleConfig.getOptions(runtimeContext.config, runtimeOptions.runtimeContext);
+            moduleOptions = moduleConfig.getOptions(runtimeContext.config, hotloadRuntimeContext);
         }
         
         // 创建模块实例
@@ -517,6 +541,9 @@ async function loadSingleModule(moduleName) {
         if (!mergedModuleConfigs.find(m => m.name === moduleName)) {
             mergedModuleConfigs.push(moduleConfig);
         }
+        
+        // 更新缓存的 userConfig
+        cachedUserConfig = userConfig;
         
         // 启动模块
         await bootstrapModule(instance, moduleConfig, runtimeContext);
