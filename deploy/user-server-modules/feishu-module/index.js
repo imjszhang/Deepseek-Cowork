@@ -205,14 +205,36 @@ function setupFeishuModuleService(options = {}) {
             if (!this.secureSettings) return;
             
             try {
-                // 尝试获取飞书配置
-                const appId = await this.secureSettings.get?.('feishu.appId');
-                const appSecret = await this.secureSettings.get?.('feishu.appSecret');
+                // 确保 secureSettings 已初始化
+                if (!this.secureSettings.isInitialized || !this.secureSettings.isInitialized()) {
+                    // 获取数据目录并初始化
+                    const os = require('os');
+                    const path = require('path');
+                    const APP_NAME = 'deepseek-cowork';
+                    let dataDir;
+                    
+                    if (process.platform === 'win32') {
+                        dataDir = path.join(process.env.APPDATA || path.join(os.homedir(), 'AppData', 'Roaming'), APP_NAME);
+                    } else if (process.platform === 'darwin') {
+                        dataDir = path.join(os.homedir(), 'Library', 'Application Support', APP_NAME);
+                    } else {
+                        dataDir = path.join(process.env.XDG_CONFIG_HOME || path.join(os.homedir(), '.config'), APP_NAME);
+                    }
+                    
+                    console.log(`[FeishuModule] Initializing secureSettings with dataDir: ${dataDir}`);
+                    await this.secureSettings.initialize?.(dataDir);
+                }
+                
+                // 尝试获取飞书配置（使用 getSecret 方法）
+                const appId = this.secureSettings.getSecret?.('feishu.appId');
+                const appSecret = this.secureSettings.getSecret?.('feishu.appSecret');
                 
                 if (appId) this.config.appId = appId;
                 if (appSecret) this.config.appSecret = appSecret;
                 
-                console.log(`[FeishuModule] Config loaded from secureSettings`);
+                if (appId || appSecret) {
+                    console.log(`[FeishuModule] Config loaded from secureSettings`);
+                }
             } catch (error) {
                 console.warn(`[FeishuModule] Failed to load config from secureSettings:`, error.message);
             }
@@ -324,12 +346,35 @@ function setupFeishuModuleService(options = {}) {
                         }
                     }
                     
-                    // 保存敏感配置到 secureSettings
-                    if (this.secureSettings && newConfig.appSecret) {
-                        await this.secureSettings.set?.('feishu.appSecret', newConfig.appSecret);
-                    }
-                    if (this.secureSettings && newConfig.appId) {
-                        await this.secureSettings.set?.('feishu.appId', newConfig.appId);
+                    // 保存敏感配置到 secureSettings（使用 setSecret 方法）
+                    if (this.secureSettings) {
+                        // 确保 secureSettings 已初始化
+                        if (!this.secureSettings.isInitialized || !this.secureSettings.isInitialized()) {
+                            const os = require('os');
+                            const path = require('path');
+                            const APP_NAME = 'deepseek-cowork';
+                            let dataDir;
+                            
+                            if (process.platform === 'win32') {
+                                dataDir = path.join(process.env.APPDATA || path.join(os.homedir(), 'AppData', 'Roaming'), APP_NAME);
+                            } else if (process.platform === 'darwin') {
+                                dataDir = path.join(os.homedir(), 'Library', 'Application Support', APP_NAME);
+                            } else {
+                                dataDir = path.join(process.env.XDG_CONFIG_HOME || path.join(os.homedir(), '.config'), APP_NAME);
+                            }
+                            
+                            console.log(`[FeishuModule] Initializing secureSettings for save with dataDir: ${dataDir}`);
+                            await this.secureSettings.initialize?.(dataDir);
+                        }
+                        
+                        if (newConfig.appSecret) {
+                            this.secureSettings.setSecret?.('feishu.appSecret', newConfig.appSecret);
+                            console.log(`[FeishuModule] Saved appSecret to secureSettings`);
+                        }
+                        if (newConfig.appId) {
+                            this.secureSettings.setSecret?.('feishu.appId', newConfig.appId);
+                            console.log(`[FeishuModule] Saved appId to secureSettings`);
+                        }
                     }
                     
                     // 更新子模块配置
