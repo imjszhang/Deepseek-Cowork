@@ -58,11 +58,11 @@ module.exports = {
                 emitsEvents: true
             },
             // 注入核心服务和飞书配置
+            // 注意：AI 通信通过 ChannelBridge 间接访问 HappyService，无需直接注入
             getOptions: (config, runtimeContext) => ({
-                // 核心服务
-                HappyService: runtimeContext?.services?.HappyService,
-                MessageStore: runtimeContext?.services?.MessageStore,
+                // 核心服务（通过 ChannelBridge 访问 AI）
                 ChannelBridge: runtimeContext?.services?.ChannelBridge,
+                MessageStore: runtimeContext?.services?.MessageStore,
                 secureSettings: runtimeContext?.services?.secureSettings,
                 
                 // 飞书配置：优先从 moduleConfigs 读取，兼容旧方式从 config.feishu 读取

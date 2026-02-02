@@ -51,7 +51,7 @@ function setupFeishuModuleService(options = {}) {
             this.staticDir = path.join(__dirname, 'static');
             
             // 保存核心服务引用
-            this.happyService = HappyService;
+            // 注意：AI 通信通过 ChannelBridge 间接访问，无需直接持有 HappyService
             this.messageStore = MessageStore;
             this.secureSettings = secureSettings;
             
@@ -98,24 +98,18 @@ function setupFeishuModuleService(options = {}) {
          * 初始化模块
          */
         async init() {
-            console.log(`[FeishuModule] Initializing...`);
+            console.log(`[FeishuModule] 初始化中...`);
             
             // 检查静态目录是否存在
             if (!fs.existsSync(this.staticDir)) {
-                console.warn(`[FeishuModule] Static directory not found: ${this.staticDir}`);
+                console.warn(`[FeishuModule] 静态目录不存在: ${this.staticDir}`);
             }
             
-            // 检查核心服务是否可用
-            if (this.happyService) {
-                console.log(`[FeishuModule] HappyService injected, AI communication available`);
-                // 初始化 Channel Bridge（如果尚未初始化）
-                this._initChannelBridge();
-            } else {
-                console.warn(`[FeishuModule] HappyService not injected, AI features unavailable`);
-            }
+            // 初始化 Channel Bridge（AI 通信通过 bridge 间接访问 HappyService）
+            this._initChannelBridge();
             
             if (this.messageStore) {
-                console.log(`[FeishuModule] MessageStore injected, message persistence available`);
+                console.log(`[FeishuModule] MessageStore 已注入，可用于消息持久化`);
             }
             
             // 尝试从 secureSettings 加载敏感配置
@@ -124,30 +118,31 @@ function setupFeishuModuleService(options = {}) {
             // 加载子模块
             await this._loadSubModules();
             
-            console.log(`[FeishuModule] Initialization complete`);
+            console.log(`[FeishuModule] 初始化完成`);
         }
         
         /**
          * 初始化 Channel Bridge
+         * 注意：ChannelBridge 由主进程初始化（使用 HappyService），
+         * feishu-module 只需要获取引用并使用
          */
         _initChannelBridge() {
             // 使用通过 modulesManager 注入的 ChannelBridge
             if (!ChannelBridgeService) {
-                console.warn(`[FeishuModule] ChannelBridge not injected, AI features unavailable`);
+                console.warn(`[FeishuModule] ChannelBridge 未注入，AI 功能不可用`);
                 channelBridge = null;
                 return;
             }
             
             channelBridge = ChannelBridgeService;
             
-            // 检查 bridge 是否已初始化
-            if (!channelBridge.isInitialized()) {
-                channelBridge.init({
-                    happyService: this.happyService
-                });
-                console.log(`[FeishuModule] Channel Bridge initialized`);
+            // ChannelBridge 由主进程初始化，这里只检查状态
+            // 注意：模块初始化时 bridge 可能还未初始化，这是正常的
+            // bridge 会在 HappyService 初始化后由主进程完成初始化
+            if (channelBridge.isInitialized()) {
+                console.log(`[FeishuModule] ChannelBridge 已就绪`);
             } else {
-                console.log(`[FeishuModule] Channel Bridge ready`);
+                console.log(`[FeishuModule] ChannelBridge 已注入，等待主进程初始化`);
             }
         }
         
@@ -281,7 +276,9 @@ function setupFeishuModuleService(options = {}) {
                             requireMention: this.config.requireMention
                         },
                         coreServices: {
-                            happyService: !!this.happyService,
+                            channelBridge: !!channelBridge,
+                            channelBridgeReady: channelBridge?.isInitialized?.() || false,
+                            aiConnected: channelBridge?.isAIConnected?.() || false,
                             messageStore: !!this.messageStore
                         }
                     }
@@ -423,6 +420,175 @@ function setupFeishuModuleService(options = {}) {
                         count: history.length,
                         messages: history.slice(-50) // 最近 50 条
                     }
+                });
+            });
+            
+            // API: 模拟对话（无需飞书配置即可测试 AI）
+            app.post('/api/feishu/simulate', async (req, res) => {
+                this.requestCount++;
+                
+                try {
+                    const { message, sessionId: customSessionId } = req.body;
+                    
+                    if (!message || typeof message !== 'string' || !message.trim()) {
+                        return res.status(400).json({
+                            success: false,
+                            error: '消息内容不能为空'
+                        });
+                    }
+                    
+                    // 检查 Channel Bridge 是否可用
+                    if (!channelBridge || !channelBridge.isInitialized()) {
+                        return res.status(503).json({
+                            success: false,
+                            error: 'AI 服务未初始化，请确保 HappyService 已连接'
+                        });
+                    }
+                    
+                    // 检查 AI 是否已连接
+                    if (!channelBridge.isAIConnected()) {
+                        return res.status(503).json({
+                            success: false,
+                            error: 'AI 服务未连接，请先在主界面连接 AI'
+                        });
+                    }
+                    
+                    const sessionId = customSessionId || 'simulator:default';
+                    const messageId = `sim_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+                    
+                    // 创建 SimulatorAdapter - 用于捕获 AI 响应
+                    let responseResolve;
+                    let responseReject;
+                    const responsePromise = new Promise((resolve, reject) => {
+                        responseResolve = resolve;
+                        responseReject = reject;
+                        
+                        // 设置超时
+                        setTimeout(() => {
+                            reject(new Error('AI 响应超时（60秒）'));
+                        }, 60000);
+                    });
+                    
+                    const simulatorAdapter = {
+                        channelId: 'simulator',
+                        
+                        async sendText(to, text) {
+                            console.log(`[Simulator] sendText to ${to}: ${text.substring(0, 100)}...`);
+                            responseResolve(text);
+                            return { success: true, messageId: `sim_resp_${Date.now()}` };
+                        },
+                        
+                        async replyText(replyToId, text) {
+                            console.log(`[Simulator] replyText to ${replyToId}: ${text.substring(0, 100)}...`);
+                            responseResolve(text);
+                            return { success: true, messageId: `sim_resp_${Date.now()}` };
+                        },
+                        
+                        async sendTyping(to) {
+                            console.log(`[Simulator] sendTyping to ${to}`);
+                        }
+                    };
+                    
+                    // 构建消息上下文
+                    const context = {
+                        channelId: 'simulator',
+                        sessionKey: sessionId,
+                        messageId: messageId,
+                        senderId: 'simulator_user',
+                        senderName: '模拟用户',
+                        chatType: 'dm',
+                        content: message.trim(),
+                        replyToId: messageId,
+                        timestamp: Date.now(),
+                        metadata: {
+                            source: 'web_simulator'
+                        }
+                    };
+                    
+                    console.log(`[FeishuModule] Simulate: Sending message to AI - ${message.substring(0, 50)}...`);
+                    
+                    // 通过 Channel Bridge 处理消息
+                    const inboundResult = await channelBridge.handleInbound(context, simulatorAdapter);
+                    
+                    if (!inboundResult.success) {
+                        return res.status(500).json({
+                            success: false,
+                            error: inboundResult.error || '消息处理失败'
+                        });
+                    }
+                    
+                    // 等待 AI 响应
+                    const aiResponse = await responsePromise;
+                    
+                    console.log(`[FeishuModule] Simulate: Got AI response - ${aiResponse.substring(0, 50)}...`);
+                    
+                    // 保存到会话历史
+                    if (!this.simulatorHistories) {
+                        this.simulatorHistories = new Map();
+                    }
+                    if (!this.simulatorHistories.has(sessionId)) {
+                        this.simulatorHistories.set(sessionId, []);
+                    }
+                    const history = this.simulatorHistories.get(sessionId);
+                    history.push(
+                        { role: 'user', content: message.trim(), timestamp: context.timestamp },
+                        { role: 'assistant', content: aiResponse, timestamp: Date.now() }
+                    );
+                    // 限制历史记录数量
+                    if (history.length > 100) {
+                        history.splice(0, history.length - 100);
+                    }
+                    
+                    res.json({
+                        success: true,
+                        data: {
+                            requestId: inboundResult.requestId,
+                            response: aiResponse,
+                            sessionId: sessionId
+                        }
+                    });
+                    
+                } catch (error) {
+                    console.error(`[FeishuModule] Simulate error:`, error.message);
+                    res.status(500).json({
+                        success: false,
+                        error: error.message || '模拟对话失败'
+                    });
+                }
+            });
+            
+            // API: 获取模拟对话历史
+            app.get('/api/feishu/simulate/history', (req, res) => {
+                this.requestCount++;
+                const sessionId = req.query.sessionId || 'simulator:default';
+                
+                if (!this.simulatorHistories) {
+                    this.simulatorHistories = new Map();
+                }
+                
+                const history = this.simulatorHistories.get(sessionId) || [];
+                
+                res.json({
+                    success: true,
+                    data: {
+                        sessionId,
+                        messages: history
+                    }
+                });
+            });
+            
+            // API: 清除模拟对话历史
+            app.delete('/api/feishu/simulate/history', (req, res) => {
+                this.requestCount++;
+                const sessionId = req.query.sessionId || 'simulator:default';
+                
+                if (this.simulatorHistories) {
+                    this.simulatorHistories.delete(sessionId);
+                }
+                
+                res.json({
+                    success: true,
+                    message: '对话历史已清除'
                 });
             });
             
