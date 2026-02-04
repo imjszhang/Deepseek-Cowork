@@ -10,6 +10,7 @@ const fs = require('fs');
 const path = require('path');
 const EventEmitter = require('events');
 const { v4: uuidv4 } = require('uuid');
+const processKiller = require('./process-killer');
 
 /**
  * 设置进程服务
@@ -128,18 +129,27 @@ function setupProcessService(options = {}) {
           this.cleanupTimer = null;
         }
         
-        // 终止所有运行中的进程
-        const terminatedCount = this.terminateAllProcesses('SIGTERM');
-        if (terminatedCount > 0) {
-          this.logger.info(`已终止 ${terminatedCount} 个运行中的进程`);
+        // 终止所有运行中的进程（先优雅终止，超时后强制终止）
+        const runningCount = this.runningProcesses.size;
+        if (runningCount > 0) {
+          this.logger.info(`正在终止 ${runningCount} 个运行中的进程...`);
           
-          // 等待进程终止
-          await new Promise(resolve => setTimeout(resolve, 2000));
+          // 使用跨平台终止工具，先优雅终止
+          const terminatedCount = await this.terminateAllProcesses({
+            gracefulTimeout: 2000,
+            force: false
+          });
           
-          // 强制终止仍在运行的进程
-          const remainingCount = this.terminateAllProcesses('SIGKILL');
-          if (remainingCount > 0) {
-            this.logger.warn(`强制终止了 ${remainingCount} 个顽固进程`);
+          this.logger.info(`已终止 ${terminatedCount} 个进程`);
+          
+          // 检查是否还有残留进程，强制终止
+          const remaining = this.runningProcesses.size;
+          if (remaining > 0) {
+            this.logger.warn(`还有 ${remaining} 个进程未终止，正在强制终止...`);
+            await this.terminateAllProcesses({
+              gracefulTimeout: 0,
+              force: true
+            });
           }
         }
         
@@ -257,15 +267,15 @@ function setupProcessService(options = {}) {
       });
 
       // 终止进程路由
-      app.delete('/api/process/process/:processId', (req, res) => {
+      app.delete('/api/process/process/:processId', async (req, res) => {
         try {
           const { processId } = req.params;
-          const { signal = 'SIGTERM' } = req.body;
+          const { gracefulTimeout = 2000, force = false } = req.body || {};
           
-          const success = this.terminateProcess(processId, signal);
+          const success = await this.terminateProcess(processId, { gracefulTimeout, force });
           
           if (success) {
-            res.json({ success: true, message: '进程终止信号已发送' });
+            res.json({ success: true, message: '进程已终止' });
           } else {
             res.status(404).json({ success: false, error: '进程不存在或已结束' });
           }
@@ -275,14 +285,14 @@ function setupProcessService(options = {}) {
       });
 
       // 终止所有进程路由
-      app.delete('/api/process/processes', (req, res) => {
+      app.delete('/api/process/processes', async (req, res) => {
         try {
-          const { signal = 'SIGTERM' } = req.body;
-          const terminatedCount = this.terminateAllProcesses(signal);
+          const { gracefulTimeout = 2000, force = false } = req.body || {};
+          const terminatedCount = await this.terminateAllProcesses({ gracefulTimeout, force });
           
           res.json({ 
             success: true, 
-            message: `已向 ${terminatedCount} 个进程发送终止信号`,
+            message: `已终止 ${terminatedCount} 个进程`,
             terminatedCount 
           });
         } catch (error) {
@@ -764,41 +774,86 @@ function setupProcessService(options = {}) {
       };
     }
 
-    terminateProcess(processId, signal = 'SIGTERM') {
-      const process = this.runningProcesses.get(processId);
-      if (!process) {
+    /**
+     * 终止指定进程（异步，跨平台安全）
+     * @param {string} processId 进程ID
+     * @param {Object} options 选项
+     * @param {number} options.gracefulTimeout 优雅退出超时时间（毫秒），默认 2000
+     * @param {boolean} options.force 是否强制终止，默认 false
+     * @returns {Promise<boolean>} 是否成功
+     */
+    async terminateProcess(processId, options = {}) {
+      const processInfo = this.runningProcesses.get(processId);
+      if (!processInfo) {
         if (this.enableLogging) {
           this.logger.warn(`尝试终止不存在的进程: ${processId}`);
         }
         return false;
       }
 
+      const { gracefulTimeout = 2000, force = false } = options;
+      const pid = processInfo.childProcess.pid;
+
       try {
-        process.childProcess.kill(signal);
         if (this.enableLogging) {
-          this.logger.info(`发送终止信号 ${signal} 到进程: ${processId}`);
+          this.logger.info(`正在终止进程: ${processId} (PID: ${pid})`);
         }
-        return true;
+
+        // 使用跨平台进程终止工具
+        const result = await processKiller.terminate(pid, {
+          gracefulTimeout,
+          force,
+          tree: true // 终止进程树
+        });
+
+        if (result.success) {
+          if (this.enableLogging) {
+            const method = result.forced ? '强制' : '优雅';
+            this.logger.info(`进程已${method}终止: ${processId} (PID: ${pid})`);
+          }
+          return true;
+        } else {
+          this.logger.error(`终止进程失败 ${processId} (PID: ${pid})`);
+          return false;
+        }
       } catch (error) {
-        this.logger.error(`终止进程失败 ${processId}: ${error.message}`);
+        this.logger.error(`终止进程异常 ${processId}: ${error.message}`);
         return false;
       }
     }
 
-    terminateAllProcesses(signal = 'SIGTERM') {
-      let terminatedCount = 0;
+    /**
+     * 终止所有运行中的进程（异步，跨平台安全）
+     * @param {Object} options 选项
+     * @param {number} options.gracefulTimeout 优雅退出超时时间（毫秒），默认 2000
+     * @param {boolean} options.force 是否强制终止，默认 false
+     * @returns {Promise<number>} 成功终止的进程数量
+     */
+    async terminateAllProcesses(options = {}) {
+      const processIds = Array.from(this.runningProcesses.keys());
       
-      for (const [processId, process] of this.runningProcesses.entries()) {
-        try {
-          process.childProcess.kill(signal);
-          terminatedCount++;
-        } catch (error) {
-          this.logger.error(`终止进程失败 ${processId}: ${error.message}`);
+      if (processIds.length === 0) {
+        if (this.enableLogging) {
+          this.logger.info('没有运行中的进程需要终止');
         }
+        return 0;
       }
 
       if (this.enableLogging) {
-        this.logger.info(`发送终止信号到 ${terminatedCount} 个进程`);
+        this.logger.info(`正在终止 ${processIds.length} 个进程...`);
+      }
+
+      // 并行终止所有进程
+      const results = await Promise.allSettled(
+        processIds.map(processId => this.terminateProcess(processId, options))
+      );
+
+      const terminatedCount = results.filter(
+        r => r.status === 'fulfilled' && r.value === true
+      ).length;
+
+      if (this.enableLogging) {
+        this.logger.info(`成功终止 ${terminatedCount}/${processIds.length} 个进程`);
       }
 
       return terminatedCount;
@@ -848,21 +903,26 @@ function setupProcessService(options = {}) {
         
         const processEnv = { ...process.env, ...env };
         
+        // 检测平台，用于设置平台特定选项
+        const isWindows = process.platform === 'win32';
+        
         let childProcess;
         
         if (useFork) {
           childProcess = fork(scriptPath, args, {
             cwd,
             env: processEnv,
-            detached,
-            silent: true // 改为true以便捕获输出
+            detached: true, // 始终将子进程从父进程的进程组中分离，防止信号传播
+            silent: true, // 捕获输出
+            windowsHide: isWindows // Windows 上隐藏控制台窗口
           });
         } else {
           childProcess = spawn('node', [scriptPath, ...args], {
             cwd,
             env: processEnv,
-            detached,
-            stdio: ['pipe', 'pipe', 'pipe'] // 捕获所有输出
+            detached: true, // 始终将子进程从父进程的进程组中分离
+            stdio: ['pipe', 'pipe', 'pipe'], // 捕获所有输出
+            windowsHide: isWindows // Windows 上隐藏控制台窗口
           });
         }
 
@@ -883,23 +943,83 @@ function setupProcessService(options = {}) {
         this._setupProcessOutputListeners(processId, childProcess, useFork);
 
         const timeoutHandle = setTimeout(() => {
-          this._handleProcessTimeout(processId);
+          try {
+            this._handleProcessTimeout(processId);
+          } catch (err) {
+            this.logger.error(`处理进程超时异常 ${processId}: ${err.message}`);
+          }
         }, timeout);
 
+        // 进程退出事件（包裹 try-catch 防止错误传播到父进程）
         childProcess.on('exit', (code, signal) => {
-          this._handleProcessExit(processId, code, signal, timeoutHandle);
+          try {
+            this._handleProcessExit(processId, code, signal, timeoutHandle);
+          } catch (err) {
+            this.logger.error(`处理进程退出异常 ${processId}: ${err.message}`);
+          }
         });
 
+        // 进程错误事件（包裹 try-catch）
         childProcess.on('error', (error) => {
-          this._handleProcessError(processId, error, timeoutHandle);
+          try {
+            this._handleProcessError(processId, error, timeoutHandle);
+          } catch (err) {
+            this.logger.error(`处理进程错误事件异常 ${processId}: ${err.message}`);
+          }
         });
 
         if (useFork) {
+          // IPC 消息事件
           childProcess.on('message', (message) => {
-            this.emit('processMessage', { processId, message });
-            this.broadcastLog('info', `[${processId.substring(0, 8)}] 收到消息: ${JSON.stringify(message)}`, { processId, type: 'message' });
+            try {
+              // 处理子进程中的未捕获异常消息
+              if (message && message.type === 'uncaughtException') {
+                this.broadcastLog('error', `[${processId.substring(0, 8)}] 子进程未捕获异常: ${message.error}`, {
+                  processId,
+                  type: 'uncaughtException',
+                  error: message.error,
+                  stack: message.stack
+                });
+                return;
+              }
+              
+              this.emit('processMessage', { processId, message });
+              this.broadcastLog('info', `[${processId.substring(0, 8)}] 收到消息: ${JSON.stringify(message)}`, { processId, type: 'message' });
+            } catch (err) {
+              this.logger.error(`处理进程消息异常 ${processId}: ${err.message}`);
+            }
+          });
+
+          // IPC 通道断开事件（防止断开时导致父进程错误）
+          childProcess.on('disconnect', () => {
+            try {
+              this.broadcastLog('warn', `[${processId.substring(0, 8)}] IPC 通道已断开`, {
+                processId,
+                type: 'disconnect'
+              });
+              
+              // 如果进程仍在运行列表中但 IPC 断开，记录日志但不做其他处理
+              // 进程实际结束会触发 exit 事件
+              if (this.enableLogging) {
+                this.logger.warn(`进程 ${processId} 的 IPC 通道已断开`);
+              }
+            } catch (err) {
+              this.logger.error(`处理 IPC 断开事件异常 ${processId}: ${err.message}`);
+            }
           });
         }
+
+        // 监听子进程的 close 事件（所有 stdio 流关闭后触发）
+        childProcess.on('close', (code, signal) => {
+          try {
+            // close 事件在 exit 之后触发，用于确认所有资源已释放
+            if (this.enableLogging) {
+              this.logger.info(`进程 ${processId} 的所有 stdio 流已关闭 (code: ${code}, signal: ${signal})`);
+            }
+          } catch (err) {
+            this.logger.error(`处理进程 close 事件异常 ${processId}: ${err.message}`);
+          }
+        });
 
         if (this.enableLogging) {
           this.logger.info(`进程启动: ${processId} (PID: ${childProcess.pid})`);
