@@ -53,6 +53,12 @@ class ExtensionWebSocketServer {
         
         // 连接活动追踪超时时间（用于清理长时间不活跃的连接）
         this.connectionIdleTimeout = options.connectionIdleTimeout || 300000;  // 默认 5 分钟
+        
+        // Round-Robin 索引，用于定向发送消息给单个扩展（而非广播）
+        this._extensionRoundRobinIndex = 0;
+        
+        // 已通过 WS 定向推送的 requestId 集合（防止 pushResponseToWaitingClient 重复广播）
+        this._resolvedViaWS = new Set();
     }
 
     /**
@@ -599,6 +605,7 @@ class ExtensionWebSocketServer {
     resolvePendingResponse(requestId, responseData) {
         const info = this.pendingResponses.get(requestId);
         if (info) {
+            let pushed = false;
             // 向发起请求的 automation 客户端 WS 回传结果
             if (info.socket && info.socket.readyState === WebSocket.OPEN) {
                 const operationType = info.operationType || 'unknown';
@@ -607,6 +614,9 @@ class ExtensionWebSocketServer {
                     requestId,
                     ...responseData
                 });
+                pushed = true;
+                // 标记为已通过 WS 推送，防止 pushResponseToWaitingClient 重复广播
+                this._resolvedViaWS.add(requestId);
                 Logger.debug(`Resolved pending response via WS: ${requestId} (op: ${operationType})`);
             }
             // 清理
@@ -614,7 +624,9 @@ class ExtensionWebSocketServer {
                 clearTimeout(info.timeoutId);
             }
             this.pendingResponses.delete(requestId);
+            return pushed;
         }
+        return false;
     }
 
     /**
@@ -1725,35 +1737,60 @@ class ExtensionWebSocketServer {
                 };
             }
 
-            let sentCount = 0;
-            let extensionCount = 0;
+            // 收集所有活跃的 extension 连接
+            const extensionClients = [];
             for (const [clientId, connInfo] of this.activeConnections.entries()) {
-                // 兼容旧格式（直接存 socket）和新格式（存对象）
                 const socket = connInfo.socket || connInfo;
                 const clientType = connInfo.clientType || 'extension';
                 
-                // 只发送给 extension 客户端，跳过 automation 客户端（避免回声）
                 if (clientType === 'automation') {
                     continue;
                 }
                 
-                extensionCount++;
                 if (socket.readyState === WebSocket.OPEN) {
-                    socket.send(JSON.stringify(message));
-                    sentCount++;
+                    extensionClients.push({ clientId, socket });
                 }
             }
 
-            if (extensionCount === 0) {
+            if (extensionClients.length === 0) {
                 return { 
                     status: 'error', 
-                    message: 'No active browser extension connections (only automation clients found)' 
+                    message: 'No active browser extension connections (only automation clients found or all disconnected)' 
+                };
+            }
+
+            // Round-Robin 定向发送：选择一个扩展连接
+            // 如果选中的连接发送失败，尝试下一个
+            let sentCount = 0;
+            const startIndex = this._extensionRoundRobinIndex % extensionClients.length;
+            
+            for (let i = 0; i < extensionClients.length; i++) {
+                const idx = (startIndex + i) % extensionClients.length;
+                const { clientId, socket } = extensionClients[idx];
+                
+                try {
+                    socket.send(JSON.stringify(message));
+                    sentCount = 1;
+                    // 推进 Round-Robin 索引到下一个
+                    this._extensionRoundRobinIndex = idx + 1;
+                    Logger.debug(`[sendToExtensions] Targeted message to extension ${clientId} (RR index: ${idx}/${extensionClients.length})`);
+                    break;  // 成功发送到一个扩展即可
+                } catch (sendErr) {
+                    Logger.warn(`[sendToExtensions] Failed to send to extension ${clientId}: ${sendErr.message}, trying next`);
+                    continue;
+                }
+            }
+
+            if (sentCount === 0) {
+                return { 
+                    status: 'error', 
+                    message: 'Failed to send message to any extension' 
                 };
             }
 
             return { 
                 status: 'success', 
-                message: `Message sent to ${sentCount} extensions`,
+                message: `Message sent to 1 extension (Round-Robin)`,
                 requestId: message.requestId,
                 needsCallback: true
             };
@@ -1904,9 +1941,15 @@ class ExtensionWebSocketServer {
                 const errorMessage = data.message || 'Unknown error';
                 Logger.error(`Received error message from extension ${clientId}: ${errorMessage}`);
                 
-                // 清除 pending response 超时
+                // 转发错误给发起请求的 automation 客户端（而非仅清理 pending 状态）
                 if (requestId) {
-                    this.clearPendingResponse(requestId);
+                    this.resolvePendingResponse(requestId, {
+                        status: 'error',
+                        type: 'error',
+                        message: errorMessage,
+                        code: data.code || 'EXTENSION_ERROR',
+                        requestId
+                    });
                 }
                 
                 if (requestId && this.callbackManager) {
@@ -1962,6 +2005,11 @@ class ExtensionWebSocketServer {
                                 timeout: this.heartbeatTimeout
                             },
                             rateLimit: this.securityConfig?.rateLimit || null,
+                            // 扩展端命令处理限流（独立于 HTTP 回调查询限流）
+                            extensionRateLimit: {
+                                maxRequestsPerSecond: 10,
+                                blockDuration: 5000
+                            },
                             resourceMonitor: this.securityConfig?.resourceMonitor || null
                         };
                         socket.send(JSON.stringify({
@@ -2128,11 +2176,14 @@ class ExtensionWebSocketServer {
                         requestId
                     };
                     // 通过 WS 回传结果给 automation 客户端，并清理 pending
-                    this.resolvePendingResponse(requestId, execScriptResponse);
+                    const wsPushed = this.resolvePendingResponse(requestId, execScriptResponse);
                     // 清除活动请求（去重）- 注意：这里没有原始的 code，所以只清理 tabId 相关的
                     // 实际上脚本执行完成后，activeRequests 会因为超时自动清理
                     
+                    // 仍然写入 DB（保留审计日志），但如果 WS 已成功推送则标记 _wsPushed
+                    // 以便 pushResponseToWaitingClient 跳过重复广播
                     if (this.callbackManager) {
+                        execScriptResponse._wsPushed = wsPushed;
                         await this.callbackManager.postToCallback(requestId, execScriptResponse);
                     }
 
@@ -2257,9 +2308,13 @@ class ExtensionWebSocketServer {
                     break;
             }
 
-            // 向等待的 WebSocket 客户端推送响应
-            if (data.requestId) {
+            // 向等待的 WebSocket 客户端推送响应（仅当 resolvePendingResponse 未成功推送时）
+            // resolvePendingResponse 已通过定向 WS 推送给了发起请求的 automation 客户端，
+            // 此处的广播会导致重复响应，因此在已推送的情况下跳过
+            if (data.requestId && !this._resolvedViaWS.has(data.requestId)) {
                 await this.pushResponseToWaitingClient(data.requestId, data);
+            } else if (data.requestId) {
+                this._resolvedViaWS.delete(data.requestId);
             }
         } catch (err) {
             Logger.error(`Error handling extension message from ${clientId}: ${err.message}`);
