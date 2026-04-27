@@ -35,6 +35,7 @@ class AuthManager {
       enabled: true,
       secretKey: null,
       secretKeyFile: 'data/auth_secret.key',
+      tokenFile: 'data/server.token',
       sessionTTL: 3600,           // 1小时
       lockoutDuration: 60,        // 60秒
       maxFailedAttempts: 5,
@@ -71,6 +72,7 @@ class AuthManager {
     if (process.env.BROWSER_CONTROL_SECRET) {
       this.secretKey = process.env.BROWSER_CONTROL_SECRET;
       Logger.info('Secret key loaded from environment variable');
+      this.ensureTokenFile();
       return;
     }
 
@@ -78,6 +80,7 @@ class AuthManager {
     if (this.config.secretKey) {
       this.secretKey = this.config.secretKey;
       Logger.info('Secret key loaded from config');
+      this.ensureTokenFile();
       return;
     }
 
@@ -90,6 +93,7 @@ class AuthManager {
       try {
         this.secretKey = fs.readFileSync(keyFilePath, 'utf8').trim();
         Logger.info(`Secret key loaded from file: ${keyFilePath}`);
+        this.ensureTokenFile();
         return;
       } catch (err) {
         Logger.warn(`Failed to read secret key file: ${err.message}`);
@@ -99,6 +103,7 @@ class AuthManager {
     // 4. 自动生成并保存
     this.secretKey = this.generateRandomKey();
     this.saveSecretKeyToFile(keyFilePath);
+    this.ensureTokenFile();
     Logger.info('New secret key generated and saved');
   }
 
@@ -125,6 +130,92 @@ class AuthManager {
     } catch (err) {
       Logger.error(`Failed to save secret key: ${err.message}`);
     }
+  }
+
+  /**
+   * 获取 token 文件绝对路径
+   * @returns {string}
+   */
+  getTokenFilePath() {
+    return path.isAbsolute(this.config.tokenFile)
+      ? this.config.tokenFile
+      : path.join(global.rootDir || process.cwd(), this.config.tokenFile);
+  }
+
+  /**
+   * 为兼容 js-eyes 扩展准备 server.token 文件。
+   * 当前实现复用现有认证密钥，避免旧 challenge-response 流程失效。
+   */
+  ensureTokenFile() {
+    if (!this.secretKey) {
+      return;
+    }
+
+    if (process.env.JS_EYES_SERVER_TOKEN) {
+      Logger.info('Server token provided by JS_EYES_SERVER_TOKEN environment variable');
+      return;
+    }
+
+    const tokenFilePath = this.getTokenFilePath();
+    try {
+      const dir = path.dirname(tokenFilePath);
+      if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true });
+      }
+
+      if (!fs.existsSync(tokenFilePath) || fs.readFileSync(tokenFilePath, 'utf8').trim() !== this.secretKey) {
+        fs.writeFileSync(tokenFilePath, this.secretKey, { mode: 0o600 });
+        Logger.info(`Compatibility server token saved to: ${tokenFilePath}`);
+      }
+    } catch (err) {
+      Logger.warn(`Failed to ensure server token file: ${err.message}`);
+    }
+  }
+
+  /**
+   * 获取当前 bearer token。
+   * 优先级：JS_EYES_SERVER_TOKEN > secretKey。
+   * @returns {string|null}
+   */
+  getBearerToken() {
+    if (process.env.JS_EYES_SERVER_TOKEN) {
+      return process.env.JS_EYES_SERVER_TOKEN;
+    }
+    return this.secretKey || null;
+  }
+
+  /**
+   * 验证 bearer token
+   * @param {string} token
+   * @param {string} clientAddress
+   * @returns {{valid:boolean, reason?:string}}
+   */
+  verifyBearerToken(token, clientAddress = 'unknown') {
+    if (!token || typeof token !== 'string') {
+      Logger.warn(`[Auth] Missing bearer token from ${clientAddress}`);
+      return { valid: false, reason: 'Missing bearer token' };
+    }
+
+    const expectedToken = this.getBearerToken();
+    if (!expectedToken) {
+      Logger.warn(`[Auth] No configured bearer token for ${clientAddress}`);
+      return { valid: false, reason: 'Server token not configured' };
+    }
+
+    const tokenBuffer = Buffer.from(token, 'utf8');
+    const expectedBuffer = Buffer.from(expectedToken, 'utf8');
+    if (tokenBuffer.length !== expectedBuffer.length) {
+      Logger.warn(`[Auth] Invalid bearer token length from ${clientAddress}`);
+      return { valid: false, reason: 'Invalid bearer token' };
+    }
+
+    const isValid = crypto.timingSafeEqual(tokenBuffer, expectedBuffer);
+    if (!isValid) {
+      Logger.warn(`[Auth] Invalid bearer token from ${clientAddress}`);
+      return { valid: false, reason: 'Invalid bearer token' };
+    }
+
+    return { valid: true };
   }
 
   /**
@@ -402,8 +493,10 @@ class AuthManager {
 
     return {
       secretKey: this.secretKey,
+      bearerToken: this.getBearerToken(),
       source,
-      keyFile: this.config.secretKeyFile
+      keyFile: this.config.secretKeyFile,
+      tokenFile: this.config.tokenFile
     };
   }
 }

@@ -525,15 +525,15 @@
       
       // 第四步 - JS-EYES 浏览器扩展
       installJsEyesTitle: '安装 JS-EYES 浏览器扩展',
-      installJsEyesDesc: 'JS-EYES 用于浏览器自动化功能（可选）',
+      installJsEyesDesc: 'JS-EYES 提供支持 token 连接的浏览器自动化能力（可选）',
       jsEyesOptionalHint: '此步骤为可选，您可以跳过',
-      jsEyesFeatures: '功能：控制标签页、执行脚本、提取数据',
+      jsEyesFeatures: '功能：控制标签页、执行脚本、提取数据、通过 token 建立安全连接',
       jsEyesInstallSteps: '安装步骤',
-      jsEyesStep1: '从 GitHub 下载项目',
-      jsEyesStep2: '打开 Chrome 扩展管理页面 (chrome://extensions)',
-      jsEyesStep3: '开启开发者模式',
-      jsEyesStep4: '点击"加载已解压的扩展程序"',
-      jsEyesStep5: '选择下载的 js-eyes 目录',
+      jsEyesStep1: '下载最新 JS Eyes 发布包，或打开其 GitHub 仓库',
+      jsEyesStep2: '按浏览器安装扩展（Chrome/Edge 加载已解压扩展，Firefox 使用 XPI 或临时附加组件）',
+      jsEyesStep3: '启动 DeepSeek Cowork，并保持 Browser Control 服务运行',
+      jsEyesStep4: '打开 JS Eyes 扩展弹窗，连接到 DeepSeek Cowork 的 HTTP 地址（默认：http://localhost:3333）',
+      jsEyesStep5: '如果启用了认证，请同步或粘贴 server token，然后等待扩展状态变为 Connected',
       openGithub: '打开 GitHub',
       
       // 第五步

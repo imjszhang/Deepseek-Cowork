@@ -525,15 +525,15 @@
       
       // Step 4 - JS-EYES Browser Extension
       installJsEyesTitle: 'Install JS-EYES Browser Extension',
-      installJsEyesDesc: 'JS-EYES enables browser automation features (optional)',
+      installJsEyesDesc: 'JS-EYES enables browser automation with token-based connection support (optional)',
       jsEyesOptionalHint: 'This step is optional, you can skip it',
-      jsEyesFeatures: 'Features: Tab control, script execution, data extraction',
+      jsEyesFeatures: 'Features: tab control, script execution, data extraction, token-authenticated connection',
       jsEyesInstallSteps: 'Installation Steps',
-      jsEyesStep1: 'Download the project from GitHub',
-      jsEyesStep2: 'Open Chrome extensions page (chrome://extensions)',
-      jsEyesStep3: 'Enable Developer Mode',
-      jsEyesStep4: 'Click "Load unpacked"',
-      jsEyesStep5: 'Select the downloaded js-eyes directory',
+      jsEyesStep1: 'Download the latest JS Eyes release or open the repository',
+      jsEyesStep2: 'Install the browser extension for your browser (Chrome/Edge load unpacked, Firefox use XPI or temporary add-on)',
+      jsEyesStep3: 'Start DeepSeek Cowork and keep the Browser Control service running',
+      jsEyesStep4: 'Open the JS Eyes popup and connect to the DeepSeek Cowork HTTP address (default: http://localhost:3333)',
+      jsEyesStep5: 'If authentication is enabled, sync or paste the server token, then wait for the extension status to become Connected',
       openGithub: 'Open GitHub',
       
       // Step 5

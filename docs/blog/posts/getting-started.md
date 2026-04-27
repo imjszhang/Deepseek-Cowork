@@ -72,10 +72,11 @@ On first launch, you need to configure your DeepSeek API Key:
 
 To use browser automation features, install the JS Eyes extension:
 
-1. Open Chrome extensions page (`chrome://extensions/`)
-2. Enable "Developer mode"
-3. Click "Load unpacked"
-4. Select the `extensions/js-eyes` directory
+1. Download the latest JS Eyes release, or clone the JS Eyes repository if you want the source extension
+2. Install the extension in your browser (`extensions/chrome` for Chrome/Edge source installs, signed `.xpi` for Firefox releases)
+3. Start DeepSeek Cowork and keep Browser Control running
+4. Open the JS Eyes popup and connect to `http://localhost:3333`
+5. If authentication is enabled, sync or paste the `server.token` value before checking the connection status
 
 Once installed, the extension will automatically connect to the application.
 

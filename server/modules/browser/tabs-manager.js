@@ -16,6 +16,8 @@ class TabsManager {
     this.database = database;
     this.callbackManager = callbackManager;
     this.logger = Logger;
+    this.lastKnownTabCount = 0;
+    this.lastKnownActiveTabId = null;
     
     // Queue for managing cookie saves per tab to avoid concurrent conflicts
     this.cookiesSaveQueues = new Map();
@@ -33,6 +35,7 @@ class TabsManager {
   async getTabs() {
     try {
       const tabs = await this.database.all('SELECT * FROM tabs ORDER BY window_id, index_in_window');
+      this.lastKnownTabCount = tabs.length;
       return { status: 'success', tabs };
     } catch (err) {
       this.logger.error(`Error getting tabs: ${err.message}`);
@@ -360,6 +363,9 @@ class TabsManager {
         this.logger.error('Provided tabs is not an array when updating tabs');
         return false;
       }
+
+      this.lastKnownTabCount = tabs.length;
+      this.lastKnownActiveTabId = active_tab_id || null;
 
       await this.database.run('BEGIN TRANSACTION');
 
@@ -723,6 +729,14 @@ class TabsManager {
       this.logger.error(`Error handling change tab URL complete: ${err.message}`);
       return false;
     }
+  }
+
+  /**
+   * 获取最近一次同步到内存中的标签页数量
+   * @returns {number}
+   */
+  getLastKnownTabCount() {
+    return this.lastKnownTabCount || 0;
   }
 }
 

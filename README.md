@@ -292,14 +292,25 @@ Browser automation requires the **[JS Eyes](https://github.com/imjszhang/js-eyes
 
 ### Installation
 
-1. Download [JS Eyes](https://github.com/imjszhang/js-eyes)
-2. Open browser extension page
-   - Chrome: `chrome://extensions/`
-   - Edge: `edge://extensions/`
-   - Firefox: `about:debugging`
-3. Enable "Developer mode"
-4. Click "Load unpacked" and select the extension folder for your browser
-5. Make sure DeepSeek Cowork is running, extension will auto-connect
+1. Download the latest extension assets from [JS Eyes Releases](https://github.com/imjszhang/js-eyes/releases/latest), or clone the repository if you want to load the source extension manually.
+2. Install the extension in your browser
+   - Chrome / Edge: open `chrome://extensions/` or `edge://extensions/`, enable Developer mode, then load the `extensions/chrome` folder if using the source tree
+   - Firefox: install the signed `.xpi` from the release, or load `extensions/firefox/manifest.json` temporarily from `about:debugging`
+3. Start DeepSeek Cowork so the Browser Control service is available
+4. Open the JS Eyes popup and connect it to DeepSeek Cowork's HTTP address (default: `http://localhost:3333`)
+5. If authentication is enabled, sync or paste the `server.token` value before waiting for the extension to show `Connected`
+
+### Connection Notes
+
+- DeepSeek Cowork exposes Browser Control over HTTP on `http://localhost:3333` and the extension WebSocket on `ws://localhost:8080` by default.
+- Current JS Eyes releases support token-based authentication. This project now exposes a compatible `server.token` file for manual token copy/paste.
+- Native-host based token sync belongs to the upstream JS Eyes ecosystem and is not yet a one-click flow inside DeepSeek Cowork.
+
+### Compatibility Boundary
+
+- DeepSeek Cowork is compatible with the current JS Eyes browser extension handshake and connection flow.
+- DeepSeek Cowork is **not** a drop-in replacement for the full `js-eyes` CLI runtime. Native-host installation, `js-eyes doctor`, and `js-eyes skills` remain upstream-managed workflows for now.
+- The built-in Browser Control skill and deployment assets in this repository are still the primary workflow inside DeepSeek Cowork.
 
 See [JS Eyes documentation](https://github.com/imjszhang/js-eyes) for details
 

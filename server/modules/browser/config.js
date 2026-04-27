@@ -76,6 +76,7 @@ class BrowserControlServerConfig {
         enableRateLimit: false,
         rateLimitWindow: 60000,
         rateLimitMax: 100,
+        allowAnonymous: false,       // 兼容 js-eyes：允许匿名连接时跳过 token / challenge 认证
         
         // Origin 白名单配置（用于 WebSocket 和 HTTP CORS）
         allowedOrigins: [
@@ -83,6 +84,8 @@ class BrowserControlServerConfig {
           'chrome-extension://*',   // Chrome 扩展
           'http://localhost:*',     // 本地开发
           'http://127.0.0.1:*',     // 本地开发
+          'http://[::1]',           // 本地开发 IPv6
+          'https://[::1]',          // 本地开发 IPv6 HTTPS
           'https://localhost:*',    // 本地 HTTPS
           'https://127.0.0.1:*'     // 本地 HTTPS
         ],
@@ -95,11 +98,12 @@ class BrowserControlServerConfig {
           logLevel: 'WARN'               // 安全日志级别
         },
 
-        // 认证配置（Challenge-Response 机制）
+        // 认证配置（兼容 token + challenge-response）
         auth: {
           enabled: true,              // 是否启用认证（开发环境可设为 false）
           secretKey: null,            // 密钥（首次启动自动生成，或从环境变量读取）
           secretKeyFile: 'data/auth_secret.key',  // 密钥文件路径
+          tokenFile: 'data/server.token',         // 兼容 js-eyes 的 server.token 路径
           sessionTTL: 3600,           // 会话有效期（秒）
           lockoutDuration: 60,        // 认证失败锁定时间（秒）
           maxFailedAttempts: 5,       // 连续失败多少次触发锁定

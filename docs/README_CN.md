@@ -292,14 +292,25 @@ npm run version:major   # 0.1.0 → 1.0.0 (重大变更)
 
 ### 安装步骤
 
-1. 下载 [JS Eyes](https://github.com/imjszhang/js-eyes) 项目
-2. 打开浏览器扩展管理页面
-   - Chrome: `chrome://extensions/`
-   - Edge: `edge://extensions/`
-   - Firefox: `about:debugging`
-3. 开启"开发者模式"
-4. 点击"加载已解压的扩展程序"，选择对应浏览器的扩展文件夹
-5. 确保 DeepSeek Cowork 正在运行，扩展会自动连接
+1. 从 [JS Eyes Releases](https://github.com/imjszhang/js-eyes/releases/latest) 下载最新扩展包；如果你打算手动加载源码扩展，也可以直接克隆仓库
+2. 在浏览器中安装扩展
+   - Chrome / Edge：打开 `chrome://extensions/` 或 `edge://extensions/`，开启开发者模式；如果使用源码目录，加载 `extensions/chrome`
+   - Firefox：安装发布页提供的签名 `.xpi`，或在 `about:debugging` 中临时加载 `extensions/firefox/manifest.json`
+3. 启动 DeepSeek Cowork，确保 Browser Control 服务已运行
+4. 打开 JS Eyes 扩展弹窗，连接到 DeepSeek Cowork 的 HTTP 地址（默认：`http://localhost:3333`）
+5. 如果启用了认证，请先同步或粘贴 `server.token`，再等待扩展状态变为 `Connected`
+
+### 连接说明
+
+- DeepSeek Cowork 默认通过 `http://localhost:3333` 暴露 Browser Control HTTP 接口，并通过 `ws://localhost:8080` 与扩展通信。
+- 当前版 JS Eyes 扩展支持 token 认证，本项目已经提供兼容的 `server.token` 文件，便于手动复制到扩展。
+- 基于 native-host 的自动 token 同步目前仍以上游 JS Eyes 生态为主，DeepSeek Cowork 暂未内置一键接入流程。
+
+### 兼容边界
+
+- DeepSeek Cowork 已兼容当前版 JS Eyes 浏览器扩展的握手与连接流程。
+- DeepSeek Cowork **不是** 完整 `js-eyes` CLI 运行时的等价替代；`js-eyes doctor`、native-host 安装、`js-eyes skills` 生命周期目前仍以上游生态为主。
+- 本仓库内置的 Browser Control skill 与部署资源，仍然是 DeepSeek Cowork 当前阶段的主工作流。
 
 详细说明请参考 [JS Eyes 文档](https://github.com/imjszhang/js-eyes)
 

@@ -19,6 +19,10 @@ const Logger = require('./logger');
 const { browserEventEmitter } = require('./event-emitter');
 const { browserControlServerConfig } = require('./config');
 const ExtensionWebSocketServer = require('./ExtensionWebSocketServer');
+const packageInfo = require('../../../package.json');
+
+const PROTOCOL_VERSION = '1.0';
+const SERVER_VERSION = packageInfo.version;
 
 // 导入安全模块
 const AuthManager = require('./auth-manager');
@@ -462,7 +466,7 @@ function setupBrowserControlService(options = {}) {
           }
         },
         methods: ['GET', 'POST', 'OPTIONS'],
-        allowedHeaders: ['Content-Type', 'Accept'],
+        allowedHeaders: ['Content-Type', 'Accept', 'Authorization'],
         credentials: false  // 不允许凭证，与 origin 动态验证配合使用
       }));
       
@@ -470,6 +474,8 @@ function setupBrowserControlService(options = {}) {
       
       // 获取服务器配置信息
       apiRouter.get('/config', (req, res) => {
+        const authInfo = this.authManager?.getSecretInfo?.() || {};
+        const authEnforced = this.config.security?.auth?.enabled !== false && this.config.security?.allowAnonymous !== true;
         res.json({
           status: 'success',
           config: {
@@ -487,6 +493,33 @@ function setupBrowserControlService(options = {}) {
             websocketAddress: this.config.extensionWebSocket.baseUrl,
             host: this.config.extensionWebSocket.host,
             extensionPort: this.config.extensionWebSocket.port
+          },
+          protocolVersion: PROTOCOL_VERSION,
+          serverVersion: SERVER_VERSION,
+          request: {
+            defaultTimeout: this.config.request?.defaultTimeout || 60000
+          },
+          extensionRateLimit: {
+            maxRequestsPerSecond: 10,
+            blockDuration: 5000
+          },
+          resourceMonitor: {
+            enabled: this.config.resourceMonitor?.enabled !== false,
+            healthCheckInterval: this.config.resourceMonitor?.healthCheckInterval || 30000,
+            warningThreshold: this.config.resourceMonitor?.warningThreshold || 0.8
+          },
+          security: {
+            allowAnonymous: this.config.security?.allowAnonymous === true,
+            allowRawEval: this.config.security?.allowRawEval === true,
+            allowedOrigins: this.config.security?.allowedOrigins || [],
+            authEnabled: authEnforced,
+            tokenFile: authInfo.tokenFile || this.config.security?.auth?.tokenFile || null
+          },
+          capabilities: {
+            jsEyesExtensionCompat: true,
+            jsEyesCliCompat: 'partial',
+            nativeHostManaged: false,
+            skillsManagedByJsEyes: false
           }
         });
       });
@@ -617,8 +650,10 @@ function setupBrowserControlService(options = {}) {
           res.json({
             success: true,
             secretKey: secretInfo.secretKey,
+            bearerToken: secretInfo.bearerToken,
             source: secretInfo.source,
             keyFile: secretInfo.keyFile,
+            tokenFile: secretInfo.tokenFile,
             authEnabled: true
           });
         } catch (err) {
@@ -1293,8 +1328,17 @@ function setupBrowserControlService(options = {}) {
      * 获取服务状态
      */
     getStatus() {
+      const connectionStats = this.extensionWebSocketServer
+        ? this.extensionWebSocketServer.getConnectionStats()
+        : { extensions: [], extensionCount: 0, automationClients: 0 };
+      const activeSessions = this.authManager ? this.authManager.getActiveSessionCount() : 0;
+      const tabs = this.tabsManager?.getLastKnownTabCount?.() || 0;
+      const authEnforced = this.config?.security?.auth?.enabled !== false && this.config?.security?.allowAnonymous !== true;
+
       return {
         isRunning: this.isRunning,
+        protocolVersion: PROTOCOL_VERSION,
+        serverVersion: SERVER_VERSION,
         config: browserControlServerConfig.getSummary(),
         connections: {
           extensionWebSocket: {
@@ -1303,15 +1347,27 @@ function setupBrowserControlService(options = {}) {
             port: this.config?.extensionWebSocket?.port,
             baseUrl: this.config?.extensionWebSocket?.baseUrl
           },
+          extensions: connectionStats.extensions,
+          automationClients: connectionStats.automationClients
         },
         security: {
-          authEnabled: this.authManager ? true : false,
+          authEnabled: authEnforced,
           auditEnabled: this.auditLogger ? true : false,
           rateLimitEnabled: this.rateLimiter ? true : false,
-          activeSessions: this.authManager ? this.authManager.getActiveSessionCount() : 0
+          activeSessions,
+          allowAnonymous: this.config?.security?.allowAnonymous === true,
+          allowRawEval: this.config?.security?.allowRawEval === true
+        },
+        capabilities: {
+          jsEyesExtensionCompat: true,
+          jsEyesCliCompat: 'partial',
+          nativeHostManaged: false,
+          skillsManagedByJsEyes: false
         },
         extensionWsPort: this.config?.extensionWebSocket?.port,
-        activeExtensionConnections: this.extensionWebSocketServer ? this.extensionWebSocketServer.getActiveClients() : 0
+        activeExtensionConnections: connectionStats.extensionCount,
+        automationClients: connectionStats.automationClients,
+        tabs
       };
     }
     
