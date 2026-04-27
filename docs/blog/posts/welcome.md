@@ -66,7 +66,7 @@ AI remembers conversation context and understands your habits:
 
 ```bash
 # Clone the repository
-git clone https://github.com/imjszhang/deepseek-cowork.git
+git clone https://github.com/imjszhang/Deepseek-Cowork.git
 
 # Install dependencies
 cd deepseek-cowork
@@ -85,7 +85,7 @@ DeepSeek Cowork is an open-source project, and community contributions are welco
 - 🔧 Submit PRs to contribute code
 - 📖 Improve documentation
 
-Visit the [GitHub repository](https://github.com/imjszhang/deepseek-cowork) to learn more.
+Visit the [GitHub repository](https://github.com/imjszhang/Deepseek-Cowork) to learn more.
 
 ---
 

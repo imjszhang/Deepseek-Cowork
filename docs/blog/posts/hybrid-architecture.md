@@ -64,5 +64,5 @@ This **Hybrid architecture** precisely balances "cloud convenience" with "local 
 If you're also interested in this architecture, or want to try this open-source AI assistant, welcome to visit:
 
 - **Project Website**: [https://deepseek-cowork.com](https://deepseek-cowork.com)
-- **GitHub Repository**: [DeepSeek Cowork](https://github.com/imjszhang/deepseek-cowork)
+- **GitHub Repository**: [DeepSeek Cowork](https://github.com/imjszhang/Deepseek-Cowork)
 - **Follow me on X**: [@imjszhang](https://x.com/imjszhang)

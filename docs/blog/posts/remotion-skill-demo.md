@@ -176,5 +176,5 @@ Next time I need to learn a new framework, I probably won't start with the docs.
 Want to try conversational development?
 
 - **Website**: [deepseek-cowork.com](https://deepseek-cowork.com)
-- **GitHub**: [DeepSeek Cowork](https://github.com/imjszhang/deepseek-cowork)
+- **GitHub**: [DeepSeek Cowork](https://github.com/imjszhang/Deepseek-Cowork)
 - **Follow me**: [@imjszhang](https://x.com/imjszhang)

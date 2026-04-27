@@ -1,6 +1,6 @@
 {
   "name": "deepseek-cowork",
-  "version": "0.1.35",
+  "version": "0.2.0",
   "description": "Open-Source Alternative to Claude Cowork - CLI Tool",
   "author": "imjszhang",
   "license": "MIT",
@@ -50,11 +50,11 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/imjszhang/deepseek-cowork.git"
+    "url": "git+https://github.com/imjszhang/Deepseek-Cowork.git"
   },
   "homepage": "https://deepseek-cowork.com",
   "bugs": {
-    "url": "https://github.com/imjszhang/deepseek-cowork/issues"
+    "url": "https://github.com/imjszhang/Deepseek-Cowork/issues"
   },
   "publishConfig": {
     "registry": "https://registry.npmjs.org",

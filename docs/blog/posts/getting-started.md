@@ -24,7 +24,7 @@ Suitable for most users, provides a complete desktop application experience.
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/imjszhang/deepseek-cowork.git
+git clone https://github.com/imjszhang/Deepseek-Cowork.git
 
 # 2. Navigate to project directory
 cd deepseek-cowork
@@ -130,8 +130,8 @@ If you receive an AI response, the configuration is successful!
 
 After installation, you can:
 
-- Read the [full documentation](https://github.com/imjszhang/deepseek-cowork)
-- Join [community discussions](https://github.com/imjszhang/deepseek-cowork/discussions)
+- Read the [full documentation](https://github.com/imjszhang/Deepseek-Cowork)
+- Join [community discussions](https://github.com/imjszhang/Deepseek-Cowork/discussions)
 - Try [example tasks](#example-tasks)
 
 ## Example Tasks
@@ -158,4 +158,4 @@ Use this contact list to batch fill registration forms
 
 ---
 
-Having issues? Feel free to ask on [GitHub Issues](https://github.com/imjszhang/deepseek-cowork/issues)!
+Having issues? Feel free to ask on [GitHub Issues](https://github.com/imjszhang/Deepseek-Cowork/issues)!

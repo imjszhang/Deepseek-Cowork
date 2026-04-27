@@ -248,13 +248,13 @@ try {
         
         // happy-cli 运行时依赖（daemon 启动所需）
         "@agentclientprotocol/sdk": "^0.8.0",
-        "@modelcontextprotocol/sdk": "^1.22.0",
+        "@modelcontextprotocol/sdk": "^1.29.0",
         "@stablelib/base64": "^2.0.1",
         "@stablelib/hex": "^2.0.1",
         "ai": "^5.0.107",
         "cross-spawn": "^7.0.6",
         "expo-server-sdk": "^3.15.0",
-        "fastify": "^5.6.2",
+        "fastify": "^5.8.5",
         "fastify-type-provider-zod": "4.0.2",
         "http-proxy": "^1.18.1",
         "http-proxy-middleware": "^3.0.5",
@@ -335,11 +335,11 @@ try {
         },
         repository: {
             type: "git",
-            url: "git+https://github.com/imjszhang/deepseek-cowork.git"
+            url: "git+https://github.com/imjszhang/Deepseek-Cowork.git"
         },
         homepage: "https://deepseek-cowork.com",
         bugs: {
-            url: "https://github.com/imjszhang/deepseek-cowork/issues"
+            url: "https://github.com/imjszhang/Deepseek-Cowork/issues"
         },
         publishConfig: {
             registry: "https://registry.npmjs.org",
