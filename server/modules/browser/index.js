@@ -8,7 +8,7 @@ const express = require('express');
 const path = require('path');
 const cors = require('cors');
 const fs = require('fs');
-const { v4: uuidv4 } = require('uuid');
+const crypto = require('crypto');
 const { EventEmitter } = require('events');
 
 // 导入模块内部组件
@@ -754,7 +754,7 @@ function setupBrowserControlService(options = {}) {
           });
         }
         
-        const finalRequestId = requestId || uuidv4();
+        const finalRequestId = requestId || crypto.randomUUID();
         
         if (this.callbackManager) {
           await this.callbackManager.registerCallback(finalRequestId, callbackUrl || '_internal');
@@ -790,7 +790,7 @@ function setupBrowserControlService(options = {}) {
           });
         }
         
-        const finalRequestId = requestId || uuidv4();
+        const finalRequestId = requestId || crypto.randomUUID();
         
         if (this.callbackManager) {
           await this.callbackManager.registerCallback(finalRequestId, callbackUrl || '_internal');
@@ -824,7 +824,7 @@ function setupBrowserControlService(options = {}) {
           });
         }
         
-        const finalRequestId = requestId || uuidv4();
+        const finalRequestId = requestId || crypto.randomUUID();
         
         if (this.callbackManager) {
           await this.callbackManager.registerCallback(finalRequestId, callbackUrl || '_internal');
@@ -858,7 +858,7 @@ function setupBrowserControlService(options = {}) {
           });
         }
         
-        const finalRequestId = requestId || uuidv4();
+        const finalRequestId = requestId || crypto.randomUUID();
         
         if (this.callbackManager) {
           await this.callbackManager.registerCallback(finalRequestId, callbackUrl || '_internal');
@@ -893,7 +893,7 @@ function setupBrowserControlService(options = {}) {
           });
         }
         
-        const finalRequestId = requestId || uuidv4();
+        const finalRequestId = requestId || crypto.randomUUID();
         
         if (this.callbackManager) {
           await this.callbackManager.registerCallback(finalRequestId, callbackUrl || '_internal');
@@ -928,7 +928,7 @@ function setupBrowserControlService(options = {}) {
           });
         }
         
-        const finalRequestId = requestId || uuidv4();
+        const finalRequestId = requestId || crypto.randomUUID();
         
         if (this.callbackManager) {
           await this.callbackManager.registerCallback(finalRequestId, callbackUrl || '_internal');
@@ -965,7 +965,7 @@ function setupBrowserControlService(options = {}) {
           });
         }
         
-        const finalRequestId = requestId || uuidv4();
+        const finalRequestId = requestId || crypto.randomUUID();
         
         if (this.callbackManager) {
           await this.callbackManager.registerCallback(finalRequestId, callbackUrl || '_internal');

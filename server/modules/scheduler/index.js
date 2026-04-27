@@ -34,6 +34,17 @@ function getSubDir(subPath) {
   return path.join(getWorkDir(), subPath);
 }
 
+function createStoppedCronTask(schedule, handler, timezone) {
+  if (typeof cron.createTask === 'function') {
+    return cron.createTask(schedule, handler, { timezone });
+  }
+
+  return cron.schedule(schedule, handler, {
+    scheduled: false,
+    timezone
+  });
+}
+
 /**
  * 获取配置文件路径（按优先级查找）
  * 优先级1: {workDir}/config/scheduler-config.json
@@ -658,12 +669,9 @@ class InternalScheduler extends EventEmitter {
           // 定时任务使用 node-cron 调度
           // 使用配置中的时区，如果没有则默认使用 Asia/Shanghai
           const timezone = this.config.settings?.timezone || 'Asia/Shanghai';
-          task = cron.schedule(taskConfig.schedule, () => {
+          task = createStoppedCronTask(taskConfig.schedule, () => {
             this.executeTask(taskId, taskConfig);
-          }, {
-            scheduled: false,
-            timezone
-          });
+          }, timezone);
         }
         
         // 注册任务到内存映射
@@ -1262,12 +1270,9 @@ class InternalScheduler extends EventEmitter {
           let task = null;
           
           if (type === 'cron') {
-            task = cron.schedule(taskConfig.schedule, () => {
+            task = createStoppedCronTask(taskConfig.schedule, () => {
               this.executeTask(taskId, taskConfig);
-            }, {
-              scheduled: false,
-              timezone
-            });
+            }, timezone);
           }
           
           this.tasks.set(taskId, {
@@ -1527,12 +1532,9 @@ class InternalScheduler extends EventEmitter {
 
       if (type === 'cron') {
         const timezone = this.config.settings?.timezone || 'Asia/Shanghai';
-        task = cron.schedule(taskConfig.schedule, () => {
+        task = createStoppedCronTask(taskConfig.schedule, () => {
           this.executeTask(taskId, taskConfig);
-        }, {
-          scheduled: false,
-          timezone
-        });
+        }, timezone);
       }
 
       // 注册任务到内存映射

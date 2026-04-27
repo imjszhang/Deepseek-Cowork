@@ -5,7 +5,7 @@
  */
 
 const WebSocket = require('ws');
-const { v4: uuidv4 } = require('uuid');
+const crypto = require('crypto');
 const Logger = require('./logger');
 const { browserEventEmitter } = require('./event-emitter');
 
@@ -752,7 +752,7 @@ class ExtensionWebSocketServer {
      * @param {string} clientAddress 客户端地址
      */
     async initiateAuthHandshake(socket, request, clientType, clientAddress) {
-        const socketId = uuidv4();
+        const socketId = crypto.randomUUID();
         
         // 生成 challenge
         const { challenge, expiresAt } = this.authManager.generateChallenge();
@@ -892,7 +892,7 @@ class ExtensionWebSocketServer {
             }
             
             // 认证成功，创建会话
-            const clientId = data.clientId || uuidv4();
+            const clientId = data.clientId || crypto.randomUUID();
             const session = this.authManager.createSession(clientId, clientType);
             
             // 记录认证成功
@@ -998,7 +998,7 @@ class ExtensionWebSocketServer {
             }
         }
 
-        const clientId = uuidv4();
+        const clientId = crypto.randomUUID();
         const clientAddress = `${request.socket.remoteAddress}:${request.socket.remotePort}`;
         const now = Date.now();
         
@@ -1090,7 +1090,7 @@ class ExtensionWebSocketServer {
      * @param {string|null} sessionId 会话ID（认证后传入）
      */
     async handleAutomationClient(socket, request, sessionId) {
-        const clientId = uuidv4();
+        const clientId = crypto.randomUUID();
         const clientAddress = `${request.socket.remoteAddress}:${request.socket.remotePort}`;
         const now = Date.now();
         

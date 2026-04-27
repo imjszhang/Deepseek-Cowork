@@ -9,7 +9,6 @@
  */
 
 const crypto = require('crypto');
-const { v4: uuidv4 } = require('uuid');
 const fs = require('fs');
 const path = require('path');
 const Logger = require('./logger');
@@ -215,7 +214,7 @@ class AuthManager {
    * @returns {Object} { sessionId: string, expiresAt: Date, permissions: string[] }
    */
   createSession(clientId, clientType = 'unknown') {
-    const sessionId = uuidv4();
+    const sessionId = crypto.randomUUID();
     const expiresAt = new Date(Date.now() + this.config.sessionTTL * 1000);
 
     // 定义权限（目前所有认证用户权限相同）
