@@ -87,6 +87,11 @@ function listConfig(userSettings, config) {
     console.log(`  happy.claudeCode.baseUrl:          ${claudeCode.baseUrl || '(default)'}`);
     console.log(`  happy.claudeCode.model:            ${claudeCode.model || '(default)'}`);
     console.log(`  happy.claudeCode.smallFastModel:   ${claudeCode.smallFastModel || '(default)'}`);
+    console.log(`  happy.claudeCode.defaultOpusModel: ${claudeCode.defaultOpusModel || '(default)'}`);
+    console.log(`  happy.claudeCode.defaultSonnetModel: ${claudeCode.defaultSonnetModel || '(default)'}`);
+    console.log(`  happy.claudeCode.defaultHaikuModel: ${claudeCode.defaultHaikuModel || '(default)'}`);
+    console.log(`  happy.claudeCode.subagentModel:    ${claudeCode.subagentModel || '(default)'}`);
+    console.log(`  happy.claudeCode.effortLevel:      ${claudeCode.effortLevel || '(default)'}`);
     console.log(`  happy.claudeCode.timeoutMs:        ${claudeCode.timeoutMs || 600000}`);
     
     // 路径信息

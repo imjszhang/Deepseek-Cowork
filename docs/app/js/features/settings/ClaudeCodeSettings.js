@@ -261,11 +261,20 @@ class ClaudeCodeSettings {
         this.elements.saveSettingsBtn.textContent = t('common.saving');
       }
 
+      const provider = this.elements.providerSelect?.value || 'anthropic';
+      const model = this.elements.modelInput?.value?.trim() || null;
+      const isDeepSeek = provider === 'deepseek';
+      const deepSeekMainModel = model || 'deepseek-v4-pro';
       const settings = {
-        provider: this.elements.providerSelect?.value || 'anthropic',
+        provider,
         baseUrl: this.elements.baseurlInput?.value?.trim() || null,
-        model: this.elements.modelInput?.value?.trim() || null,
-        smallFastModel: this.elements.modelInput?.value?.trim() || null, // 使用相同的模型
+        model,
+        smallFastModel: isDeepSeek ? 'deepseek-v4-flash' : model,
+        defaultOpusModel: isDeepSeek ? deepSeekMainModel : null,
+        defaultSonnetModel: isDeepSeek ? deepSeekMainModel : null,
+        defaultHaikuModel: isDeepSeek ? 'deepseek-v4-flash' : null,
+        subagentModel: isDeepSeek ? 'deepseek-v4-flash' : null,
+        effortLevel: isDeepSeek ? 'max' : null,
         timeoutMs: parseInt(this.elements.timeoutInput?.value) || 600000,
         disableNonessential: this.elements.disableNonessentialCheckbox?.checked || false
       };

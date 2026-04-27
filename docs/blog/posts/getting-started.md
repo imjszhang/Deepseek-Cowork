@@ -64,7 +64,7 @@ On first launch, you need to configure your DeepSeek API Key:
 ```json
 {
   "apiKey": "your-api-key-here",
-  "model": "deepseek-chat"
+  "model": "deepseek-v4-pro"
 }
 ```
 

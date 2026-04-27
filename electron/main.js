@@ -1583,6 +1583,21 @@ function setupIpcHandlers() {
       if (otherSettings.smallFastModel !== undefined) {
         userSettings.set('happy.claudeCode.smallFastModel', otherSettings.smallFastModel || null);
       }
+      if (otherSettings.defaultOpusModel !== undefined) {
+        userSettings.set('happy.claudeCode.defaultOpusModel', otherSettings.defaultOpusModel || null);
+      }
+      if (otherSettings.defaultSonnetModel !== undefined) {
+        userSettings.set('happy.claudeCode.defaultSonnetModel', otherSettings.defaultSonnetModel || null);
+      }
+      if (otherSettings.defaultHaikuModel !== undefined) {
+        userSettings.set('happy.claudeCode.defaultHaikuModel', otherSettings.defaultHaikuModel || null);
+      }
+      if (otherSettings.subagentModel !== undefined) {
+        userSettings.set('happy.claudeCode.subagentModel', otherSettings.subagentModel || null);
+      }
+      if (otherSettings.effortLevel !== undefined) {
+        userSettings.set('happy.claudeCode.effortLevel', otherSettings.effortLevel || null);
+      }
       if (otherSettings.timeoutMs !== undefined) {
         userSettings.set('happy.claudeCode.timeoutMs', otherSettings.timeoutMs);
       }
@@ -2026,9 +2041,19 @@ async function initializeHappyService() {
         // 如果没有任何环境变量需要注入，返回 null
         return Object.keys(env).length > 0 ? env : null;
       }
-      
-      if (claudeConfig.baseUrl) {
-        env.ANTHROPIC_BASE_URL = claudeConfig.baseUrl;
+
+      const preset = userSettings.getClaudeCodePreset(provider) || {};
+      const baseUrl = claudeConfig.baseUrl || preset.baseUrl;
+      const model = claudeConfig.model || preset.model;
+      const smallFastModel = claudeConfig.smallFastModel || preset.smallFastModel;
+      const defaultOpusModel = claudeConfig.defaultOpusModel || preset.defaultOpusModel;
+      const defaultSonnetModel = claudeConfig.defaultSonnetModel || preset.defaultSonnetModel;
+      const defaultHaikuModel = claudeConfig.defaultHaikuModel || preset.defaultHaikuModel;
+      const subagentModel = claudeConfig.subagentModel || preset.subagentModel;
+      const effortLevel = claudeConfig.effortLevel || preset.effortLevel;
+
+      if (baseUrl) {
+        env.ANTHROPIC_BASE_URL = baseUrl;
       }
       
       // 从安全存储获取 Auth Token
@@ -2036,12 +2061,32 @@ async function initializeHappyService() {
         env.ANTHROPIC_AUTH_TOKEN = secureSettings.getSecret('claude.authToken');
       }
       
-      if (claudeConfig.model) {
-        env.ANTHROPIC_MODEL = claudeConfig.model;
+      if (model) {
+        env.ANTHROPIC_MODEL = model;
       }
       
-      if (claudeConfig.smallFastModel) {
-        env.ANTHROPIC_SMALL_FAST_MODEL = claudeConfig.smallFastModel;
+      if (smallFastModel) {
+        env.ANTHROPIC_SMALL_FAST_MODEL = smallFastModel;
+      }
+
+      if (defaultOpusModel) {
+        env.ANTHROPIC_DEFAULT_OPUS_MODEL = defaultOpusModel;
+      }
+
+      if (defaultSonnetModel) {
+        env.ANTHROPIC_DEFAULT_SONNET_MODEL = defaultSonnetModel;
+      }
+
+      if (defaultHaikuModel) {
+        env.ANTHROPIC_DEFAULT_HAIKU_MODEL = defaultHaikuModel;
+      }
+
+      if (subagentModel) {
+        env.CLAUDE_CODE_SUBAGENT_MODEL = subagentModel;
+      }
+
+      if (effortLevel) {
+        env.CLAUDE_CODE_EFFORT_LEVEL = effortLevel;
       }
       
       if (claudeConfig.timeoutMs) {

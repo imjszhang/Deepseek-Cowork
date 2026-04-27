@@ -450,7 +450,7 @@ class SetupWizard {
       const t = typeof I18nManager !== 'undefined' ? I18nManager.t.bind(I18nManager) : (k) => k;
       if (provider === 'deepseek') {
         this.elements.apiHint.textContent = t('notifications.enterDeepSeekKey');
-        if (this.elements.model) this.elements.model.placeholder = 'deepseek-chat';
+        if (this.elements.model) this.elements.model.placeholder = 'deepseek-v4-pro';
       } else if (provider === 'anthropic') {
         this.elements.apiHint.textContent = t('notifications.enterAnthropicKey');
       } else {
@@ -507,7 +507,13 @@ class SetupWizard {
       
       if (provider === 'deepseek') {
         settings.baseUrl = 'https://api.deepseek.com/anthropic';
-        settings.model = model || 'deepseek-chat';
+        settings.model = model || 'deepseek-v4-pro';
+        settings.smallFastModel = 'deepseek-v4-flash';
+        settings.defaultOpusModel = settings.model;
+        settings.defaultSonnetModel = settings.model;
+        settings.defaultHaikuModel = 'deepseek-v4-flash';
+        settings.subagentModel = 'deepseek-v4-flash';
+        settings.effortLevel = 'max';
       } else if (provider === 'custom') {
         settings.baseUrl = baseUrl;
         settings.model = model;

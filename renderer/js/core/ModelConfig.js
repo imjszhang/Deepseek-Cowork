@@ -9,10 +9,15 @@
 // 模型配置映射表
 const MODEL_CONFIGS = {
   // DeepSeek 系列
-  'deepseek-chat': {
-    name: 'DeepSeek-V3.2',
-    contextSize: 128000,
-    maxOutput: 8000
+  'deepseek-v4-pro': {
+    name: 'DeepSeek-V4-Pro',
+    contextSize: 1000000,
+    maxOutput: 384000
+  },
+  'deepseek-v4-flash': {
+    name: 'DeepSeek-V4-Flash',
+    contextSize: 1000000,
+    maxOutput: 384000
   },
   'deepseek-reasoner': {
     name: 'DeepSeek-R1',
@@ -50,7 +55,7 @@ const MODEL_CONFIGS = {
 
 // Provider 到默认模型的映射
 const PROVIDER_DEFAULT_MODELS = {
-  'deepseek': 'deepseek-chat',
+  'deepseek': 'deepseek-v4-pro',
   'anthropic': 'claude-3-5-sonnet'
 };
 

@@ -21,7 +21,7 @@ class UsageDisplay {
     this.alwaysShowContextSize = true;
     
     // 模型配置状态
-    this.currentModel = null;        // 当前模型 ID (如 'deepseek-chat')
+    this.currentModel = null;        // 当前模型 ID (如 'deepseek-v4-pro')
     this.currentProvider = null;     // 当前 provider (如 'deepseek')
     this.currentModelConfig = null;  // 当前模型配置
   }
