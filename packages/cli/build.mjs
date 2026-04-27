@@ -93,8 +93,8 @@ const externalDeps = [
     'socket.io',
     'socket.io-client',
     'chokidar',
+    'node-cron',
     'ws',
-    'uuid',
     'sql.js',
     'axios',
     'libsodium-wrappers',
@@ -232,19 +232,19 @@ try {
         "ora": "^8.0.1",
         
         // 服务依赖
-        "express": "^4.18.2",
+        "express": "^4.22.1",
         "cors": "^2.8.5",
-        "socket.io": "^4.7.0",
-        "socket.io-client": "^4.7.0",
+        "socket.io": "^4.8.3",
+        "socket.io-client": "^4.8.3",
         "chokidar": "^3.6.0",
-        "ws": "^8.14.0",
-        "uuid": "^9.0.0",
-        "sql.js": "^1.11.0",
-        "axios": "^1.6.0",
+        "node-cron": "^4.2.1",
+        "ws": "^8.20.0",
+        "sql.js": "^1.14.1",
+        "axios": "^1.15.2",
         "libsodium-wrappers": "^0.7.13",
         
         // happy-cli 工具解压依赖
-        "tar": "^7.5.2",
+        "tar": "^7.5.13",
         
         // happy-cli 运行时依赖（daemon 启动所需）
         "@agentclientprotocol/sdk": "^0.8.0",

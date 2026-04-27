@@ -760,6 +760,18 @@ contextBridge.exposeInMainWorld('browserControlManager', {
    * @returns {Promise<Object>} 安装结果
    */
   installHappyCoder: () => ipcRenderer.invoke('deps:installHappyCoder'),
+
+  /**
+   * 自动安装 Claude Code
+   * @returns {Promise<Object>} 安装结果
+   */
+  installClaudeCode: () => ipcRenderer.invoke('deps:installClaudeCode'),
+
+  /**
+   * 自动升级 Claude Code
+   * @returns {Promise<Object>} 升级结果
+   */
+  upgradeClaudeCode: () => ipcRenderer.invoke('deps:upgradeClaudeCode'),
   
   /**
    * 获取安装指南

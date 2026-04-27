@@ -106,10 +106,10 @@ asar: true
 asarUnpack:
   # sql.js WASM 文件 - 需要解压才能正常加载
   - "**/sql.js/dist/sql-wasm.wasm"
-  # happy-cli 二进制工具 - 需要解压才能执行
+  # happy-cli 运行时入口与二进制工具 - 需要解压供外部 Node.js 执行
+  - "lib/happy-cli/bin/**/*"
+  - "lib/happy-cli/dist/**/*"
   - "lib/happy-cli/tools/**/*"
-  # happy-coder 包 - daemon 命令需要从外部 Node.js 执行
-  - "node_modules/happy-coder/**/*"
   # libsodium WASM 文件 - 加密功能需要
   - "node_modules/libsodium-wrappers/**/*"
   - "node_modules/libsodium/**/*"

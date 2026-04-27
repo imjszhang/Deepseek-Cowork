@@ -88,7 +88,7 @@
       <div id="titlebar-center" class="titlebar-section">
         <div id="product-info" class="product-info">
           <span class="product-name">DeepSeek Cowork</span>
-          <span class="product-version" id="product-version">V0.1.0</span>
+          <span class="product-version" id="product-version">V0.2.0</span>
         </div>
       </div>
       
@@ -820,6 +820,8 @@
                   </div>
                   
                   <div class="env-actions" id="claude-code-actions" style="display: none;">
+                    <button id="btn-auto-install-claude-code" class="btn-link" data-i18n="settings.installNow">Install Now</button>
+                    <button id="btn-upgrade-claude-code" class="btn-link" data-i18n="settings.upgradeNow" style="display: none;">Upgrade</button>
                     <button id="btn-install-claude-code" class="btn-link" data-i18n="settings.installGuide">Installation Guide</button>
                   </div>
                 </div>
@@ -955,7 +957,7 @@
                 </div>
                 <div class="setting-item" id="claude-model-item" style="display: none;">
                   <label data-i18n="settings.modelName">Model Name</label>
-                  <input type="text" id="claude-model" placeholder="deepseek-chat">
+                  <input type="text" id="claude-model" placeholder="deepseek-v4-pro">
                 </div>
                 <div class="setting-item">
                   <label data-i18n="settings.timeout">Timeout</label>
@@ -1352,6 +1354,7 @@
             </div>
             <div class="step-actions">
               <button class="btn-secondary" id="wizard-prev-2" data-i18n="common.previous">Previous</button>
+              <button class="btn-secondary" id="wizard-install-claude-btn" data-i18n="wizard.installNow">Install Now</button>
               <button class="btn-secondary" id="wizard-recheck-2" data-i18n="wizard.recheck">Re-check</button>
               <button class="btn-primary" id="wizard-next-2" disabled data-i18n="common.next">Next</button>
             </div>
@@ -1388,7 +1391,7 @@
               </div>
               <div class="form-group" id="wizard-model-group" style="display: none;">
                 <label for="wizard-model" data-i18n="wizard.modelNameLabel">Model Name</label>
-                <input type="text" id="wizard-model" class="form-input" placeholder="deepseek-chat">
+                <input type="text" id="wizard-model" class="form-input" placeholder="deepseek-v4-pro">
               </div>
               <p class="api-config-status" id="wizard-api-status"></p>
             </div>

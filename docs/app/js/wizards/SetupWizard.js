@@ -24,6 +24,7 @@ class SetupWizard {
     
     // 当前安装命令
     this.currentInstallCommand = null;
+    this.claudeActionInProgress = null;
     
     // DOM 元素
     this.elements = {};
@@ -53,6 +54,7 @@ class SetupWizard {
       
       // Step 2 元素
       prev2: document.getElementById('wizard-prev-2'),
+      installClaudeBtn: document.getElementById('wizard-install-claude-btn'),
       recheck2: document.getElementById('wizard-recheck-2'),
       next2: document.getElementById('wizard-next-2'),
       copyCommandBtn: document.getElementById('copy-command-btn'),
@@ -97,6 +99,7 @@ class SetupWizard {
     
     // Step 2 事件
     this.elements.prev2?.addEventListener('click', () => this.goToStep(1));
+    this.elements.installClaudeBtn?.addEventListener('click', () => this.installOrUpgradeClaudeCode());
     this.elements.recheck2?.addEventListener('click', () => this.recheckClaudeCode());
     this.elements.next2?.addEventListener('click', () => this.goToStep(3));
     this.elements.copyCommandBtn?.addEventListener('click', () => this.copyInstallCommand());
@@ -120,6 +123,67 @@ class SetupWizard {
     
     // Step 5 事件 (完成)
     this.elements.completeBtn?.addEventListener('click', () => this.complete());
+  }
+
+  getTranslator() {
+    return typeof I18nManager !== 'undefined' ? I18nManager.t.bind(I18nManager) : (k) => k;
+  }
+
+  setClaudeInstallStatus(message, type = 'info') {
+    const statusEl = this.elements.claudeInstallStatus;
+    if (!statusEl) return;
+
+    const icon = type === 'success' ? '✅' : type === 'error' ? '❌' : '⚠️';
+    statusEl.className = type === 'success' ? 'install-status success' : `install-status ${type}`;
+    statusEl.innerHTML = `
+      <span class="status-icon">${icon}</span>
+      <span class="status-text">${message}</span>
+    `;
+  }
+
+  getClaudeWizardActionMode(claudeCode) {
+    if (!claudeCode || claudeCode.status !== 'installed') return 'install';
+    if (claudeCode.source === 'npm') return 'upgrade';
+    return 'hidden';
+  }
+
+  updateClaudeInstallButton(claudeCode) {
+    const t = this.getTranslator();
+    const mode = this.getClaudeWizardActionMode(claudeCode);
+    const btn = this.elements.installClaudeBtn;
+    if (!btn) return;
+
+    btn.style.display = mode === 'hidden' ? 'none' : 'inline-flex';
+    btn.disabled = !!this.claudeActionInProgress;
+
+    if (this.claudeActionInProgress === 'install') {
+      btn.textContent = t('settings.installing');
+      return;
+    }
+    if (this.claudeActionInProgress === 'upgrade') {
+      btn.textContent = t('settings.upgrading');
+      return;
+    }
+
+    btn.textContent = mode === 'upgrade' ? t('settings.upgradeNow') : t('wizard.installNow');
+  }
+
+  getClaudeActionErrorMessage(result, action) {
+    const t = this.getTranslator();
+    switch (result?.errorCode) {
+      case 'npm_not_found':
+        return t('notifications.npmRequiredForClaudeCode');
+      case 'permission_denied':
+        return t('notifications.claudeCodePermissionDenied');
+      case 'unsupported_source':
+        return t('notifications.claudeCodeUpgradeUnsupported');
+      default: {
+        const fallback = action === 'upgrade'
+          ? t('notifications.claudeCodeUpgradeFailed')
+          : t('notifications.claudeCodeInstallFailed');
+        return result?.error ? `${fallback}: ${result.error}` : fallback;
+      }
+    }
   }
 
   /**
@@ -301,37 +365,25 @@ class SetupWizard {
    * 初始化 Claude Code 安装步骤
    */
   async initClaudeCodeStep() {
-    const statusEl = this.elements.claudeInstallStatus;
+    const t = this.getTranslator();
     const commandEl = this.elements.claudeCommandText;
     
     // 检测 Claude Code 状态
     const claudeCode = this.wizardRequirements?.critical?.find(c => c.id === 'claudeCode');
     
     if (claudeCode?.status === 'installed') {
-      // 已安装
-      if (statusEl) {
-        statusEl.className = 'install-status success';
-        statusEl.innerHTML = `
-          <span class="status-icon">✅</span>
-          <span class="status-text">Claude Code 已安装 (v${claudeCode.version || 'unknown'})</span>
-        `;
-      }
+      this.setClaudeInstallStatus(`Claude Code ${t('settings.installedVersion', { version: claudeCode.version || 'unknown' })}`, 'success');
       if (this.elements.next2) {
         this.elements.next2.disabled = false;
       }
     } else {
-      // 未安装，显示安装指南
-      if (statusEl) {
-        statusEl.className = 'install-status';
-        statusEl.innerHTML = `
-          <span class="status-icon">⚠️</span>
-          <span class="status-text">Claude Code 未安装，请按以下步骤安装</span>
-        `;
-      }
+      this.setClaudeInstallStatus(t('wizard.installClaudeMissing'));
       if (this.elements.next2) {
         this.elements.next2.disabled = true;
       }
     }
+
+    this.updateClaudeInstallButton(claudeCode);
     
     // 渲染安装命令
     const guide = claudeCode?.guide;
@@ -347,11 +399,56 @@ class SetupWizard {
     }
   }
 
+  async installOrUpgradeClaudeCode() {
+    const t = this.getTranslator();
+    const claudeCode = this.wizardRequirements?.critical?.find(c => c.id === 'claudeCode');
+    const action = this.getClaudeWizardActionMode(claudeCode) === 'upgrade' ? 'upgrade' : 'install';
+    const methodName = action === 'upgrade' ? 'upgradeClaudeCode' : 'installClaudeCode';
+
+    try {
+      this.claudeActionInProgress = action;
+      this.updateClaudeInstallButton(claudeCode);
+      this.setClaudeInstallStatus(
+        action === 'upgrade' ? t('settings.upgrading') : t('settings.installing'),
+        'info'
+      );
+
+      const result = await window.browserControlManager?.[methodName]?.();
+      if (result?.success) {
+        this.wizardRequirements = await window.browserControlManager?.recheckSetup?.();
+        this.renderRequirementsList();
+        await this.initClaudeCodeStep();
+
+        const successMessage = action === 'upgrade'
+          ? t('notifications.claudeCodeUpgraded')
+          : t('notifications.claudeCodeInstalled');
+        const versionSuffix = result?.status?.version ? ` (v${result.status.version})` : '';
+        this.showNotification(successMessage + versionSuffix, 'success');
+        return;
+      }
+
+      const errorMessage = this.getClaudeActionErrorMessage(result, action);
+      this.setClaudeInstallStatus(errorMessage, 'error');
+      this.showNotification(errorMessage, 'error');
+    } catch (error) {
+      console.error('[SetupWizard] Claude Code install action error:', error);
+      const fallback = action === 'upgrade'
+        ? t('notifications.claudeCodeUpgradeFailed')
+        : t('notifications.claudeCodeInstallFailed');
+      const message = `${fallback}: ${error.message}`;
+      this.setClaudeInstallStatus(message, 'error');
+      this.showNotification(message, 'error');
+    } finally {
+      this.claudeActionInProgress = null;
+      this.updateClaudeInstallButton(this.wizardRequirements?.critical?.find(c => c.id === 'claudeCode'));
+    }
+  }
+
   /**
    * 重新检测 Claude Code
    */
   async recheckClaudeCode() {
-    const t = typeof I18nManager !== 'undefined' ? I18nManager.t.bind(I18nManager) : (k) => k;
+    const t = this.getTranslator();
     const recheckBtn = this.elements.recheck2;
     
     if (recheckBtn) {
@@ -450,7 +547,7 @@ class SetupWizard {
       const t = typeof I18nManager !== 'undefined' ? I18nManager.t.bind(I18nManager) : (k) => k;
       if (provider === 'deepseek') {
         this.elements.apiHint.textContent = t('notifications.enterDeepSeekKey');
-        if (this.elements.model) this.elements.model.placeholder = 'deepseek-chat';
+        if (this.elements.model) this.elements.model.placeholder = 'deepseek-v4-pro';
       } else if (provider === 'anthropic') {
         this.elements.apiHint.textContent = t('notifications.enterAnthropicKey');
       } else {
@@ -492,7 +589,7 @@ class SetupWizard {
     }
     
     // 显示保存中状态
-    const t = typeof I18nManager !== 'undefined' ? I18nManager.t.bind(I18nManager) : (k) => k;
+    const t = this.getTranslator();
     if (this.elements.saveApi) {
       this.elements.saveApi.textContent = t('common.saving');
       this.elements.saveApi.disabled = true;
@@ -507,7 +604,13 @@ class SetupWizard {
       
       if (provider === 'deepseek') {
         settings.baseUrl = 'https://api.deepseek.com/anthropic';
-        settings.model = model || 'deepseek-chat';
+        settings.model = model || 'deepseek-v4-pro';
+        settings.smallFastModel = 'deepseek-v4-flash';
+        settings.defaultOpusModel = settings.model;
+        settings.defaultSonnetModel = settings.model;
+        settings.defaultHaikuModel = 'deepseek-v4-flash';
+        settings.subagentModel = 'deepseek-v4-flash';
+        settings.effortLevel = 'max';
       } else if (provider === 'custom') {
         settings.baseUrl = baseUrl;
         settings.model = model;
@@ -601,7 +704,7 @@ class SetupWizard {
       'anthropic': 'Anthropic (Official)',
       'custom': 'Custom'
     };
-    const t = typeof I18nManager !== 'undefined' ? I18nManager.t.bind(I18nManager) : (k) => k;
+    const t = this.getTranslator();
     // Try to get localized names
     const localizedNames = {
       'deepseek': 'DeepSeek',
@@ -615,7 +718,7 @@ class SetupWizard {
    * 跳过设置向导
    */
   async skip() {
-    const t = typeof I18nManager !== 'undefined' ? I18nManager.t.bind(I18nManager) : (k) => k;
+    const t = this.getTranslator();
     try {
       await window.browserControlManager?.skipSetup?.();
       this.hide();
@@ -629,7 +732,7 @@ class SetupWizard {
    * 完成设置向导
    */
   async complete() {
-    const t = typeof I18nManager !== 'undefined' ? I18nManager.t.bind(I18nManager) : (k) => k;
+    const t = this.getTranslator();
     try {
       await window.browserControlManager?.completeSetup?.();
       this.hide();
@@ -648,7 +751,7 @@ class SetupWizard {
    * 重新运行设置向导
    */
   async rerun() {
-    const t = typeof I18nManager !== 'undefined' ? I18nManager.t.bind(I18nManager) : (k) => k;
+    const t = this.getTranslator();
     try {
       // 重置向导状态
       await window.browserControlManager?.resetSetupWizard?.();

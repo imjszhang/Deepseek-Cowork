@@ -1,6 +1,6 @@
 {
   "name": "deepseek-cowork",
-  "version": "0.1.35",
+  "version": "0.2.0",
   "description": "Open-Source Alternative to Claude Cowork - Implement all Claude Cowork features using DeepSeek",
   "main": "electron/main.js",
   "scripts": {
@@ -8,6 +8,7 @@
     "dev": "electron . --enable-logging",
     "server": "node server/index.js",
     "server:pages": "node scripts/server-pages.js",
+    "check:claude-detector": "node scripts/check-claude-detector.js",
     "cli": "node packages/cli/bin/cli.mjs",
     "version:patch": "npm version patch --no-git-tag-version",
     "version:minor": "npm version minor --no-git-tag-version",
@@ -47,41 +48,63 @@
   "license": "MIT",
   "homepage": "./",
   "dependencies": {
-    "axios": "^1.6.0",
+    "axios": "^1.15.2",
     "chokidar": "^3.6.0",
     "cors": "^2.8.5",
-    "electron-updater": "^6.7.3",
-    "express": "^4.18.2",
-    "happy-coder": "file:./lib/happy-cli",
+    "electron-updater": "^6.8.3",
+    "express": "^4.22.1",
     "libsodium-wrappers": "^0.7.13",
-    "node-cron": "^3.0.3",
-    "socket.io": "^4.7.0",
-    "socket.io-client": "^4.7.0",
-    "sql.js": "^1.11.0",
-    "uuid": "^9.0.0",
-    "ws": "^8.14.0"
+    "node-cron": "^4.2.1",
+    "socket.io": "^4.8.3",
+    "socket.io-client": "^4.8.3",
+    "sql.js": "^1.14.1",
+    "ws": "^8.20.0"
   },
   "devDependencies": {
-    "electron": "^40.0.0",
-    "electron-builder": "^26.4.0",
+    "electron": "^40.9.2",
+    "electron-builder": "^26.8.1",
     "png-to-ico": "^2.1.8",
     "sharp": "^0.33.5"
   },
   "overrides": {
+    "anymatch": {
+      "picomatch": "^2.3.2"
+    },
+    "micromatch": {
+      "picomatch": "^2.3.2"
+    },
+    "minimatch@3": {
+      "brace-expansion": "^1.1.14"
+    },
+    "readdirp": {
+      "picomatch": "^2.3.2"
+    },
+    "tinyglobby": {
+      "picomatch": "^4.0.4"
+    },
+    "defu": "^6.1.7",
+    "flatted": "^3.4.2",
+    "follow-redirects": "^1.16.0",
     "rimraf": "^5.0.0",
     "glob": "^13.0.0",
-    "tar": "^7.5.2",
+    "lodash": "^4.18.1",
+    "postcss": "^8.5.12",
+    "qs": "^6.15.1",
+    "rollup": "^4.60.2",
+    "socket.io-parser": "^4.2.6",
+    "tar": "^7.5.13",
+    "vite": "^7.3.2",
+    "yaml": "^2.8.3",
     "boolean": "^4.0.0",
     "shelljs": "^0.10.0",
+    "express": {
+      "path-to-regexp": "0.1.13"
+    },
+    "router": {
+      "path-to-regexp": "^8.4.2"
+    },
     "shx": {
       "shelljs": "^0.10.0",
-      "glob": "^13.0.0"
-    },
-    "happy-coder": {
-      "shx": {
-        "shelljs": "^0.10.0",
-        "glob": "^13.0.0"
-      },
       "glob": "^13.0.0"
     }
   }

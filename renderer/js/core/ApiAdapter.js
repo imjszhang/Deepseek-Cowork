@@ -131,6 +131,8 @@ const API_MAPPING = {
     'deleteClaudeAuthToken': { method: 'PUT', path: '/api/settings/claude' },
     'getDependencyStatus': { method: 'GET', path: '/api/deps/status' },
     'checkAllDependencies': { method: 'GET', path: '/api/deps/check' },
+    'installClaudeCode': { method: 'POST', path: '/api/deps/install/claude-code' },
+    'upgradeClaudeCode': { method: 'POST', path: '/api/deps/upgrade/claude-code' },
     'clearLogs': { method: 'DELETE', path: '/api/logs' },
     'getServerLogs': { method: 'GET', path: '/api/logs' },
     
@@ -932,6 +934,8 @@ function createBrowserControlManagerPolyfill() {
         deleteClaudeAuthToken: createApiMethod('deleteClaudeAuthToken'),
         getDependencyStatus: createApiMethod('getDependencyStatus'),
         checkAllDependencies: createApiMethod('checkAllDependencies'),
+        installClaudeCode: createApiMethod('installClaudeCode'),
+        upgradeClaudeCode: createApiMethod('upgradeClaudeCode'),
         
         // ========== 浏览器控制 ==========
         getTabs: createApiMethod('getTabs'),

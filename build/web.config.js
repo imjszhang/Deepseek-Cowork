@@ -161,7 +161,7 @@ function processHtml(srcPath, destPath) {
     // 3. 在 Three.js 脚本后添加 Socket.IO 客户端库
     content = content.replace(
         /(<script src="https:\/\/cdnjs\.cloudflare\.com\/ajax\/libs\/three\.js\/[^"]+"><\/script>)/,
-        `$1\n  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>`
+        `$1\n  <script src="https://cdn.socket.io/4.8.3/socket.io.min.js"></script>`
     );
     
     // 4. 添加新的 JS 文件引用（仅当不存在时）

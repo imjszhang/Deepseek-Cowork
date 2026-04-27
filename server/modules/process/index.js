@@ -6,10 +6,10 @@
  */
 
 const { spawn, fork } = require('child_process');
+const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 const EventEmitter = require('events');
-const { v4: uuidv4 } = require('uuid');
 const processKiller = require('./process-killer');
 
 /**
@@ -685,7 +685,7 @@ function setupProcessService(options = {}) {
           throw new Error(`脚本文件不存在: ${absoluteScriptPath}`);
         }
 
-        const processId = taskId || uuidv4();
+        const processId = taskId || crypto.randomUUID();
         const processTimeout = timeout || this.processTimeout;
         const workingDir = cwd || this.workDir;
 
