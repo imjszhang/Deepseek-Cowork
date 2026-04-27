@@ -1470,6 +1470,22 @@ function setupIpcHandlers() {
     return result;
   });
 
+  ipcMain.handle('deps:installClaudeCode', async () => {
+    const result = await dependencyChecker.installClaudeCode();
+    if (result.success) {
+      dependencyStatus = dependencyChecker.checkAllDependencies();
+    }
+    return result;
+  });
+
+  ipcMain.handle('deps:upgradeClaudeCode', async () => {
+    const result = await dependencyChecker.upgradeClaudeCode();
+    if (result.success) {
+      dependencyStatus = dependencyChecker.checkAllDependencies();
+    }
+    return result;
+  });
+
   ipcMain.handle('deps:getInstallGuide', (event, component) => {
     return dependencyChecker.getInstallGuide(component);
   });

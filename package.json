@@ -1,6 +1,6 @@
 {
   "name": "deepseek-cowork",
-  "version": "0.1.35",
+  "version": "0.2.0",
   "description": "Open-Source Alternative to Claude Cowork - Implement all Claude Cowork features using DeepSeek",
   "main": "electron/main.js",
   "scripts": {
@@ -8,6 +8,7 @@
     "dev": "electron . --enable-logging",
     "server": "node server/index.js",
     "server:pages": "node scripts/server-pages.js",
+    "check:claude-detector": "node scripts/check-claude-detector.js",
     "cli": "node packages/cli/bin/cli.mjs",
     "version:patch": "npm version patch --no-git-tag-version",
     "version:minor": "npm version minor --no-git-tag-version",

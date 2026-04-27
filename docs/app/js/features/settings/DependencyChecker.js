@@ -18,6 +18,7 @@ class DependencyChecker {
     this.nodejs = null;
     this.happyCoder = null;
     this.claudeCode = null;
+    this.claudeActionInProgress = null;
     
     // DOM 元素
     this.elements = {};
@@ -53,7 +54,9 @@ class DependencyChecker {
       claudeCodeSource: document.getElementById('claude-code-source'),
       claudeCodePath: document.getElementById('claude-code-path'),
       claudeCodeActions: document.getElementById('claude-code-actions'),
-      installClaudeCodeBtn: document.getElementById('btn-install-claude-code')
+      autoInstallClaudeCodeBtn: document.getElementById('btn-auto-install-claude-code'),
+      installClaudeCodeBtn: document.getElementById('btn-install-claude-code'),
+      upgradeClaudeCodeBtn: document.getElementById('btn-upgrade-claude-code')
     };
   }
 
@@ -63,7 +66,23 @@ class DependencyChecker {
   bindEvents() {
     this.elements.refreshBtn?.addEventListener('click', () => this.refresh());
     this.elements.installNodejsBtn?.addEventListener('click', () => this.openNodeJsGuide());
+    this.elements.autoInstallClaudeCodeBtn?.addEventListener('click', () => this.installClaudeCode());
+    this.elements.upgradeClaudeCodeBtn?.addEventListener('click', () => this.upgradeClaudeCode());
     this.elements.installClaudeCodeBtn?.addEventListener('click', () => this.openClaudeCodeGuide());
+  }
+
+  getTranslator() {
+    return typeof I18nManager !== 'undefined' ? I18nManager.t.bind(I18nManager) : (k) => k;
+  }
+
+  applyDependencyStatus(result) {
+    const status = result?.status || result;
+    this.nodejs = status?.nodejs;
+    this.happyCoder = status?.happyCoder;
+    this.claudeCode = status?.claudeCode;
+    this.updateNodeJsUI(this.nodejs);
+    this.updateHappyCoderUI(this.happyCoder);
+    this.updateClaudeCodeUI(this.claudeCode);
   }
 
   /**
@@ -74,19 +93,7 @@ class DependencyChecker {
       console.log('[DependencyChecker] Loading...');
       const result = await window.browserControlManager.getDependencyStatus();
       console.log('[DependencyChecker] Result:', result);
-      
-      // 处理两种可能的响应格式
-      // 格式1: { success, nodejs, happyCoder, claudeCode } - 直接字段
-      // 格式2: { success, status: { nodejs, happyCoder, claudeCode } } - 包装格式
-      const status = result?.status || result;
-      
-      this.nodejs = status?.nodejs;
-      this.happyCoder = status?.happyCoder;
-      this.claudeCode = status?.claudeCode;
-      
-      this.updateNodeJsUI(this.nodejs);
-      this.updateHappyCoderUI(this.happyCoder);
-      this.updateClaudeCodeUI(this.claudeCode);
+      this.applyDependencyStatus(result);
     } catch (error) {
       console.error('[DependencyChecker] Load error:', error);
     }
@@ -96,7 +103,7 @@ class DependencyChecker {
    * 刷新依赖状态
    */
   async refresh() {
-    const t = typeof I18nManager !== 'undefined' ? I18nManager.t.bind(I18nManager) : (k) => k;
+    const t = this.getTranslator();
     
     try {
       if (this.elements.refreshBtn) {
@@ -106,17 +113,7 @@ class DependencyChecker {
       
       const result = await window.browserControlManager.checkAllDependencies();
       console.log('[DependencyChecker] Refresh result:', result);
-      
-      // 处理两种可能的响应格式
-      const status = result?.status || result;
-      
-      this.nodejs = status?.nodejs;
-      this.happyCoder = status?.happyCoder;
-      this.claudeCode = status?.claudeCode;
-      
-      this.updateNodeJsUI(this.nodejs);
-      this.updateHappyCoderUI(this.happyCoder);
-      this.updateClaudeCodeUI(this.claudeCode);
+      this.applyDependencyStatus(result);
       
       this.app?.showNotification?.(t('notifications.dependencyRefreshed'), 'success');
     } catch (error) {
@@ -194,7 +191,7 @@ class DependencyChecker {
   updateClaudeCodeUI(claudeCode) {
     if (!claudeCode) return;
     
-    const t = typeof I18nManager !== 'undefined' ? I18nManager.t.bind(I18nManager) : (k) => k;
+    const t = this.getTranslator();
     
     if (claudeCode.installed) {
       if (this.elements.claudeCodeBadge) {
@@ -211,9 +208,6 @@ class DependencyChecker {
         this.elements.claudeCodePath.textContent = this.shortenPath(claudeCode.path);
         this.elements.claudeCodePath.title = claudeCode.path || '';
       }
-      if (this.elements.claudeCodeActions) {
-        this.elements.claudeCodeActions.style.display = 'none';
-      }
     } else {
       if (this.elements.claudeCodeBadge) {
         this.elements.claudeCodeBadge.textContent = t('settings.notInstalled');
@@ -229,10 +223,9 @@ class DependencyChecker {
         this.elements.claudeCodePath.textContent = t('notifications.partialLimited');
         this.elements.claudeCodePath.title = '';
       }
-      if (this.elements.claudeCodeActions) {
-        this.elements.claudeCodeActions.style.display = 'flex';
-      }
     }
+
+    this.updateClaudeCodeActionButtons(claudeCode);
   }
 
   /**
@@ -260,6 +253,110 @@ class DependencyChecker {
     
     // 保留前 15 和后 20 个字符
     return path.substring(0, 15) + '...' + path.substring(path.length - 20);
+  }
+
+  getClaudeCodeActionMode(claudeCode = this.claudeCode) {
+    if (!claudeCode?.installed) return 'install';
+    if (claudeCode.source === 'npm') return 'upgrade';
+    return 'guide';
+  }
+
+  updateClaudeCodeActionButtons(claudeCode = this.claudeCode) {
+    const t = this.getTranslator();
+    const mode = this.getClaudeCodeActionMode(claudeCode);
+    const isInstalling = this.claudeActionInProgress === 'install';
+    const isUpgrading = this.claudeActionInProgress === 'upgrade';
+
+    if (this.elements.claudeCodeActions) {
+      this.elements.claudeCodeActions.style.display = mode === null ? 'none' : 'flex';
+    }
+
+    if (this.elements.autoInstallClaudeCodeBtn) {
+      this.elements.autoInstallClaudeCodeBtn.style.display = mode === 'install' ? 'inline-flex' : 'none';
+      this.elements.autoInstallClaudeCodeBtn.disabled = !!this.claudeActionInProgress;
+      this.elements.autoInstallClaudeCodeBtn.textContent = isInstalling
+        ? t('settings.installing')
+        : t('settings.installNow');
+    }
+
+    if (this.elements.upgradeClaudeCodeBtn) {
+      this.elements.upgradeClaudeCodeBtn.style.display = mode === 'upgrade' ? 'inline-flex' : 'none';
+      this.elements.upgradeClaudeCodeBtn.disabled = !!this.claudeActionInProgress;
+      this.elements.upgradeClaudeCodeBtn.textContent = isUpgrading
+        ? t('settings.upgrading')
+        : t('settings.upgradeNow');
+    }
+
+    if (this.elements.installClaudeCodeBtn) {
+      this.elements.installClaudeCodeBtn.style.display = mode === 'guide' || mode === 'install' ? 'inline-flex' : 'none';
+      this.elements.installClaudeCodeBtn.disabled = !!this.claudeActionInProgress;
+    }
+  }
+
+  getClaudeCodeActionErrorMessage(result, action) {
+    const t = this.getTranslator();
+    switch (result?.errorCode) {
+      case 'npm_not_found':
+        return t('notifications.npmRequiredForClaudeCode');
+      case 'permission_denied':
+        return t('notifications.claudeCodePermissionDenied');
+      case 'unsupported_source':
+        return t('notifications.claudeCodeUpgradeUnsupported');
+      default: {
+        const fallback = action === 'upgrade'
+          ? t('notifications.claudeCodeUpgradeFailed')
+          : t('notifications.claudeCodeInstallFailed');
+        return result?.error ? `${fallback}: ${result.error}` : fallback;
+      }
+    }
+  }
+
+  async runClaudeCodeAction(action) {
+    const t = this.getTranslator();
+    const methodName = action === 'upgrade' ? 'upgradeClaudeCode' : 'installClaudeCode';
+
+    try {
+      this.claudeActionInProgress = action;
+      this.updateClaudeCodeActionButtons();
+
+      const result = await window.browserControlManager?.[methodName]?.();
+      if (result?.success) {
+        if (result.status) {
+          this.claudeCode = result.status;
+          this.updateClaudeCodeUI(this.claudeCode);
+        }
+
+        const successMessage = action === 'upgrade'
+          ? t('notifications.claudeCodeUpgraded')
+          : t('notifications.claudeCodeInstalled');
+        const versionSuffix = result?.status?.version ? ` (v${result.status.version})` : '';
+        this.app?.showNotification?.(successMessage + versionSuffix, 'success');
+        return;
+      }
+
+      if (result?.status) {
+        this.claudeCode = result.status;
+        this.updateClaudeCodeUI(this.claudeCode);
+      }
+      this.app?.showNotification?.(this.getClaudeCodeActionErrorMessage(result, action), 'error');
+    } catch (error) {
+      console.error(`[DependencyChecker] Claude Code ${action} error:`, error);
+      const fallback = action === 'upgrade'
+        ? t('notifications.claudeCodeUpgradeFailed')
+        : t('notifications.claudeCodeInstallFailed');
+      this.app?.showNotification?.(`${fallback}: ${error.message}`, 'error');
+    } finally {
+      this.claudeActionInProgress = null;
+      this.updateClaudeCodeActionButtons();
+    }
+  }
+
+  async installClaudeCode() {
+    await this.runClaudeCodeAction('install');
+  }
+
+  async upgradeClaudeCode() {
+    await this.runClaudeCodeAction('upgrade');
   }
 
   /**
