@@ -78,7 +78,7 @@ class ConnectionGuide {
                         </svg>
                     </div>
                     <h2>连接本地服务</h2>
-                    <p>DeepSeek Cowork 需要本地服务来支持 AI 对话、文件管理和浏览器控制功能。</p>
+                    <p>DeepSeek Cowork 需要本地服务来支持 AI 对话、文件管理和本地工作流功能。</p>
                 </div>
                 
                 <div class="connection-status">

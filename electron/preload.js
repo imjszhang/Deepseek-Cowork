@@ -7,7 +7,7 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
 // 暴露管理 API 到渲染进程
-contextBridge.exposeInMainWorld('browserControlManager', {
+contextBridge.exposeInMainWorld('appBridge', {
   // ============ 服务器控制 ============
   
   /**
@@ -21,12 +21,6 @@ contextBridge.exposeInMainWorld('browserControlManager', {
    * @returns {Promise<Object>} 详细状态信息
    */
   getDetailedStatus: () => ipcRenderer.invoke('server:getDetailedStatus'),
-  
-  /**
-   * 获取浏览器扩展连接数
-   * @returns {Promise<number>} 连接数
-   */
-  getExtensionConnections: () => ipcRenderer.invoke('server:getExtensionConnections'),
   
   /**
    * 启动服务器
@@ -175,75 +169,6 @@ contextBridge.exposeInMainWorld('browserControlManager', {
     return () => ipcRenderer.removeListener('view-load-failed', handler);
   },
   
-  // ============ 服务器事件监听（来自内嵌服务器）============
-  
-  /**
-   * 监听标签页更新事件
-   * @param {Function} callback - 回调函数
-   * @returns {Function} 取消监听函数
-   */
-  onTabsUpdate: (callback) => {
-    const handler = (event, data) => callback(data);
-    ipcRenderer.on('server-event-tabs_update', handler);
-    return () => ipcRenderer.removeListener('server-event-tabs_update', handler);
-  },
-  
-  /**
-   * 监听标签页打开事件
-   * @param {Function} callback - 回调函数
-   * @returns {Function} 取消监听函数
-   */
-  onTabOpened: (callback) => {
-    const handler = (event, data) => callback(data);
-    ipcRenderer.on('server-event-tab_opened', handler);
-    return () => ipcRenderer.removeListener('server-event-tab_opened', handler);
-  },
-  
-  /**
-   * 监听标签页关闭事件
-   * @param {Function} callback - 回调函数
-   * @returns {Function} 取消监听函数
-   */
-  onTabClosed: (callback) => {
-    const handler = (event, data) => callback(data);
-    ipcRenderer.on('server-event-tab_closed', handler);
-    return () => ipcRenderer.removeListener('server-event-tab_closed', handler);
-  },
-  
-  /**
-   * 监听服务器错误事件
-   * @param {Function} callback - 回调函数
-   * @returns {Function} 取消监听函数
-   */
-  onServerError: (callback) => {
-    const handler = (event, data) => callback(data);
-    ipcRenderer.on('server-event-error', handler);
-    return () => ipcRenderer.removeListener('server-event-error', handler);
-  },
-
-  // ============ 浏览器标签页 API ============
-  
-  /**
-   * 获取所有标签页
-   * @returns {Promise<Object>} 标签页列表
-   */
-  getTabs: () => ipcRenderer.invoke('browser:getTabs'),
-  
-  /**
-   * 关闭标签页
-   * @param {number} tabId - 标签页 ID
-   * @returns {Promise<Object>} 结果
-   */
-  closeTab: (tabId) => ipcRenderer.invoke('browser:closeTab', tabId),
-  
-  /**
-   * 打开 URL
-   * @param {string} url - URL 地址
-   * @param {number} tabId - 可选的标签页 ID
-   * @returns {Promise<Object>} 结果
-   */
-  openUrl: (url, tabId) => ipcRenderer.invoke('browser:openUrl', url, tabId),
-
   // ============ AI 相关 API ============
   
   /**

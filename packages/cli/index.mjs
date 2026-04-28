@@ -78,6 +78,13 @@ export async function getConfig() {
 }
 
 /**
+ * 获取服务发现模块
+ */
+export async function getDiscovery() {
+    return require(join(LOCAL_SERVICE_PATH, 'discovery'));
+}
+
+/**
  * 获取用户设置模块
  */
 export async function getUserSettings() {
@@ -96,6 +103,7 @@ export default {
     LOCAL_SERVICE_PATH,
     getLocalService,
     getConfig,
+    getDiscovery,
     getUserSettings,
     getSecureSettings
 };

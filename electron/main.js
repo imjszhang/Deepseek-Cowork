@@ -2,7 +2,7 @@
  * DeepSeek Cowork - 主进程入口
  * 
  * 功能：
- * - 启动内嵌 browserControlServer（同进程）
+ * - 启动内嵌本地服务（同进程）
  * - 创建应用窗口
  * - 管理 BrowserView 加载管理界面
  * - 处理 IPC 通信
@@ -220,10 +220,6 @@ function setupIpcHandlers() {
     return serverManager ? serverManager.getDetailedStatus() : { running: false };
   });
 
-  ipcMain.handle('server:getExtensionConnections', () => {
-    return serverManager ? serverManager.getExtensionConnections() : 0;
-  });
-
   ipcMain.handle('server:start', async () => {
     if (serverManager) {
       return serverManager.start();
@@ -276,73 +272,6 @@ function setupIpcHandlers() {
       return serverManager.killProcessOnPort(port);
     }
     return false;
-  });
-
-  // ============ 浏览器标签页 ============
-
-  ipcMain.handle('browser:getTabs', async () => {
-    try {
-      const service = serverManager?.getService?.();
-      
-      if (service) {
-        // 尝试多种方式获取 tabsManager
-        let tabsManager = null;
-        if (typeof service.getTabsManager === 'function') {
-          tabsManager = service.getTabsManager();
-        } else if (service.tabsManager) {
-          tabsManager = service.tabsManager;
-        }
-        
-        if (tabsManager) {
-          const result = await tabsManager.getTabs();
-          console.log('[browser:getTabs] Success, tabs count:', result?.tabs?.length || 0);
-          return result;
-        }
-      }
-      return { status: 'error', message: '标签页管理器不可用', tabs: [] };
-    } catch (error) {
-      console.error('[browser:getTabs] Error:', error.message);
-      return { status: 'error', message: error.message, tabs: [] };
-    }
-  });
-
-  ipcMain.handle('browser:closeTab', async (event, tabId) => {
-    try {
-      const service = serverManager?.getService?.();
-      if (service) {
-        const extensionServer = service.getExtensionWebSocketServer?.();
-        if (extensionServer) {
-          return await extensionServer.sendMessage({
-            type: 'close_tab',
-            tabId: tabId,
-            requestId: `close_${tabId}_${Date.now()}`
-          });
-        }
-      }
-      return { status: 'error', message: '扩展服务器不可用' };
-    } catch (error) {
-      return { status: 'error', message: error.message };
-    }
-  });
-
-  ipcMain.handle('browser:openUrl', async (event, url, tabId) => {
-    try {
-      const service = serverManager?.getService?.();
-      if (service) {
-        const extensionServer = service.getExtensionWebSocketServer?.();
-        if (extensionServer) {
-          return await extensionServer.sendMessage({
-            type: 'open_url',
-            url: url,
-            tabId: tabId,
-            requestId: `open_${Date.now()}`
-          });
-        }
-      }
-      return { status: 'error', message: '扩展服务器不可用' };
-    } catch (error) {
-      return { status: 'error', message: error.message };
-    }
   });
 
   // ============ 视图控制 ============
@@ -472,35 +401,11 @@ function setupIpcHandlers() {
 
   // 保留旧的执行指令接口（使用 serverManager 的 AIAgent）
   ipcMain.handle('ai:executeInstruction', async (event, instruction, context = {}) => {
-    try {
-      if (serverManager) {
-        const service = serverManager.getService();
-        const aiAgent = service?.getAIAgent?.();
-        if (aiAgent) {
-          return await aiAgent.executeInstruction(instruction, context);
-        }
-      }
-      return { success: false, error: 'AI Agent 未配置' };
-    } catch (error) {
-      return { success: false, error: error.message };
-    }
+    return { success: false, error: 'AI Agent 未配置' };
   });
 
   ipcMain.handle('ai:getContext', async (event, type = 'full') => {
-    try {
-      if (serverManager) {
-        const service = serverManager.getService();
-        if (service) {
-          const { ContextBuilder } = require('../server/ai');
-          const contextBuilder = new ContextBuilder({ browserService: service });
-          return await contextBuilder.build({ type });
-        }
-      }
-      return null;
-    } catch (error) {
-      console.error('Failed to get browser context:', error);
-      return null;
-    }
+    return null;
   });
 
   ipcMain.handle('ai:getSession', () => {
@@ -2429,22 +2334,22 @@ async function checkAndInstallDependencies() {
     console.log(`  Electron Node.js: v${status.nodejs.electronBuiltin.version}`);
   }
   
-  // 检查并安装 happy-coder
+  // 检查并安装 happy CLI
   if (status.happyCoder.installed) {
-    console.log(`  happy-coder: v${status.happyCoder.version} (${status.happyCoder.source})`);
+    console.log(`  happy CLI: v${status.happyCoder.version} (${status.happyCoder.source})`);
     if (status.happyCoder.daemon.running) {
       console.log(`    Daemon: Running (PID: ${status.happyCoder.daemon.pid}, Port: ${status.happyCoder.daemon.port})`);
     }
   } else {
-    console.log('  happy-coder: Not installed, attempting to install...');
+    console.log('  happy CLI: Not installed, attempting to install...');
     
     // 尝试安装
     const installResult = await dependencyChecker.installHappyCoder();
     if (installResult.success) {
       status.happyCoder = installResult.status;
-      console.log(`  happy-coder: Installed v${status.happyCoder.version}`);
+      console.log(`  happy CLI: Installed v${status.happyCoder.version}`);
     } else {
-      console.error('  happy-coder: Installation failed -', installResult.error);
+      console.error('  happy CLI: Installation failed -', installResult.error);
     }
   }
   
@@ -2500,7 +2405,7 @@ async function bootstrap() {
     await initializeServerManager();
     console.log('Server manager initialized');
 
-    // 2. Start server (embedded mode) - with port conflict detection
+    // 2. Start or attach to the shared local backend
     let serverStarted = false;
     try {
       serverStarted = await serverManager.start();
@@ -2514,12 +2419,12 @@ async function bootstrap() {
         console.error('Port conflict detected:', conflict);
         
         let title, message;
-        if (conflict.conflict === 'cli') {
-          title = 'Service Conflict / 服务冲突';
-          message = `CLI service is running on port ${serverManager.config.port}.\n\nPlease run "dsc stop" in terminal to stop CLI service first.\n\nCLI 服务正在运行，请先在终端执行 "dsc stop" 停止 CLI 服务。`;
-        } else if (conflict.conflict === 'electron') {
+        if (conflict.conflict === 'electron') {
           title = 'Service Conflict / 服务冲突';
           message = `Another DeepSeek Cowork client is already running.\n\n另一个客户端已在运行。`;
+        } else if (conflict.conflict === 'incompatible') {
+          title = 'Service Version Conflict / 服务版本冲突';
+          message = `A DeepSeek Cowork service is running on port ${serverManager.config.port}, but its protocol is incompatible.\n\nPlease update both Electron and CLI, then restart the local service.\n\n端口上已有 DeepSeek Cowork 服务，但协议版本不兼容。请更新 Electron 和 CLI 后重启本地服务。`;
         } else {
           title = 'Port In Use / 端口被占用';
           message = `Port ${serverManager.config.port} is already in use by another program.\n\nPlease close that program before starting.\n\n端口被其他程序占用，请先关闭占用该端口的程序。`;

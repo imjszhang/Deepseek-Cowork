@@ -57,12 +57,6 @@ module.exports = {
     secret: null
   },
   
-  // 浏览器扩展 WebSocket 配置
-  extensionWebSocket: {
-    enabled: true,
-    maxClients: 1
-  },
-  
   // 日志配置
   logging: {
     level: 'info',

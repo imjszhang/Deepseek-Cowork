@@ -5,10 +5,8 @@
  */
 
 import chalk from 'chalk';
-import ora from 'ora';
 import open from 'open';
-import { getConfig } from '../index.mjs';
-import { readPidFile, isProcessRunning } from '../utils/process.mjs';
+import { getConfig, getDiscovery } from '../index.mjs';
 
 // 公域网站地址
 const PUBLIC_URL = 'https://deepseek-cowork.com';
@@ -19,25 +17,12 @@ const PUBLIC_URL = 'https://deepseek-cowork.com';
 export async function openCommand(options) {
     try {
         const config = await getConfig();
+        const discovery = await getDiscovery();
         const port = config.DEFAULT_HTTP_PORT;
         
         // 检查本地服务是否运行
-        const pid = readPidFile(config.getPidFilePath());
-        const isRunning = pid && isProcessRunning(pid);
-        
-        let serviceAvailable = false;
-        
-        if (isRunning) {
-            // 尝试连接本地服务
-            try {
-                const response = await fetch(`http://localhost:${port}/api/ping`, {
-                    signal: AbortSignal.timeout(2000)
-                });
-                serviceAvailable = response.ok;
-            } catch (e) {
-                // 服务未响应
-            }
-        }
+        const service = await discovery.discoverService({ port });
+        const serviceAvailable = service.sameApp && service.compatible;
         
         if (!serviceAvailable) {
             console.log(chalk.yellow('⚠  Local service is not running'));
@@ -45,7 +30,7 @@ export async function openCommand(options) {
             
             if (!options.local) {
                 // 询问是否启动服务
-                console.log('The web interface requires the local service to function properly.');
+                console.log('The app interface requires the local service to function properly.');
                 console.log('');
                 console.log(chalk.cyan('Start the service first:'));
                 console.log(chalk.white('  deepseek-cowork start --daemon'));
@@ -64,11 +49,11 @@ export async function openCommand(options) {
             // 打开本地界面（如果部署了本地前端）
             // 目前本地前端使用 Electron，这里打开的是公域网站连接本地服务
             url = `${PUBLIC_URL}?local=true`;
-            console.log(chalk.dim('Opening local interface...'));
+            console.log(chalk.dim('Opening local app interface...'));
         } else {
             // 打开公域网站
             url = PUBLIC_URL;
-            console.log(chalk.dim('Opening web interface...'));
+            console.log(chalk.dim('Opening app web interface...'));
         }
         
         // 打开浏览器
@@ -78,7 +63,7 @@ export async function openCommand(options) {
         console.log(chalk.green('✓'), `Opened ${chalk.cyan(url)}`);
         
         if (serviceAvailable) {
-            console.log(chalk.dim(`  Local service: http://localhost:${port}`));
+            console.log(chalk.dim(`  Local service: ${service.baseUrl}`));
         }
         console.log('');
         

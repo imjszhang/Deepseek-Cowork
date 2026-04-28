@@ -6,7 +6,7 @@
 
 import chalk from 'chalk';
 import ora from 'ora';
-import { getConfig } from '../index.mjs';
+import { getConfig, getDiscovery } from '../index.mjs';
 import { readPidFile, removePidFile, isProcessRunning, killProcess, waitForProcessExit } from '../utils/process.mjs';
 
 /**
@@ -17,16 +17,41 @@ export async function stopCommand(options) {
     
     try {
         const config = await getConfig();
+        const discovery = await getDiscovery();
         const pidPath = config.getPidFilePath();
         const pid = readPidFile(pidPath);
+        const service = await discovery.discoverService({ port: config.DEFAULT_HTTP_PORT });
         
         if (!pid) {
+            if (service.sameApp && service.compatible) {
+                spinner.info(`Local service is provided by ${service.startedBy || service.mode} (PID: ${service.pid || 'unknown'}). Not stopping it.`);
+                console.log(chalk.yellow('\nClose the Electron app to stop its embedded backend, or stop the CLI daemon that owns the PID file.'));
+                return;
+            }
             spinner.info('No running service found');
             removePidFile(pidPath);
             return;
         }
+
+        if (service.sameApp && service.compatible && service.pid !== pid) {
+            spinner.info(`Local service is provided by ${service.startedBy || service.mode} (PID: ${service.pid || 'unknown'}). Not stopping recorded PID ${pid}.`);
+            console.log(chalk.yellow('\nThe PID file does not match the active local backend and was removed.'));
+            removePidFile(pidPath);
+            return;
+        }
+
+        if (service.sameApp && service.compatible && service.mode !== 'cli') {
+            spinner.info(`Local service is provided by ${service.startedBy || service.mode} (PID: ${service.pid || 'unknown'}). Not stopping it.`);
+            console.log(chalk.yellow('\nClose the Electron app to stop its embedded backend.'));
+            return;
+        }
         
         if (!isProcessRunning(pid)) {
+            if (service.sameApp && service.compatible) {
+                spinner.info(`Local service is running without a matching CLI PID file (${service.startedBy || service.mode}, PID: ${service.pid || 'unknown'}). Not stopping it.`);
+                removePidFile(pidPath);
+                return;
+            }
             spinner.info('Service is not running (stale PID file removed)');
             removePidFile(pidPath);
             return;

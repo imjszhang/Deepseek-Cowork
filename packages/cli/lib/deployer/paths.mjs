@@ -67,15 +67,15 @@ export const APP_NAME = 'deepseek-cowork';
 export const USER_MODULES_DIR_NAME = 'user-server-modules';
 export const USER_MODULES_CONFIG_NAME = 'userServerModulesConfig.js';
 
-// Skill 相关常量
-export const SKILL_NAME = 'browser-control';
-export const SKILL_PATH = `.claude/skills/${SKILL_NAME}`;
-export const BACKUP_DIR = '.bcm-backups';
-
 // conversation-memory skill 常量
 export const CONVERSATION_MEMORY_SKILL_NAME = 'conversation-memory';
 export const CONVERSATION_MEMORY_SKILL_PATH = `.claude/skills/${CONVERSATION_MEMORY_SKILL_NAME}`;
 export const CONVERSATION_MEMORY_DATA_PATH = `.claude/data/${CONVERSATION_MEMORY_SKILL_NAME}`;
+
+// 主内置 Skill（当前仅保留 conversation-memory）
+export const SKILL_NAME = CONVERSATION_MEMORY_SKILL_NAME;
+export const SKILL_PATH = CONVERSATION_MEMORY_SKILL_PATH;
+export const BACKUP_DIR = '.bcm-backups';
 
 /**
  * 获取用户数据目录（跨平台）

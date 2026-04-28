@@ -3,8 +3,6 @@ title: Getting Started with DeepSeek Cowork
 date: 2026-01-21
 ---
 
-# Getting Started with DeepSeek Cowork
-
 This guide will help you quickly install and configure DeepSeek Cowork to start using your AI assistant.
 
 ## System Requirements
@@ -64,20 +62,18 @@ On first launch, you need to configure your DeepSeek API Key:
 ```json
 {
   "apiKey": "your-api-key-here",
-  "model": "deepseek-v4-pro"
+  "model": "deepseek-v4-pro[1m]"
 }
 ```
 
-## Install Browser Extension
+## Verify Local Service
 
-To use browser automation features, install the JS Eyes extension:
+DeepSeek Cowork relies on its local service for the desktop app, web UI, and CLI workflows.
 
-1. Open Chrome extensions page (`chrome://extensions/`)
-2. Enable "Developer mode"
-3. Click "Load unpacked"
-4. Select the `extensions/js-eyes` directory
-
-Once installed, the extension will automatically connect to the application.
+1. Start the application with `npm start` or `deepseek-cowork start --daemon`
+2. Open the desktop app or run `deepseek-cowork open`
+3. Confirm the API connection and workspace settings in the application
+4. Send a simple chat message to verify the assistant is ready
 
 ## Verify Installation
 
@@ -92,18 +88,18 @@ deepseek-cowork status
 
 Expected output:
 
-```
+```text
 DeepSeek Cowork v1.0.0
 Status: Running
 API: Connected
-Extension: Connected
+Explorer: Running
 ```
 
 ### Test Chat Function
 
 In the chat interface, enter:
 
-```
+```text
 Hello, please introduce yourself
 ```
 
@@ -115,11 +111,12 @@ If you receive an AI response, the configuration is successful!
 
 **A**: Check if the API Key is correct and ensure there are no extra spaces.
 
-### Q: Browser extension cannot connect
+### Q: Local service is not responding
 
 **A**: Try the following steps:
-1. Refresh the extension
-2. Restart the application
+
+1. Restart the application or daemon
+2. Check the service logs with `deepseek-cowork status`
 3. Check if the port is occupied
 
 ### Q: Application starts slowly
@@ -138,22 +135,22 @@ After installation, you can:
 
 Here are some tasks you can try:
 
-### Data Collection
+### Task Review
 
-```
-Extract product prices from these 5 links and organize them into a table
+```text
+Review the latest changes in this project and summarize the main risks
 ```
 
 ### File Organization
 
-```
+```text
 Sort files in my downloads folder by type
 ```
 
-### Form Filling
+### Session Follow-up
 
-```
-Use this contact list to batch fill registration forms
+```text
+Summarize what changed today and suggest the next three steps
 ```
 
 ---

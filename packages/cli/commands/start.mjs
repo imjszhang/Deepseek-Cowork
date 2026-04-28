@@ -10,68 +10,8 @@ import { spawn } from 'child_process';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import { existsSync, writeFileSync, readFileSync } from 'fs';
-import { getLocalService, getConfig, PROJECT_ROOT } from '../index.mjs';
-import { checkPort, writePidFile, readPidFile, isProcessRunning } from '../utils/process.mjs';
-
-/**
- * 检测端口冲突类型
- * @param {number} port 端口号
- * @returns {Promise<Object>} 冲突信息 { available, conflict, message }
- */
-async function checkPortConflict(port) {
-    // 先检查端口是否可用
-    const available = await checkPort(port);
-    if (available) {
-        return { available: true };
-    }
-    
-    // 端口被占用，尝试请求 /api/ping 检测服务类型
-    try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 2000);
-        
-        const response = await fetch(`http://localhost:${port}/api/ping`, {
-            signal: controller.signal
-        });
-        clearTimeout(timeoutId);
-        
-        if (response.ok) {
-            const data = await response.json();
-            
-            // 检查是否是自家服务
-            if (data.app === 'deepseek-cowork') {
-                if (data.mode === 'electron') {
-                    return {
-                        available: false,
-                        conflict: 'electron',
-                        message: 'DeepSeek Cowork client is already running'
-                    };
-                } else if (data.mode === 'cli') {
-                    return {
-                        available: false,
-                        conflict: 'cli',
-                        message: 'CLI service is already running'
-                    };
-                }
-            }
-        }
-        
-        // 响应成功但不是自家服务
-        return {
-            available: false,
-            conflict: 'other',
-            message: 'Port is occupied by another program'
-        };
-        
-    } catch (error) {
-        // 请求失败（超时、连接拒绝等），说明是其他程序占用
-        return {
-            available: false,
-            conflict: 'other',
-            message: 'Port is occupied by another program'
-        };
-    }
-}
+import { getLocalService, getConfig, getDiscovery, PROJECT_ROOT } from '../index.mjs';
+import { writePidFile, readPidFile, removePidFile, isProcessRunning } from '../utils/process.mjs';
 
 /**
  * 启动服务命令
@@ -87,27 +27,36 @@ export async function startCommand(options) {
         const workDir = options.workDir || null;
         const debug = options.debug || false;
         
-        // 检查是否已有服务运行
+        // 发现并复用已有同源服务
+        spinner.text = 'Discovering local service...';
+        const discovery = await getDiscovery();
+        const service = await discovery.discoverService({ port: httpPort });
+        if (!service.available && service.sameApp && service.compatible) {
+            spinner.succeed(`DeepSeek Cowork service is already running (${service.startedBy || service.mode}, PID: ${service.pid || 'unknown'})`);
+            console.log('');
+            console.log(chalk.green(`  HTTP:      ${service.baseUrl}`));
+            if (service.wsPort) {
+                console.log(chalk.green(`  WebSocket: ws://localhost:${service.wsPort}`));
+            }
+            console.log(chalk.dim('  Reusing the existing local backend.'));
+            return;
+        }
+
+        // 检查是否已有 CLI 记录的进程运行。PID 只作为辅助信息，端口发现才是服务事实。
         const existingPid = readPidFile(config.getPidFilePath());
         if (existingPid && isProcessRunning(existingPid)) {
-            spinner.fail(`DeepSeek Cowork is already running (PID: ${existingPid})`);
-            console.log(chalk.yellow('\nUse `deepseek-cowork status` to check status'));
-            console.log(chalk.yellow('Use `deepseek-cowork stop` to stop the service'));
+            spinner.fail(`A previous CLI service process is still running (PID: ${existingPid}), but it is not responding on port ${httpPort}`);
+            console.log(chalk.yellow('\nUse `deepseek-cowork status` to check details'));
+            console.log(chalk.yellow('Use `deepseek-cowork stop` to stop the recorded CLI process'));
             process.exit(1);
+        } else if (existingPid) {
+            removePidFile(config.getPidFilePath());
         }
-        
-        // 检查端口冲突
-        spinner.text = 'Checking port availability...';
-        const portStatus = await checkPortConflict(httpPort);
-        if (!portStatus.available) {
-            if (portStatus.conflict === 'electron') {
-                spinner.fail(`${portStatus.message} (port ${httpPort})`);
-                console.log('');
-                console.log(chalk.yellow('Please close the Electron client before starting CLI service.'));
-            } else if (portStatus.conflict === 'cli') {
-                spinner.fail(`${portStatus.message} (port ${httpPort})`);
-                console.log('');
-                console.log(chalk.yellow('Use `dsc stop` to stop the existing service first.'));
+
+        if (!service.available) {
+            if (service.sameApp && !service.compatible) {
+                spinner.fail(`DeepSeek Cowork service on port ${httpPort} uses an incompatible protocol`);
+                console.log(chalk.yellow('\nPlease update both Electron and CLI, then restart the local service.'));
             } else {
                 spinner.fail(`Port ${httpPort} is already in use by another program`);
                 console.log('');
@@ -178,7 +127,7 @@ export async function startCommand(options) {
                     console.log(chalk.green(`  HTTP:      http://localhost:${httpPort}`));
                     console.log(chalk.green(`  WebSocket: ws://localhost:${wsPort}`));
                     console.log('');
-                    console.log(chalk.cyan('  Open web interface:'), chalk.white('deepseek-cowork open'));
+                    console.log(chalk.cyan('  Open app interface:'), chalk.white('deepseek-cowork open'));
                     console.log(chalk.cyan('  Check status:      '), chalk.white('deepseek-cowork status'));
                     console.log(chalk.cyan('  Stop service:      '), chalk.white('deepseek-cowork stop'));
                 } else {

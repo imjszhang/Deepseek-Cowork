@@ -9,7 +9,7 @@
 5. 做发布后校验
 
 > 约定：`develop` 是日常开发分支，`main` 只用于正式 release。  
-> 约定：下文用 `{VERSION}` 表示目标版本，例如 `0.2.0`。
+> 约定：下文用 `{VERSION}` 表示目标版本，例如 `0.3.0`。
 
 ## 1. 发布范围
 
@@ -159,7 +159,7 @@ gh release create v{VERSION} --title "v{VERSION}" --notes-file RELEASE_NOTES.md
 发布后检查：
 
 - Release 是否挂在 `main` 的正确提交上
-- 标题是否正确，例如 `v0.2.0`
+- 标题是否正确，例如 `v0.3.0`
 - `RELEASE_NOTES.md` 内容是否完整
 - 桌面端产物（如果上传）是否齐全
 

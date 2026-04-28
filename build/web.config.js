@@ -10,6 +10,7 @@ const path = require('path');
 const fs = require('fs');
 
 // 源目录和输出目录
+// renderer 是唯一源码，docs/app 是构建产物
 const SRC_DIR = path.join(__dirname, '../renderer');
 const OUT_DIR = path.join(__dirname, '../docs/app');
 
@@ -31,9 +32,6 @@ const JS_FILES = [
     'js/components/NotificationManager.js',
     'js/components/LogViewer.js',
     'js/components/ConnectionGuide.js',
-    'js/features/browser/BrowserControlModule.js',
-    'js/features/browser/services/ExtensionService.js',
-    'js/features/browser/services/ServerService.js',
     'js/features/explorer/ExplorerModule.js',
     'js/features/explorer/PreviewBackground.js',
     'js/features/explorer/services/ExplorerClient.js',
@@ -51,7 +49,6 @@ const JS_FILES = [
     'js/i18n/index.js',
     'js/i18n/locales/en-US.js',
     'js/i18n/locales/zh-CN.js',
-    'js/panels/BrowserPanel.js',
     'js/panels/ChatPanel.js',
     'js/panels/FilesPanel.js',
     'js/panels/SettingsPanel.js',
@@ -68,11 +65,11 @@ const JS_FILES = [
 
 // Electron 相关代码的替换规则
 // 注意：大部分替换已不需要，因为 ApiAdapter.js 中的 polyfill 会在 Web 模式下
-// 自动创建 window.browserControlManager 兼容层
+// 自动创建 window.appBridge 兼容层
 const ELECTRON_REPLACEMENTS = [
     // 移除 Electron 专用的窗口控制代码（最小化、最大化、关闭按钮）
     {
-        pattern: /if\s*\(\s*window\.browserControlManager\s*\)\s*\{[^}]*browserControlManager\.(minimize|maximize|close)Window[^}]*\}/g,
+        pattern: /if\s*\(\s*window\.appBridge\s*\)\s*\{[^}]*appBridge\.(minimize|maximize|close)Window[^}]*\}/g,
         replacement: '/* Electron window controls removed for web build */'
     }
 ];

@@ -67,7 +67,7 @@ class DaemonManager {
   async loadStatus() {
     try {
       console.log('[DaemonManager] Loading status...');
-      const result = await window.browserControlManager?.getDaemonStatus?.();
+      const result = await window.appBridge?.getDaemonStatus?.();
       
       console.log('[DaemonManager] getDaemonStatus result:', result);
       
@@ -179,7 +179,7 @@ class DaemonManager {
         this.elements.statusDot.className = 'daemon-status-dot starting';
       }
       
-      const result = await window.browserControlManager?.startDaemon?.();
+      const result = await window.appBridge?.startDaemon?.();
       
       if (result?.success) {
         NotificationManager?.success?.(t('notifications.daemonStarted'));
@@ -216,7 +216,7 @@ class DaemonManager {
         this.elements.statusDot.className = 'daemon-status-dot stopping';
       }
       
-      const result = await window.browserControlManager?.stopDaemon?.();
+      const result = await window.appBridge?.stopDaemon?.();
       
       if (result?.success) {
         NotificationManager?.success?.(t('notifications.daemonStopped'));
@@ -251,7 +251,7 @@ class DaemonManager {
         this.elements.statusDot.className = 'daemon-status-dot starting';
       }
       
-      const result = await window.browserControlManager?.restartDaemon?.();
+      const result = await window.appBridge?.restartDaemon?.();
       
       if (result?.success) {
         NotificationManager?.success?.(t('notifications.daemonRestarted'));

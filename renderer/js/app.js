@@ -16,13 +16,9 @@
  * Panels:
  * - ChatPanel -> panels/ChatPanel.js
  * - FilesPanel -> panels/FilesPanel.js
- * - BrowserPanel -> panels/BrowserPanel.js
  * - SettingsPanel -> panels/SettingsPanel.js
  * 
  * Features:
- * - BrowserControlModule -> features/browser/BrowserControlModule.js
- * - ExtensionService -> features/browser/services/ExtensionService.js
- * - ServerService -> features/browser/services/ServerService.js
  * - ExplorerModule -> features/explorer/ExplorerModule.js
  * - ExplorerClient -> features/explorer/services/ExplorerClient.js
  * - ExplorerSSE -> features/explorer/services/ExplorerSSE.js
@@ -40,11 +36,8 @@
  * - AccountSetup -> wizards/AccountSetup.js
  */
 
-class BrowserControlManagerApp {
+class DeepSeekCoworkApp {
   constructor() {
-    // BrowserControlModule 实例（管理服务器状态和扩展连接）
-    this.browserControlModule = new BrowserControlModule({ app: this });
-    
     // LogViewer 实例
     this.logViewer = new LogViewer({
       containerSelector: '#logs-list',
@@ -94,9 +87,6 @@ class BrowserControlManagerApp {
     
     // MobileDrawer 实例（移动版侧边栏抽屉）
     this.mobileDrawer = null; // 延迟初始化，在 init() 中创建
-    
-    // BrowserPanel 实例
-    this.browserPanel = new BrowserPanel(this);
     
     // ChatPanel 实例
     this.chatPanel = new ChatPanel(this);
@@ -187,7 +177,7 @@ class BrowserControlManagerApp {
     this.alwaysShowContextSize = true; // 是否始终显示上下文大小
     
     // 模型配置状态
-    this.currentModel = null;        // 当前模型 ID (如 'deepseek-v4-pro')
+    this.currentModel = null;        // 当前模型 ID (如 'deepseek-v4-pro[1m]')
     this.currentProvider = null;     // 当前 provider (如 'deepseek')
     this.currentModelConfig = MODEL_CONFIGS['default']; // 当前模型配置
     
@@ -348,9 +338,6 @@ class BrowserControlManagerApp {
     // 初始化 LogViewer
     this.logViewer.init();
     
-    // 初始化 BrowserPanel
-    this.browserPanel.init();
-    
     // 初始化 ChatPanel
     this.chatPanel.init();
     
@@ -396,14 +383,11 @@ class BrowserControlManagerApp {
       this.updateMobilePanelVisibility(true);
     }
     
-    // 初始化 BrowserControlModule（服务器状态、扩展连接管理）
-    await this.browserControlModule.init();
-    
-    // 设置非浏览器控制相关的事件监听器
+    // 设置其余通用事件监听器
     this.setupEventListeners();
     
-    // 检查初始状态（委托给 BrowserControlModule）
-    const status = await this.browserControlModule.checkInitialStatus();
+    // 主进程可能在渲染层监听就绪前已经完成服务启动，主动拉取一次状态兜底。
+    await this.loadServerStatus();
     
     // 在 Web 模式下初始化 WebSocket 连接
     await this.initWebSocket();
@@ -424,16 +408,6 @@ class BrowserControlManagerApp {
     
     // 加载依赖状态（Node.js、Claude Code 等）
     await this.loadDependencyStatus();
-    
-    // 加载标签页列表 - 只有在服务器运行时才加载
-    if (status && status.running) {
-      console.log('[init] Server is running, refreshing tabs...');
-      await new Promise(resolve => setTimeout(resolve, 500));
-      await this.refreshTabs(true);
-    } else {
-      console.log('[init] Server not running, showing empty state');
-      this._showBrowserEmptyState();
-    }
     
     // 检查是否需要显示设置向导（委托给 SetupWizard 模块）
     await this.setupWizard.checkAndShow();
@@ -497,7 +471,7 @@ class BrowserControlManagerApp {
     this.globalLoadingOverlay = document.getElementById('global-loading-overlay');
     this.globalLoadingText = this.globalLoadingOverlay?.querySelector('.loading-text');
     
-    // 状态栏元素已简化，主要状态由 BrowserControlModule 管理
+    // 状态栏元素已简化，由通用服务器状态更新逻辑管理
     
     // 日志面板
     this.logsList = document.getElementById('logs-list');
@@ -514,7 +488,6 @@ class BrowserControlManagerApp {
     // AI 侧边栏
     
     // 浏览器面板
-    this.refreshTabsBtn = document.getElementById('refresh-tabs-btn');
     
     // 设置面板 - 运行环境
     this.refreshDepsBtn = document.getElementById('btn-refresh-deps');
@@ -578,6 +551,8 @@ class BrowserControlManagerApp {
     this.resetWorkspaceBtn = document.getElementById('btn-reset-workspace');
     
     // 状态栏 - 工作目录
+    this.serverStatusDot = document.getElementById('server-status-dot');
+    this.serverStatusValue = document.getElementById('server-status-value');
     this.workspaceStatus = document.getElementById('workspace-status');
     this.statusWorkspacePath = document.getElementById('status-workspace-path');
     
@@ -756,9 +731,6 @@ class BrowserControlManagerApp {
     
     // 注意：AI 面板事件已由 ChatPanel.bindEvents() 处理，此处不再重复绑定
     
-    // 浏览器面板事件
-    this.refreshTabsBtn?.addEventListener('click', () => this.refreshTabs(true)); // 强制刷新，跳过节流
-    
     // 设置面板 - 运行环境事件（已移至 DependencyChecker 模块）
     // 注意：refreshDepsBtn, installNodejsBtn, installClaudeCodeBtn 事件由 DependencyChecker.init() 处理
     this.installHappyCoderBtn?.addEventListener('click', () => this.installHappyCoder());
@@ -838,8 +810,8 @@ class BrowserControlManagerApp {
       // Update AI status text (connected/disconnected)
       this.updateAIStatus({ isConnected: this.aiConnected });
       // Update server status text
-      if (this.serverStatus) {
-        this.updateServerStatus(this.serverStatus);
+      if (this._serverStatus) {
+        this.updateServerStatus(this._serverStatus);
       }
     });
 
@@ -999,25 +971,33 @@ class BrowserControlManagerApp {
 
   /**
    * 设置事件监听器
-   * 注意：服务器状态、日志、视图加载相关事件已迁移到 BrowserControlModule
+   * 设置应用级事件监听器
    */
   setupEventListeners() {
     // Check if API is available
-    if (typeof window.browserControlManager === 'undefined') {
-      console.error('browserControlManager API not available');
+    if (typeof window.appBridge === 'undefined') {
+      console.error('appBridge API not available');
       return;
     }
+
+    const serverStatusUnsub = window.appBridge.onServerStatusChanged?.((status) => {
+      this._serverStatus = status || null;
+      if (status) {
+        this.updateServerStatus(status);
+      }
+    });
+    if (serverStatusUnsub) this.unsubscribers.push(serverStatusUnsub);
 
     // ============ Happy AI 实时事件监听 ============
     
     // 监听 Happy AI 消息
-    const unsubHappyMessage = window.browserControlManager.onHappyMessage?.((data) => {
+    const unsubHappyMessage = window.appBridge.onHappyMessage?.((data) => {
       this.handleHappyMessage(data);
     });
     if (unsubHappyMessage) this.unsubscribers.push(unsubHappyMessage);
     
     // 监听 Happy AI 连接状态
-    const unsubHappyConnected = window.browserControlManager.onHappyConnected?.(async (data) => {
+    const unsubHappyConnected = window.appBridge.onHappyConnected?.(async (data) => {
       console.log('Happy AI connected:', data);
       this.aiConnected = true;
       this.currentSessionId = data.sessionId;
@@ -1043,7 +1023,7 @@ class BrowserControlManagerApp {
     if (unsubHappyConnected) this.unsubscribers.push(unsubHappyConnected);
     
     // 监听 Happy AI 断开连接
-    const unsubHappyDisconnected = window.browserControlManager.onHappyDisconnected?.((data) => {
+    const unsubHappyDisconnected = window.appBridge.onHappyDisconnected?.((data) => {
       console.log('Happy AI disconnected:', data);
       this.aiConnected = false;
       this._connectedMessageShown = false;  // 重置标志，以便重新连接时再次显示消息
@@ -1056,14 +1036,14 @@ class BrowserControlManagerApp {
     
     // 监听 Happy AI 事件状态
     // 后端已经延迟 100ms 发送 ready 事件，确保消息先被处理
-    const unsubHappyEventStatus = window.browserControlManager.onHappyEventStatus?.((data) => {
+    const unsubHappyEventStatus = window.appBridge.onHappyEventStatus?.((data) => {
       console.log('[App] Received happy:eventStatus:', data.eventType);
       this.updateHappyEventStatus(data.eventType);
     });
     if (unsubHappyEventStatus) this.unsubscribers.push(unsubHappyEventStatus);
     
     // 监听 Happy AI 错误
-    const unsubHappyError = window.browserControlManager.onHappyError?.((data) => {
+    const unsubHappyError = window.appBridge.onHappyError?.((data) => {
       console.error('Happy AI error:', data);
       const t = typeof I18nManager !== 'undefined' ? I18nManager.t.bind(I18nManager) : (k) => k;
       this.addAIMessage('system', `${t('chat.agentError')}: ${data.message}`);
@@ -1071,14 +1051,14 @@ class BrowserControlManagerApp {
     if (unsubHappyError) this.unsubscribers.push(unsubHappyError);
     
     // 监听 Happy AI 使用量更新（上下文窗口使用情况）
-    const unsubUsageUpdate = window.browserControlManager.onUsageUpdate?.((data) => {
+    const unsubUsageUpdate = window.appBridge.onUsageUpdate?.((data) => {
       console.log('[Usage Update]', data);
       this.updateUsageDisplay(data);
     });
     if (unsubUsageUpdate) this.unsubscribers.push(unsubUsageUpdate);
     
     // 监听消息恢复完成事件（从记忆系统恢复历史对话后刷新界面）
-    const unsubMessagesRestored = window.browserControlManager.onHappyMessagesRestored?.(async (data) => {
+    const unsubMessagesRestored = window.appBridge.onHappyMessagesRestored?.(async (data) => {
       console.log('[MessagesRestored] Restored messages:', data);
       // 清空当前显示并重新加载
       this.clearAIMessages();
@@ -1091,14 +1071,14 @@ class BrowserControlManagerApp {
     if (unsubMessagesRestored) this.unsubscribers.push(unsubMessagesRestored);
     
     // 监听 daemon 状态变化
-    const unsubDaemonStatus = window.browserControlManager.onDaemonStatusChanged?.((data) => {
+    const unsubDaemonStatus = window.appBridge.onDaemonStatusChanged?.((data) => {
       console.log('Daemon status changed:', data);
       this.updateDaemonUI(data);
     });
     if (unsubDaemonStatus) this.unsubscribers.push(unsubDaemonStatus);
     
     // 监听 daemon 启动进度
-    const unsubDaemonProgress = window.browserControlManager.onDaemonStartProgress?.((data) => {
+    const unsubDaemonProgress = window.appBridge.onDaemonStartProgress?.((data) => {
       console.log('Daemon start progress:', data);
       const t = typeof I18nManager !== 'undefined' ? I18nManager.t.bind(I18nManager) : (k) => k;
       // 将进度消息显示为系统消息
@@ -1108,7 +1088,7 @@ class BrowserControlManagerApp {
     if (unsubDaemonProgress) this.unsubscribers.push(unsubDaemonProgress);
     
     // 监听 Happy Service 热初始化完成事件（首次登录热初始化）
-    const unsubHappyInitialized = window.browserControlManager.onHappyInitialized?.(async (data) => {
+    const unsubHappyInitialized = window.appBridge.onHappyInitialized?.(async (data) => {
       console.log('[HappyInitialized] Hot initialization completed:', data);
       if (data.success) {
         // 刷新账户信息
@@ -1128,7 +1108,7 @@ class BrowserControlManagerApp {
     
     // 监听 Happy 初始状态事件（WebSocket 连接时发送）
     // 此事件在 WebSocket 连接建立时由后端发送，包含当前 AI 连接状态
-    const unsubHappyStatus = window.browserControlManager.onHappyStatus?.(async (data) => {
+    const unsubHappyStatus = window.appBridge.onHappyStatus?.(async (data) => {
       console.log('[HappyStatus] Initial status received:', data);
       // 更新 AI 连接状态
       if (data.clientConnected !== undefined) {
@@ -1162,13 +1142,13 @@ class BrowserControlManagerApp {
     // ============ 软件更新事件监听 ============
     
     // 监听更新检查中
-    const unsubUpdateChecking = window.browserControlManager.onUpdateChecking?.(() => {
+    const unsubUpdateChecking = window.appBridge.onUpdateChecking?.(() => {
       this.updateUpdateUI({ status: 'checking' });
     });
     if (unsubUpdateChecking) this.unsubscribers.push(unsubUpdateChecking);
     
     // 监听有新版本可用
-    const unsubUpdateAvailable = window.browserControlManager.onUpdateAvailable?.((data) => {
+    const unsubUpdateAvailable = window.appBridge.onUpdateAvailable?.((data) => {
       console.log('[Update] New version available:', data.version);
       this.updateUpdateUI({ status: 'available', updateInfo: data });
       const t = typeof I18nManager !== 'undefined' ? I18nManager.t.bind(I18nManager) : (k) => k;
@@ -1177,19 +1157,19 @@ class BrowserControlManagerApp {
     if (unsubUpdateAvailable) this.unsubscribers.push(unsubUpdateAvailable);
     
     // 监听无更新
-    const unsubUpdateNotAvailable = window.browserControlManager.onUpdateNotAvailable?.((data) => {
+    const unsubUpdateNotAvailable = window.appBridge.onUpdateNotAvailable?.((data) => {
       this.updateUpdateUI({ status: 'not-available', updateInfo: data });
     });
     if (unsubUpdateNotAvailable) this.unsubscribers.push(unsubUpdateNotAvailable);
     
     // 监听下载进度
-    const unsubUpdateProgress = window.browserControlManager.onUpdateDownloadProgress?.((data) => {
+    const unsubUpdateProgress = window.appBridge.onUpdateDownloadProgress?.((data) => {
       this.updateUpdateUI({ status: 'downloading', downloadProgress: data });
     });
     if (unsubUpdateProgress) this.unsubscribers.push(unsubUpdateProgress);
     
     // 监听下载完成
-    const unsubUpdateDownloaded = window.browserControlManager.onUpdateDownloaded?.((data) => {
+    const unsubUpdateDownloaded = window.appBridge.onUpdateDownloaded?.((data) => {
       console.log('[Update] Download complete:', data.version);
       this.updateUpdateUI({ status: 'downloaded', updateInfo: data });
       const t = typeof I18nManager !== 'undefined' ? I18nManager.t.bind(I18nManager) : (k) => k;
@@ -1198,7 +1178,7 @@ class BrowserControlManagerApp {
     if (unsubUpdateDownloaded) this.unsubscribers.push(unsubUpdateDownloaded);
     
     // 监听更新错误
-    const unsubUpdateError = window.browserControlManager.onUpdateError?.((data) => {
+    const unsubUpdateError = window.appBridge.onUpdateError?.((data) => {
       console.error('[Update] Error:', data.message);
       this.updateUpdateUI({ status: 'error', error: data });
     });
@@ -1250,7 +1230,7 @@ class BrowserControlManagerApp {
         this.aiAbortBtn.classList.add('aborting');
       }
       
-      const result = await window.browserControlManager?.abortSession?.(this.currentSessionId);
+      const result = await window.appBridge?.abortSession?.(this.currentSessionId);
       
       if (result?.success) {
         this.addAIMessage('system', t('chat.taskAborted'));
@@ -1458,18 +1438,6 @@ class BrowserControlManagerApp {
       // 切换到文件面板时初始化
       // 如果 workspaceRoot 为 null（表示目录已切换），会重新获取
       this.initFilesPanel();
-    } else if (panelId === 'browser') {
-      // 切换到浏览器面板时
-      // 首次切换时强制刷新，后续切换使用节流
-      const isFirstSwitch = this.browserPanel._lastTabsRefresh === 0;
-      
-      // 激活面板（初始化 Three.js 背景等）
-      this.browserPanel.onPanelActivate();
-      
-      // 先确保面板有内容显示（防止一片黑）
-      this._ensureBrowserPanelContent();
-      // 然后尝试刷新数据
-      this.refreshTabs(isFirstSwitch);
     }
   }
   
@@ -1566,45 +1534,83 @@ class BrowserControlManagerApp {
     WindowController.close();
   }
 
-  // ============ 扩展连接（委托给 BrowserControlModule）============
-
-  /**
-   * 更新扩展连接数（兼容性方法）
-   * @deprecated 请使用 browserControlModule.refreshExtensionConnections()
-   */
-  async updateExtensionConnections() {
-    return this.browserControlModule.refreshExtensionConnections();
-  }
-
-  // ============ 服务器状态（委托给 BrowserControlModule）============
+  // ============ 服务器状态 ============
 
   /**
    * 获取服务器状态
    * @returns {Object}
    */
   get serverStatus() {
-    return this.browserControlModule.getServerStatus();
+    return this._serverStatus || null;
+  }
+
+  /**
+   * 主动加载本地服务状态，用于补齐渲染进程错过启动事件的情况
+   */
+  async loadServerStatus() {
+    try {
+      const status = await window.appBridge?.getServerStatus?.();
+      if (status) {
+        this._serverStatus = status;
+        this.updateServerStatus(status);
+      }
+    } catch (error) {
+      console.error('[App] Failed to load server status:', error);
+      this.updateServerStatus({ running: false, error: error.message });
+    }
+  }
+
+  /**
+   * 更新底部状态栏的本地服务状态
+   * @param {Object} status 服务状态
+   */
+  updateServerStatus(status = {}) {
+    const t = typeof I18nManager !== 'undefined' ? I18nManager.t.bind(I18nManager) : (k) => k;
+    const dot = this.serverStatusDot || document.getElementById('server-status-dot');
+    const value = this.serverStatusValue || document.getElementById('server-status-value');
+
+    if (!dot || !value) {
+      return;
+    }
+
+    let state = 'stopped';
+    let textKey = 'status.stopped';
+
+    if (status.restarting) {
+      state = 'starting';
+      textKey = 'status.restarting';
+    } else if (status.running) {
+      state = 'running';
+      textKey = 'status.running';
+    } else if (status.error) {
+      state = 'error';
+      textKey = 'status.error';
+    }
+
+    dot.className = `status-dot state-${state}`;
+    value.textContent = t(textKey);
+    value.title = status.error || '';
   }
 
   /**
    * 刷新管理界面
    */
   async refreshView() {
-    return this.browserControlModule.refreshView();
+    return window.appBridge?.refreshView?.();
   }
 
   /**
    * 重启服务器
    */
   async restartServer() {
-    return this.browserControlModule.restartServer();
+    return window.appBridge?.restartServer?.();
   }
 
   /**
    * 切换开发者工具
    */
   async toggleDevTools() {
-    return this.browserControlModule.toggleDevTools();
+    return window.appBridge?.toggleDevTools?.();
   }
 
   /**
@@ -1634,44 +1640,6 @@ class BrowserControlManagerApp {
     if (spinner) spinner.style.display = 'none';
   }
 
-  // ============ 浏览器面板 ============
-  // 已迁移到 panels/BrowserPanel.js，以下为委托方法
-
-  /**
-   * 刷新标签页（委托给 BrowserPanel）
-   */
-  async refreshTabs(force = false) {
-    await this.browserPanel.refreshTabs(force);
-  }
-
-  /**
-   * 确保浏览器面板有内容（委托给 BrowserPanel）
-   */
-  _ensureBrowserPanelContent() {
-    this.browserPanel._ensureBrowserPanelContent();
-  }
-
-  /**
-   * 显示浏览器面板空状态（委托给 BrowserPanel）
-   */
-  _showBrowserEmptyState() {
-    this.browserPanel._showBrowserEmptyState();
-  }
-
-  /**
-   * 渲染浏览器标签页（委托给 BrowserPanel）
-   */
-  renderBrowserTabs(tabs) {
-    this.browserPanel.renderBrowserTabs(tabs);
-  }
-
-  /**
-   * 关闭标签页（委托给 BrowserPanel）
-   */
-  async closeTab(tabId) {
-    await this.browserPanel.closeTab(tabId);
-  }
-
   // ============ AI 面板 ============
   // 已迁移到 panels/ChatPanel.js，以下为委托方法
 
@@ -1689,8 +1657,8 @@ class BrowserControlManagerApp {
     try {
       if (this.productVersion) {
         // 检查 getAppVersion 方法是否存在且为函数
-        if (typeof window.browserControlManager?.getAppVersion === 'function') {
-          const versionInfo = await window.browserControlManager.getAppVersion();
+        if (typeof window.appBridge?.getAppVersion === 'function') {
+          const versionInfo = await window.appBridge.getAppVersion();
           if (versionInfo && versionInfo.version) {
             this.productVersion.textContent = `V${versionInfo.version}`;
           }
@@ -2034,7 +2002,7 @@ class BrowserControlManagerApp {
    */
   async clearLogs() {
     await this.logViewer.clear(async () => {
-      await window.browserControlManager.clearServerLogs?.();
+      await window.appBridge.clearServerLogs?.();
     });
   }
 
@@ -2078,7 +2046,7 @@ handleKeyDown(e) {
     // Ctrl+1-3 切换展示栏面板
     if (e.ctrlKey && e.key >= '1' && e.key <= '3') {
       e.preventDefault();
-      const panels = ['files', 'browser', 'settings'];
+      const panels = ['files', 'settings'];
       const index = parseInt(e.key) - 1;
       if (panels[index]) {
         this.switchPanel(panels[index]);
@@ -2120,7 +2088,7 @@ handleKeyDown(e) {
       // Ctrl+W 关闭当前标签
       if (e.ctrlKey && e.key === 'w' && this.activeTabId) {
         e.preventDefault();
-        this.closeTab(this.activeTabId);
+        this.closeFileTab(this.activeTabId);
       }
       
       // Ctrl+Tab / Ctrl+Shift+Tab 切换标签
@@ -2242,8 +2210,8 @@ handleKeyDown(e) {
   async initUpdateUI() {
     try {
       // 检查 getAppVersion 方法是否存在且为函数
-      if (typeof window.browserControlManager?.getAppVersion === 'function') {
-        const versionInfo = await window.browserControlManager.getAppVersion();
+      if (typeof window.appBridge?.getAppVersion === 'function') {
+        const versionInfo = await window.appBridge.getAppVersion();
         if (versionInfo && this.updateCurrentVersion) {
           this.updateCurrentVersion.textContent = `v${versionInfo.version}`;
         }
@@ -2269,7 +2237,7 @@ handleKeyDown(e) {
     try {
       this.updateUpdateUI({ status: 'checking' });
       
-      const result = await window.browserControlManager?.checkForUpdates();
+      const result = await window.appBridge?.checkForUpdates();
       
       if (!result?.success) {
         this.updateUpdateUI({ status: 'error', error: { message: result?.error || t('settings.updateCheckFailed') } });
@@ -2287,7 +2255,7 @@ handleKeyDown(e) {
     try {
       this.updateUpdateUI({ status: 'downloading', downloadProgress: { percent: 0 } });
       
-      const result = await window.browserControlManager?.downloadUpdate();
+      const result = await window.appBridge?.downloadUpdate();
       
       if (!result?.success) {
         const t = typeof I18nManager !== 'undefined' ? I18nManager.t.bind(I18nManager) : (k) => k;
@@ -2304,7 +2272,7 @@ handleKeyDown(e) {
    */
   quitAndInstall() {
     try {
-      window.browserControlManager?.quitAndInstall();
+      window.appBridge?.quitAndInstall();
     } catch (error) {
       console.error('[Update] Quit and install failed:', error);
     }
@@ -2437,7 +2405,7 @@ handleKeyDown(e) {
    */
   async updateDaemonClaudeCodeStatus() {
     try {
-      const settings = await window.browserControlManager.getClaudeCodeSettings();
+      const settings = await window.appBridge.getClaudeCodeSettings();
       const provider = settings?.provider || 'anthropic';
       const t = typeof I18nManager !== 'undefined' ? I18nManager.t.bind(I18nManager) : (k) => k;
       
@@ -2663,7 +2631,7 @@ handleKeyDown(e) {
     const t = typeof I18nManager !== 'undefined' ? I18nManager.t.bind(I18nManager) : (k) => k;
     try {
       this.showNotification(t('notifications.restartingApp'), 'info');
-      await window.browserControlManager.restartApp();
+      await window.appBridge.restartApp();
     } catch (error) {
       console.error('[restartApp] Error:', error);
       this.showNotification(t('notifications.restartFailed') + ': ' + error.message, 'error');
@@ -2677,7 +2645,7 @@ handleKeyDown(e) {
     const t = typeof I18nManager !== 'undefined' ? I18nManager.t.bind(I18nManager) : (k) => k;
     
     try {
-      const result = await window.browserControlManager?.selectWorkspaceDir?.();
+      const result = await window.appBridge?.selectWorkspaceDir?.();
 
       if (result?.success && result.path) {
         console.log('[selectWorkspaceDir] Selected:', result.path);
@@ -2686,7 +2654,7 @@ handleKeyDown(e) {
         this.showNotification(t('notifications.switchingWorkDir'), 'info');
         
         // 热切换工作目录
-        const switchResult = await window.browserControlManager?.switchWorkDir?.(result.path);
+        const switchResult = await window.appBridge?.switchWorkDir?.(result.path);
 
         if (switchResult?.success) {
           // 更新显示
@@ -2731,7 +2699,7 @@ handleKeyDown(e) {
       // 显示切换中状态
       this.showNotification(t('notifications.resettingToDefault'), 'info');
       
-      const result = await window.browserControlManager?.resetWorkspaceDir?.();
+      const result = await window.appBridge?.resetWorkspaceDir?.();
 
       if (result?.success) {
         console.log('[resetWorkspaceDir] Reset successful');
@@ -3007,7 +2975,7 @@ handleKeyDown(e) {
       
       // 回退到 IPC
       if (content === null) {
-        const result = await window.browserControlManager?.readFileContent?.(filePath);
+        const result = await window.appBridge?.readFileContent?.(filePath);
         if (result?.success) {
           content = result.content;
         } else {
@@ -3567,7 +3535,7 @@ handleKeyDown(e) {
     iframe.style.display = 'block';
     
     // 检测运行环境
-    const isWebMode = window.browserControlManager?._isPolyfill === true;
+    const isWebMode = window.appBridge?._isPolyfill === true;
     
     if (tab.path && isWebMode) {
       // Web 模式：使用 HTTP 代理服务文件
@@ -3666,7 +3634,7 @@ handleKeyDown(e) {
       
       // 回退到 IPC
       if (!success) {
-        const result = await window.browserControlManager?.saveFileContent?.(tab.path, content);
+        const result = await window.appBridge?.saveFileContent?.(tab.path, content);
         success = result?.success;
         if (!success) {
           throw new Error(result?.error || t('errors.saveFailed'));
@@ -4146,9 +4114,6 @@ handleKeyDown(e) {
    * 销毁应用
    */
   destroy() {
-    // 销毁 BrowserControlModule
-    this.browserControlModule?.destroy();
-    
     // 取消所有事件监听
     this.unsubscribers.forEach(unsub => {
       if (typeof unsub === 'function') {
@@ -4166,7 +4131,7 @@ document.addEventListener('DOMContentLoaded', () => {
   window.ThemeManager = ThemeManager;
   
   // 初始化应用
-  window.app = new BrowserControlManagerApp();
+  window.app = new DeepSeekCoworkApp();
 });
 
 // 页面卸载时清理

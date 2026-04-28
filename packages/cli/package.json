@@ -1,6 +1,6 @@
 {
   "name": "deepseek-cowork",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Open-Source Alternative to Claude Cowork - CLI Tool",
   "author": "imjszhang",
   "license": "MIT",
@@ -22,10 +22,11 @@
     "claude-cowork",
     "open-source",
     "ai-assistant",
-    "browser-automation",
     "file-management",
     "llm",
     "claude-code",
+    "local-service",
+    "session-management",
     "cli"
   ],
   "scripts": {

@@ -3,8 +3,6 @@ title: Abandoning the Backend: An Indie Dev’s Architecture Practice for Buildi
 date: 2026-01-22
 ---
 
-# Abandoning the Backend: An Independent Developer's Architecture Practice for Building an Open-Source Claude Cowork
-
 When developing AI products, we often face a dilemma: should we choose a traditional SaaS architecture, or go with a fully client-side approach?
 
 As an independent developer working on DeepSeek Cowork—an open-source version of Claude Cowork—I pondered this question for a long time. Eventually, I chose a "radical" solution: **completely abandoning the traditional centralized backend and embracing a No-Backend Hybrid SaaS architecture**.
@@ -55,7 +53,7 @@ This is the "reverse hybrid mode" adopted by DeepSeek Cowork.
 
 ## Looking Ahead: The Future of AI Products is "Decentralized"
 
-As high-performance models like DeepSeek become widespread, future AI applications will no longer be simple chat boxes. They need to deeply integrate into user workflows—reading files, executing code, operating browsers.
+As high-performance models like DeepSeek become widespread, future AI applications will no longer be simple chat boxes. They need to deeply integrate into user workflows—reading files, executing code, and coordinating local tools.
 
 This **Hybrid architecture** precisely balances "cloud convenience" with "local control." It's not just a technical choice, but a "sovereignty declaration" for individual developers and users: **Your AI, Your Control.**
 

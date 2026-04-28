@@ -136,14 +136,6 @@
   flex-shrink: 0;
 }
 
-/* ===== 浏览器视图容器 ===== */
-#browser-view-container {
-  width: 100%;
-  height: 100%;
-  position: relative;
-  background: var(--background);
-}
-
 /* ===== 加载遮罩 ===== */
 #loading-overlay {
   position: absolute;

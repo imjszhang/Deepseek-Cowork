@@ -71,10 +71,8 @@
     sidebar: {
       chat: '对话',
       files: '文件',
-      browser: '浏览器',
       settings: '设置',
-      fileManagement: '文件管理',
-      browserManagement: '浏览器管理'
+      fileManagement: '文件管理'
     },
     
     // 会话中心
@@ -160,35 +158,6 @@
       noSessionFiles: '暂无文件',
       // 展示区
       toggleShowcase: '展示区'
-    },
-    
-    // 浏览器面板
-    browser: {
-      title: '浏览器',
-      refresh: '刷新',
-      refreshTabs: '刷新标签页列表',
-      activeTabs: '活动标签页',
-      noTabs: '暂无打开的标签页',
-      noTabsHint: '请确保浏览器扩展已安装并连接',
-      // 按钮文本
-      getHtml: 'HTML',
-      getCookies: 'Cookies',
-      saveCookies: '保存',
-      savedCookies: '已保存',
-      injectScript: '注入',
-      closeTab: '关闭',
-      // 通知消息
-      htmlRequestSent: 'HTML 请求已发送',
-      cookiesRequestSent: 'Cookies 请求已发送',
-      htmlRequestFailed: '获取 HTML 失败',
-      cookiesRequestFailed: '获取 Cookies 失败',
-      saveCookiesSuccess: 'Cookies 已保存',
-      saveCookiesFailed: '保存 Cookies 失败',
-      // 标签卡片信息
-      tabId: 'ID',
-      tabWindow: '窗口',
-      tabIndex: '索引',
-      tabStatus: '状态'
     },
     
     // 文件面板
@@ -309,9 +278,6 @@
       
       // 服务器状态
       serverStatus: '服务器状态',
-      extensionConnections: '扩展连接',
-      authSecret: '认证密钥',
-      authStatus: '认证状态',
       authEnabled: '已启用',
       authDisabled: '已禁用',
       authError: '错误',
@@ -493,8 +459,7 @@
       step1: '环境检测',
       step2: '安装依赖',
       step3: 'API 配置',
-      step4: '浏览器扩展',
-      step5: '完成',
+      step4: '完成',
       
       // 第一步
       envCheckTitle: '环境检测结果',
@@ -523,20 +488,7 @@
       modelNameLabel: '模型名称',
       saveConfig: '保存配置',
       
-      // 第四步 - JS-EYES 浏览器扩展
-      installJsEyesTitle: '安装 JS-EYES 浏览器扩展',
-      installJsEyesDesc: 'JS-EYES 用于浏览器自动化功能（可选）',
-      jsEyesOptionalHint: '此步骤为可选，您可以跳过',
-      jsEyesFeatures: '功能：控制标签页、执行脚本、提取数据',
-      jsEyesInstallSteps: '安装步骤',
-      jsEyesStep1: '从 GitHub 下载项目',
-      jsEyesStep2: '打开 Chrome 扩展管理页面 (chrome://extensions)',
-      jsEyesStep3: '开启开发者模式',
-      jsEyesStep4: '点击"加载已解压的扩展程序"',
-      jsEyesStep5: '选择下载的 js-eyes 目录',
-      openGithub: '打开 GitHub',
-      
-      // 第五步
+      // 第四步
       completeTitle: '配置完成',
       completeDesc: '您已完成所有必要配置，可以开始使用了',
       startUsingBtn: '开始使用'

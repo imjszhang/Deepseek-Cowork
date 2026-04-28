@@ -97,7 +97,7 @@ class FilesPanel {
     
     // 获取工作区根目录
     try {
-      const settings = await window.browserControlManager?.getAllHappySettings?.();
+      const settings = await window.appBridge?.getAllHappySettings?.();
       if (settings?.workspaceDir) {
         this.workspaceRoot = settings.workspaceDir;
         this.currentPath = this.workspaceRoot;
@@ -254,8 +254,8 @@ class FilesPanel {
    */
   setupFileChangeListener() {
     // 检测是否为 Electron 环境（非 polyfill 模式）
-    const isElectron = window.browserControlManager && 
-                       typeof window.browserControlManager.onFileChanged === 'function';
+    const isElectron = window.appBridge &&
+                       typeof window.appBridge.onFileChanged === 'function';
     
     if (!isElectron) {
       console.log('[FilesPanel] Not in Electron mode, skipping IPC file change listener');
@@ -268,7 +268,7 @@ class FilesPanel {
     this._fileChangeDebounceTimer = null;
     
     // 监听文件变化事件
-    this._unsubscribeFileChanged = window.browserControlManager.onFileChanged((data) => {
+    this._unsubscribeFileChanged = window.appBridge.onFileChanged((data) => {
       console.log('[FilesPanel] Received file change event:', data);
       
       // 使用防抖避免频繁刷新
@@ -339,11 +339,11 @@ class FilesPanel {
     this.showLoading();
     
     try {
-      if (!window.browserControlManager || !window.browserControlManager.listDirectory) {
-        throw new Error('browserControlManager.listDirectory is not available');
+      if (!window.appBridge || !window.appBridge.listDirectory) {
+        throw new Error('appBridge.listDirectory is not available');
       }
       
-      const result = await window.browserControlManager.listDirectory(dirPath);
+      const result = await window.appBridge.listDirectory(dirPath);
       
       if (!result) {
         throw new Error('No result returned from listDirectory');
@@ -655,7 +655,7 @@ class FilesPanel {
     console.log('[FilesPanel] loadChildren from API:', dirPath);
     
     try {
-      const result = await window.browserControlManager.listDirectory(dirPath);
+      const result = await window.appBridge.listDirectory(dirPath);
       
       if (result?.success && result.items) {
         // 缓存结果
@@ -913,7 +913,7 @@ class FilesPanel {
         // 用系统程序打开文件
         const t = typeof I18nManager !== 'undefined' ? I18nManager.t.bind(I18nManager) : (k) => k;
         try {
-          const result = await window.browserControlManager?.openFile?.(item.path);
+          const result = await window.appBridge?.openFile?.(item.path);
           if (!result?.success) {
             this.showNotification(result?.error || t('notifications.cannotOpenFile'), 'error');
           }
@@ -967,7 +967,7 @@ class FilesPanel {
     
     // 在web环境下隐藏"用系统程序打开"和"在文件管理器中显示"菜单项
     // 检测环境：检查是否是web模式（polyfill模式）
-    const isWebMode = window.browserControlManager?._isPolyfill === true || 
+    const isWebMode = window.appBridge?._isPolyfill === true ||
                       (typeof process === 'undefined' || !process.versions?.electron);
     
     if (openWithItem) {
@@ -1109,7 +1109,7 @@ class FilesPanel {
         break;
       case 'openWith':
         try {
-          await window.browserControlManager?.openFile?.(item.path);
+          await window.appBridge?.openFile?.(item.path);
         } catch (error) {
           this.showNotification(t('notifications.openFailed') + ': ' + error.message, 'error');
         }
@@ -1119,7 +1119,7 @@ class FilesPanel {
         break;
       case 'showInExplorer':
         try {
-          await window.browserControlManager?.showInExplorer?.(item.path);
+          await window.appBridge?.showInExplorer?.(item.path);
         } catch (error) {
           this.showNotification(t('notifications.operationFailed') + ': ' + error.message, 'error');
         }
@@ -1137,7 +1137,7 @@ class FilesPanel {
   async deleteItem(item) {
     const t = typeof I18nManager !== 'undefined' ? I18nManager.t.bind(I18nManager) : (k) => k;
     try {
-      const result = await window.browserControlManager?.deleteItem?.(item.path);
+      const result = await window.appBridge?.deleteItem?.(item.path);
       
       if (result?.success) {
         this.showNotification(t('notifications.deleteSuccess'), 'success');
@@ -1292,7 +1292,7 @@ class FilesPanel {
     
     try {
       const folderPath = this.joinPath(this.currentPath, name);
-      const result = await window.browserControlManager?.createFolder?.(folderPath);
+      const result = await window.appBridge?.createFolder?.(folderPath);
       
       if (result?.success) {
         this.hideNewFolderDialog();
@@ -1371,7 +1371,7 @@ class FilesPanel {
       const filePath = this.joinPath(this.currentPath, name);
       // 使用 saveFileContent 创建文件，传入空字符串作为初始内容
       // API期望的参数格式是 { path: filePath, content: content }
-      const result = await window.browserControlManager?.saveFileContent?.({ path: filePath, content: '' });
+      const result = await window.appBridge?.saveFileContent?.({ path: filePath, content: '' });
       
       if (result?.success) {
         this.hideNewFileDialog();
@@ -1481,7 +1481,7 @@ class FilesPanel {
       parts.pop();
       const newPath = parts.join(separator) + separator + newName;
       
-      const result = await window.browserControlManager?.renameItem?.(item.path, newPath);
+      const result = await window.appBridge?.renameItem?.(item.path, newPath);
       
       if (result?.success) {
         this.hideRenameDialog();

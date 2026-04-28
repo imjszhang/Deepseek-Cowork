@@ -21,7 +21,7 @@ class UsageDisplay {
     this.alwaysShowContextSize = true;
     
     // 模型配置状态
-    this.currentModel = null;        // 当前模型 ID (如 'deepseek-v4-pro')
+    this.currentModel = null;        // 当前模型 ID (如 'deepseek-v4-pro[1m]')
     this.currentProvider = null;     // 当前 provider (如 'deepseek')
     this.currentModelConfig = null;  // 当前模型配置
   }
@@ -44,7 +44,7 @@ class UsageDisplay {
    */
   async loadModelConfig() {
     try {
-      const settings = await window.browserControlManager?.getClaudeCodeSettings?.();
+      const settings = await window.appBridge?.getClaudeCodeSettings?.();
       if (settings) {
         this.currentProvider = settings.provider || 'deepseek';
         this.currentModel = settings.model || null;

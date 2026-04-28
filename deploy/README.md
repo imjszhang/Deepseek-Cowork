@@ -4,13 +4,12 @@ This directory contains template files used by the CLI deploy commands.
 
 ## Directory Structure
 
-```
+```text
 deploy/
 ├── skills/                     # Skill templates for work directories
 │   ├── js-skills/              # English templates
 │   │   ├── CLAUDE.md
 │   │   └── skills/
-│   │       ├── browser-control/
 │   │       └── conversation-memory/
 │   └── i18n/
 │       └── zh/
@@ -92,7 +91,7 @@ function setupMyModuleService(options = {}) {
 module.exports = { setupMyModuleService };
 ```
 
-3. Optionally add `README.md` and `static/` directory
+1. Optionally add `README.md` and `static/` directory
 
 ## Related
 

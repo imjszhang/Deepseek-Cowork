@@ -9,7 +9,7 @@
 // 模型配置映射表
 const MODEL_CONFIGS = {
   // DeepSeek 系列
-  'deepseek-v4-pro': {
+  'deepseek-v4-pro[1m]': {
     name: 'DeepSeek-V4-Pro',
     contextSize: 1000000,
     maxOutput: 384000
@@ -55,7 +55,7 @@ const MODEL_CONFIGS = {
 
 // Provider 到默认模型的映射
 const PROVIDER_DEFAULT_MODELS = {
-  'deepseek': 'deepseek-v4-pro',
+  'deepseek': 'deepseek-v4-pro[1m]',
   'anthropic': 'claude-3-5-sonnet'
 };
 

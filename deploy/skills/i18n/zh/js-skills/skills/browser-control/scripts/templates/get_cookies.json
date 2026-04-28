@@ -1,6 +1,0 @@
-{
-  "_comment": "获取页面 Cookie 请求模板",
-  "_usage": "1. 复制此文件并重命名 2. 修改 tabId 为实际的标签页 ID 3. 使用 curl -d @filename.json 发送请求 4. 使用 requestId 轮询获取结果",
-  "tabId": 123456789,
-  "requestId": "cookie-request-001"
-}

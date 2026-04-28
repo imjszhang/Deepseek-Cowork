@@ -76,7 +76,7 @@ class ClaudeCodeSettings {
   async load() {
     try {
       console.log('[ClaudeCodeSettings] Loading...');
-      const settings = await window.browserControlManager.getClaudeCodeSettings();
+      const settings = await window.appBridge.getClaudeCodeSettings();
       console.log('[ClaudeCodeSettings] Settings:', settings);
       
       // 提供商 - 先设置值，然后只更新 UI 显示状态（不自动填充预设值）
@@ -144,7 +144,7 @@ class ClaudeCodeSettings {
     // 如果选择了预设提供商，自动填充预设值
     if (provider !== 'custom' && provider !== 'anthropic') {
       try {
-        const presets = await window.browserControlManager.getClaudeCodePresets();
+        const presets = await window.appBridge.getClaudeCodePresets();
         const preset = presets[provider];
         if (preset) {
           if (this.elements.baseurlInput) {
@@ -221,11 +221,11 @@ class ClaudeCodeSettings {
       }
       
       if (token) {
-        await window.browserControlManager.setClaudeAuthToken(token);
+        await window.appBridge.setClaudeAuthToken(token);
         this.updateTokenStatus(true);
         this.app?.showNotification?.(t('notifications.tokenSaved'), 'success');
       } else {
-        await window.browserControlManager.deleteClaudeAuthToken();
+        await window.appBridge.deleteClaudeAuthToken();
         this.updateTokenStatus(false);
         this.app?.showNotification?.(t('notifications.tokenDeleted'), 'info');
       }
@@ -264,7 +264,7 @@ class ClaudeCodeSettings {
       const provider = this.elements.providerSelect?.value || 'anthropic';
       const model = this.elements.modelInput?.value?.trim() || null;
       const isDeepSeek = provider === 'deepseek';
-      const deepSeekMainModel = model || 'deepseek-v4-pro';
+      const deepSeekMainModel = model || 'deepseek-v4-pro[1m]';
       const settings = {
         provider,
         baseUrl: this.elements.baseurlInput?.value?.trim() || null,
@@ -284,7 +284,7 @@ class ClaudeCodeSettings {
         this.elements.saveSettingsBtn.textContent = t('notifications.applyingConfig');
       }
 
-      const result = await window.browserControlManager.saveClaudeCodeSettings(settings);
+      const result = await window.appBridge.saveClaudeCodeSettings(settings);
 
       if (result.success) {
         if (result.daemonRestarted) {

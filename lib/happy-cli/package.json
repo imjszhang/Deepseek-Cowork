@@ -1,13 +1,16 @@
 {
-  "name": "happy-coder",
-  "version": "0.13.0",
+  "name": "happy",
+  "version": "1.1.8-1",
   "description": "Mobile and Web client for Claude Code and Codex",
   "author": "Kirill Dubovitskiy",
   "license": "MIT",
   "type": "module",
-  "homepage": "https://github.com/slopus/happy-cli",
-  "bugs": "https://github.com/slopus/happy-cli/issues",
-  "repository": "slopus/happy-cli",
+  "homepage": "https://happy.engineering",
+  "bugs": "https://github.com/slopus/happy/issues",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/slopus/happy"
+  },
   "bin": {
     "happy": "./bin/happy.mjs",
     "happy-mcp": "./bin/happy-mcp.mjs"
@@ -55,21 +58,22 @@
     "package.json"
   ],
   "scripts": {
-    "why do we need to build before running tests / dev?": "We need the binary to be built so we run daemon commands which directly run the binary - we don't want them to go out of sync or have custom spawn logic depending how we started happy",
     "typecheck": "tsc --noEmit",
-    "build": "shx rm -rf dist && npx tsc --noEmit && pkgroll",
-    "test": "yarn build && vitest run",
-    "start": "yarn build && node ./bin/happy.mjs",
-    "dev": "tsx src/index.ts",
-    "dev:local-server": "yarn build && tsx --env-file .env.dev-local-server src/index.ts",
-    "dev:integration-test-env": "yarn build && tsx --env-file .env.integration-test src/index.ts",
-    "prepublishOnly": "yarn build && yarn test",
-    "release": "yarn install && release-it",
+    "build": "shx rm -rf dist && tsc --noEmit && pkgroll",
+    "test": "pnpm run build && vitest run",
+    "cli:install": "node scripts/install-local.cjs",
+    "prepublishOnly": "pnpm test",
     "postinstall": "node scripts/unpack-tools.cjs"
   },
   "dependencies": {
-    "@agentclientprotocol/sdk": "^0.8.0",
-    "@modelcontextprotocol/sdk": "^1.29.0",
+    "@agentclientprotocol/sdk": "^0.14.1",
+    "@anthropic-ai/claude-agent-sdk": "^0.2.96",
+    "@anthropic-ai/sandbox-runtime": "^0.0.37",
+    "@modelcontextprotocol/sdk": "1.25.3",
+    "@noble/ed25519": "^3.0.0",
+    "@noble/hashes": "^2.0.1",
+    "@paralleldrive/cuid2": "^2.2.2",
+    "@slopus/happy-wire": "file:../happy-wire",
     "@stablelib/base64": "^2.0.1",
     "@stablelib/hex": "^2.0.1",
     "@types/cross-spawn": "^6.0.6",
@@ -78,49 +82,45 @@
     "@types/react": "^19.2.7",
     "@types/tmp": "^0.2.6",
     "ai": "^5.0.107",
-    "axios": "^1.15.2",
+    "axios": "^1.13.2",
     "chalk": "^5.6.2",
     "cross-spawn": "^7.0.6",
     "expo-server-sdk": "^3.15.0",
-    "fastify": "^5.8.5",
+    "fastify": "^5.6.2",
     "fastify-type-provider-zod": "4.0.2",
     "http-proxy": "^1.18.1",
     "http-proxy-middleware": "^3.0.5",
     "ink": "^6.5.1",
+    "inquirer": "^13.2.2",
     "open": "^10.2.0",
     "ps-list": "^8.1.1",
     "qrcode-terminal": "^0.12.0",
     "react": "^19.2.0",
-    "socket.io-client": "^4.8.3",
-    "tar": "^7.5.13",
+    "socket.io-client": "^4.8.1",
+    "tar": "^7.5.2",
     "tmp": "^0.2.5",
     "tweetnacl": "^1.0.3",
-    "zod": "^3.23.8"
+    "ws": "^8.19.0",
+    "zod": "3.25.76"
   },
   "devDependencies": {
     "@eslint/compat": "^1",
+    "@types/inquirer": "^9.0.9",
     "@types/node": ">=20",
+    "@types/ws": "^8.18.1",
     "cross-env": "^10.1.0",
     "dotenv": "^16.6.1",
     "eslint": "^9",
     "eslint-config-prettier": "^10",
     "pkgroll": "^2.14.2",
-    "release-it": "^20.0.1",
     "shx": "^0.3.3",
     "ts-node": "^10",
     "tsx": "^4.20.6",
-    "typescript": "^5",
+    "typescript": "5.9.3",
     "vitest": "^3.2.4"
-  },
-  "resolutions": {
-    "whatwg-url": "14.2.0",
-    "parse-path": "7.0.3",
-    "@types/parse-path": "7.0.3",
-    "glob": "^13.0.0",
-    "shelljs": "^0.10.0"
   },
   "publishConfig": {
     "registry": "https://registry.npmjs.org"
   },
-  "packageManager": "yarn@1.22.22"
+  "packageManager": "pnpm@10.11.0"
 }

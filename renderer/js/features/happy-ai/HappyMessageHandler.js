@@ -40,8 +40,8 @@ class HappyMessageHandler {
    */
   _subscribeAgentState() {
     // Electron 版本
-    if (window.browserControlManager?.onHappyAgentState) {
-      this._unsubscribeAgentState = window.browserControlManager.onHappyAgentState((data) => {
+    if (window.appBridge?.onHappyAgentState) {
+      this._unsubscribeAgentState = window.appBridge.onHappyAgentState((data) => {
         this._handleAgentStateUpdate(data);
       });
     }

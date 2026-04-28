@@ -85,7 +85,7 @@ program
 
 program
     .command('open')
-    .description('Open web interface in browser')
+    .description('Open the app web interface')
     .option('-l, --local', 'Open local interface instead of public website')
     .action(openCommand);
 

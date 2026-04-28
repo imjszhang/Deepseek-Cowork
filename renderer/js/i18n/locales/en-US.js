@@ -71,10 +71,8 @@
     sidebar: {
       chat: 'Chat',
       files: 'Files',
-      browser: 'Browser',
       settings: 'Settings',
-      fileManagement: 'File Management',
-      browserManagement: 'Browser Management'
+      fileManagement: 'File Management'
     },
     
     // Session Hub
@@ -160,35 +158,6 @@
       noSessionFiles: 'No files yet',
       // Showcase
       toggleShowcase: 'Toggle Showcase'
-    },
-    
-    // Browser panel
-    browser: {
-      title: 'Browser',
-      refresh: 'Refresh',
-      refreshTabs: 'Refresh Tab List',
-      activeTabs: 'Active Tabs',
-      noTabs: 'No open tabs',
-      noTabsHint: 'Please ensure the browser extension is installed and connected',
-      // Button text
-      getHtml: 'HTML',
-      getCookies: 'Cookies',
-      saveCookies: 'Save',
-      savedCookies: 'Saved',
-      injectScript: 'Inject',
-      closeTab: 'Close',
-      // Notification messages
-      htmlRequestSent: 'HTML request sent',
-      cookiesRequestSent: 'Cookies request sent',
-      htmlRequestFailed: 'Failed to get HTML',
-      cookiesRequestFailed: 'Failed to get Cookies',
-      saveCookiesSuccess: 'Cookies saved',
-      saveCookiesFailed: 'Failed to save Cookies',
-      // Tab card info labels
-      tabId: 'ID',
-      tabWindow: 'Window',
-      tabIndex: 'Index',
-      tabStatus: 'Status'
     },
     
     // File panel
@@ -309,9 +278,6 @@
       
       // Server status
       serverStatus: 'Server Status',
-      extensionConnections: 'Extension Connections',
-      authSecret: 'Auth Secret',
-      authStatus: 'Auth Status',
       authEnabled: 'Enabled',
       authDisabled: 'Disabled',
       authError: 'Error',
@@ -493,8 +459,7 @@
       step1: 'Environment Check',
       step2: 'Install Dependencies',
       step3: 'API Configuration',
-      step4: 'Browser Extension',
-      step5: 'Complete',
+      step4: 'Complete',
       
       // Step 1
       envCheckTitle: 'Environment Check Results',
@@ -523,20 +488,7 @@
       modelNameLabel: 'Model Name',
       saveConfig: 'Save Configuration',
       
-      // Step 4 - JS-EYES Browser Extension
-      installJsEyesTitle: 'Install JS-EYES Browser Extension',
-      installJsEyesDesc: 'JS-EYES enables browser automation features (optional)',
-      jsEyesOptionalHint: 'This step is optional, you can skip it',
-      jsEyesFeatures: 'Features: Tab control, script execution, data extraction',
-      jsEyesInstallSteps: 'Installation Steps',
-      jsEyesStep1: 'Download the project from GitHub',
-      jsEyesStep2: 'Open Chrome extensions page (chrome://extensions)',
-      jsEyesStep3: 'Enable Developer Mode',
-      jsEyesStep4: 'Click "Load unpacked"',
-      jsEyesStep5: 'Select the downloaded js-eyes directory',
-      openGithub: 'Open GitHub',
-      
-      // Step 5
+      // Step 4
       completeTitle: 'Configuration Complete',
       completeDesc: 'You have completed all necessary configurations and can start using',
       startUsingBtn: 'Start Using'

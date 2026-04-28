@@ -11,7 +11,7 @@
     <img src="https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square" alt="License: MIT" />
   </a>
   <a href="https://github.com/imjszhang/Deepseek-Cowork">
-    <img src="https://img.shields.io/badge/Version-0.2.0-blue.svg?style=flat-square" alt="Version" />
+    <img src="https://img.shields.io/badge/Version-0.3.0-blue.svg?style=flat-square" alt="Version" />
   </a>
   <a href="https://www.electronjs.org/">
     <img src="https://img.shields.io/badge/Electron-28.x-47848F?style=flat-square&logo=electron" alt="Electron" />
@@ -72,7 +72,7 @@ This would have been impossible before. But two things changed:
 
 Use natural language to have AI help you with:
 
-- 🌐 **Browser Automation** - Open pages, batch fill forms, extract data, cross-site operations
+- 🤖 **Task Coordination** - Turn natural language requests into multi-step AI workflows
 - 📁 **File Management** - Browse, organize, and preview your workspace files
 - 🧠 **Persistent Memory** - AI remembers conversation context, understands your habits
 
@@ -80,10 +80,10 @@ Use natural language to have AI help you with:
 
 | Scenario | Example |
 |----------|---------|
-| Data Collection | "Extract prices from these 10 pages and make a spreadsheet" |
-| Form Filling | "Batch fill registration forms using this contact list" |
+| Task Delegation | "Review this module, summarize the risks, and suggest a safe refactor plan" |
+| Project Setup | "Create the project structure and prepare the initial configuration files" |
 | Content Organization | "Sort files in my downloads folder by type" |
-| Monitoring | "Check this page daily and notify me of updates" |
+| Session Follow-up | "Summarize what changed today and remind me what to do next" |
 
 > 💡 Like having a 24/7 digital assistant at your command
 
@@ -152,7 +152,7 @@ DeepSeek Cowork integrates with [Happy](https://github.com/slopus/happy), an ope
 |-----------|-------------|
 | **Claude Code** | Original Claude Code integrated as Agent kernel with all features and capabilities |
 | **[Happy](https://github.com/slopus/happy)** | Open-source AI session management with E2E encryption and mobile app support |
-| **[JS Eyes](https://github.com/imjszhang/js-eyes)** | Browser extension for tab control, script execution, data extraction |
+| **LocalService** | Local runtime that powers the desktop app, web UI, and CLI workflows |
 | **Electron App** | Cross-platform desktop interface integrating all components |
 
 ## Quick Start
@@ -165,6 +165,13 @@ npm start
 ```
 
 Development mode: `npm run dev`
+
+### Runtime Entry Points
+
+- `npm start` launches the Electron desktop app.
+- `npm run local-service` starts the supported LocalService runtime directly.
+- `npm run server` is kept as a compatibility alias for `npm run local-service`.
+- `server/index.js` is deprecated and is no longer a supported standalone entry point.
 
 ## Web Version (Hybrid SaaS)
 
@@ -182,8 +189,11 @@ Visit [deepseek-cowork.com](https://deepseek-cowork.com) to try the web interfac
 ### Setup Local Service
 
 ```bash
-# Install CLI tool globally (latest version: 0.2.0)
-npm install -g deepseek-cowork@0.2.0
+# Install CLI tool globally (latest version: 0.3.0)
+npm install -g deepseek-cowork@0.3.0
+
+# Or start the same LocalService from the repository
+npm run local-service
 
 # Start local service (background mode)
 deepseek-cowork start --daemon
@@ -194,7 +204,7 @@ deepseek-cowork open
 
 ### CLI Commands Reference
 
-> **CLI Version**: `deepseek-cowork@0.2.0`
+> **CLI Version**: `deepseek-cowork@0.3.0`
 
 | Command | Description |
 |---------|-------------|
@@ -245,6 +255,9 @@ deepseek-cowork module status
 # Build static files for web deployment
 npm run build:web
 
+# Verify docs/app is still in sync with renderer sources
+npm run check:web-sync
+
 # Output: docs/app/
 ```
 
@@ -271,7 +284,7 @@ Built packages will be output to the `dist/` directory.
 
 ### Version Management
 
-The project uses semantic versioning (SemVer). Current version: **V0.2.0**
+The project uses semantic versioning (SemVer). Current version: **V0.3.0**
 
 Update version numbers:
 
@@ -286,23 +299,6 @@ The version number is automatically synchronized to:
 - `renderer/index.html` - UI display (auto-updated during build)
 - Application runtime - Dynamically loaded from package.json
 
-## Browser Extension
-
-Browser automation requires the **[JS Eyes](https://github.com/imjszhang/js-eyes)** extension.
-
-### Installation
-
-1. Download [JS Eyes](https://github.com/imjszhang/js-eyes)
-2. Open browser extension page
-   - Chrome: `chrome://extensions/`
-   - Edge: `edge://extensions/`
-   - Firefox: `about:debugging`
-3. Enable "Developer mode"
-4. Click "Load unpacked" and select the extension folder for your browser
-5. Make sure DeepSeek Cowork is running, extension will auto-connect
-
-See [JS Eyes documentation](https://github.com/imjszhang/js-eyes) for details
-
 ## Contributing
 
 PRs welcome! Fork → Change → Submit.
@@ -316,7 +312,6 @@ MIT
 This project is built upon:
 
 - [Happy](https://github.com/slopus/happy) - AI session management client
-- [JS Eyes](https://github.com/imjszhang/js-eyes) - Browser automation extension
 - [Electron](https://www.electronjs.org/) - Cross-platform desktop framework
 - [DeepSeek](https://www.deepseek.com/) - Open-source LLM
 
