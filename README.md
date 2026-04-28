@@ -11,7 +11,7 @@
     <img src="https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square" alt="License: MIT" />
   </a>
   <a href="https://github.com/imjszhang/Deepseek-Cowork">
-    <img src="https://img.shields.io/badge/Version-0.2.0-blue.svg?style=flat-square" alt="Version" />
+    <img src="https://img.shields.io/badge/Version-0.3.0-blue.svg?style=flat-square" alt="Version" />
   </a>
   <a href="https://www.electronjs.org/">
     <img src="https://img.shields.io/badge/Electron-28.x-47848F?style=flat-square&logo=electron" alt="Electron" />
@@ -189,8 +189,8 @@ Visit [deepseek-cowork.com](https://deepseek-cowork.com) to try the web interfac
 ### Setup Local Service
 
 ```bash
-# Install CLI tool globally (latest version: 0.2.0)
-npm install -g deepseek-cowork@0.2.0
+# Install CLI tool globally (latest version: 0.3.0)
+npm install -g deepseek-cowork@0.3.0
 
 # Or start the same LocalService from the repository
 npm run local-service
@@ -204,7 +204,7 @@ deepseek-cowork open
 
 ### CLI Commands Reference
 
-> **CLI Version**: `deepseek-cowork@0.2.0`
+> **CLI Version**: `deepseek-cowork@0.3.0`
 
 | Command | Description |
 |---------|-------------|
@@ -284,7 +284,7 @@ Built packages will be output to the `dist/` directory.
 
 ### Version Management
 
-The project uses semantic versioning (SemVer). Current version: **V0.2.0**
+The project uses semantic versioning (SemVer). Current version: **V0.3.0**
 
 Update version numbers:
 
