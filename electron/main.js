@@ -2405,7 +2405,7 @@ async function bootstrap() {
     await initializeServerManager();
     console.log('Server manager initialized');
 
-    // 2. Start server (embedded mode) - with port conflict detection
+    // 2. Start or attach to the shared local backend
     let serverStarted = false;
     try {
       serverStarted = await serverManager.start();
@@ -2419,12 +2419,12 @@ async function bootstrap() {
         console.error('Port conflict detected:', conflict);
         
         let title, message;
-        if (conflict.conflict === 'cli') {
-          title = 'Service Conflict / 服务冲突';
-          message = `CLI service is running on port ${serverManager.config.port}.\n\nPlease run "dsc stop" in terminal to stop CLI service first.\n\nCLI 服务正在运行，请先在终端执行 "dsc stop" 停止 CLI 服务。`;
-        } else if (conflict.conflict === 'electron') {
+        if (conflict.conflict === 'electron') {
           title = 'Service Conflict / 服务冲突';
           message = `Another DeepSeek Cowork client is already running.\n\n另一个客户端已在运行。`;
+        } else if (conflict.conflict === 'incompatible') {
+          title = 'Service Version Conflict / 服务版本冲突';
+          message = `A DeepSeek Cowork service is running on port ${serverManager.config.port}, but its protocol is incompatible.\n\nPlease update both Electron and CLI, then restart the local service.\n\n端口上已有 DeepSeek Cowork 服务，但协议版本不兼容。请更新 Electron 和 CLI 后重启本地服务。`;
         } else {
           title = 'Port In Use / 端口被占用';
           message = `Port ${serverManager.config.port} is already in use by another program.\n\nPlease close that program before starting.\n\n端口被其他程序占用，请先关闭占用该端口的程序。`;

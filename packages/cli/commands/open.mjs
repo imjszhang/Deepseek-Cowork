@@ -5,10 +5,8 @@
  */
 
 import chalk from 'chalk';
-import ora from 'ora';
 import open from 'open';
-import { getConfig } from '../index.mjs';
-import { readPidFile, isProcessRunning } from '../utils/process.mjs';
+import { getConfig, getDiscovery } from '../index.mjs';
 
 // 公域网站地址
 const PUBLIC_URL = 'https://deepseek-cowork.com';
@@ -19,25 +17,12 @@ const PUBLIC_URL = 'https://deepseek-cowork.com';
 export async function openCommand(options) {
     try {
         const config = await getConfig();
+        const discovery = await getDiscovery();
         const port = config.DEFAULT_HTTP_PORT;
         
         // 检查本地服务是否运行
-        const pid = readPidFile(config.getPidFilePath());
-        const isRunning = pid && isProcessRunning(pid);
-        
-        let serviceAvailable = false;
-        
-        if (isRunning) {
-            // 尝试连接本地服务
-            try {
-                const response = await fetch(`http://localhost:${port}/api/ping`, {
-                    signal: AbortSignal.timeout(2000)
-                });
-                serviceAvailable = response.ok;
-            } catch (e) {
-                // 服务未响应
-            }
-        }
+        const service = await discovery.discoverService({ port });
+        const serviceAvailable = service.sameApp && service.compatible;
         
         if (!serviceAvailable) {
             console.log(chalk.yellow('⚠  Local service is not running'));
@@ -78,7 +63,7 @@ export async function openCommand(options) {
         console.log(chalk.green('✓'), `Opened ${chalk.cyan(url)}`);
         
         if (serviceAvailable) {
-            console.log(chalk.dim(`  Local service: http://localhost:${port}`));
+            console.log(chalk.dim(`  Local service: ${service.baseUrl}`));
         }
         console.log('');
         

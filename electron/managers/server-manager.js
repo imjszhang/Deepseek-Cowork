@@ -10,6 +10,7 @@ const net = require('net');
 const { exec } = require('child_process');
 const { app } = require('electron');
 const { LocalService } = require('../../lib/local-service');
+const discovery = require('../../lib/local-service/discovery');
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -19,6 +20,8 @@ class ServerManager {
   constructor(mainWindow = null) {
     this.mainWindow = mainWindow;
     this.localService = null;
+    this.remoteService = null;
+    this.ownsService = false;
     this.localServiceListeners = [];
     this.isRunning = false;
     this.logs = [];
@@ -63,17 +66,7 @@ class ServerManager {
   }
 
   checkPortAvailable(port) {
-    return new Promise((resolve) => {
-      const server = net.createServer();
-
-      server.once('error', () => resolve(false));
-      server.once('listening', () => {
-        server.close();
-        resolve(true);
-      });
-
-      server.listen(port, this.config.host);
-    });
+    return discovery.checkPortAvailable(port, this.config.host);
   }
 
   getProcessOnPort(port) {
@@ -121,41 +114,23 @@ class ServerManager {
   }
 
   async checkPortConflict(port) {
-    const available = await this.checkPortAvailable(port);
-    if (available) {
+    const service = await discovery.discoverService({ port, host: this.config.host });
+    if (service.available) {
       return { available: true };
     }
 
-    this.addLog('info', `Port ${port} is in use, checking service type...`);
-
-    try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 2000);
-      const response = await fetch(`http://localhost:${port}/api/ping`, {
-        signal: controller.signal
-      });
-      clearTimeout(timeoutId);
-
-      if (response.ok) {
-        const data = await response.json();
-        if (data.app === 'deepseek-cowork') {
-          if (data.mode === 'cli') {
-            this.addLog('info', `Port ${port} is used by CLI service`);
-            return { available: false, conflict: 'cli', message: 'CLI service is running' };
-          }
-          if (data.mode === 'electron') {
-            this.addLog('info', `Port ${port} is used by another Electron client`);
-            return { available: false, conflict: 'electron', message: 'Another Electron client is running' };
-          }
-        }
-      }
-
-      this.addLog('info', `Port ${port} is used by another program`);
-      return { available: false, conflict: 'other', message: 'Port is occupied by another program' };
-    } catch (error) {
-      this.addLog('info', `Port ${port} is used by another program (ping failed)`);
-      return { available: false, conflict: 'other', message: 'Port is occupied by another program' };
+    if (service.sameApp && service.compatible) {
+      this.addLog('info', `Port ${port} is used by compatible ${service.startedBy || service.mode} service`);
+      return { available: false, conflict: null, attachable: true, service };
     }
+
+    if (service.sameApp && !service.compatible) {
+      this.addLog('warn', `Port ${port} is used by incompatible DeepSeek Cowork service`);
+      return { available: false, conflict: 'incompatible', message: 'Incompatible DeepSeek Cowork service', service };
+    }
+
+    this.addLog('info', `Port ${port} is used by another program`);
+    return { available: false, conflict: 'other', message: 'Port is occupied by another program' };
   }
 
   _createLocalService() {
@@ -200,11 +175,25 @@ class ServerManager {
 
       const portStatus = await this.checkPortConflict(this.config.port);
       if (!portStatus.available) {
+        if (portStatus.attachable) {
+          this.remoteService = portStatus.service;
+          this.ownsService = false;
+          this.isRunning = true;
+          this.addLog('info', `Attached to existing LocalService: ${this.remoteService.baseUrl}`);
+
+          const status = this.getStatus();
+          this.notifyRenderer('server-status-changed', status);
+          this.emitStatusChange(status);
+          return true;
+        }
+
         const error = new Error(`HTTP port ${this.config.port}: ${portStatus.message}`);
         error.portConflict = portStatus;
         throw error;
       }
 
+      this.remoteService = null;
+      this.ownsService = true;
       this.localService = this._createLocalService();
       const initResult = await this.localService.initialize({
         dataDir: app.getPath('userData'),
@@ -262,9 +251,27 @@ class ServerManager {
   }
 
   checkServerHealth() {
+    const baseUrl = this.remoteService?.baseUrl || `http://${this.config.host}:${this.config.port}`;
     return new Promise((resolve) => {
-      const req = http.get(`http://${this.config.host}:${this.config.port}/api/ping`, { timeout: 3000 }, (res) => {
-        resolve(res.statusCode === 200);
+      const req = http.get(`${baseUrl}/api/ping`, { timeout: 3000 }, (res) => {
+        let body = '';
+        res.setEncoding('utf8');
+        res.on('data', (chunk) => {
+          body += chunk;
+        });
+        res.on('end', () => {
+          if (res.statusCode !== 200) {
+            resolve(false);
+            return;
+          }
+
+          try {
+            const data = JSON.parse(body);
+            resolve(data.app === 'deepseek-cowork');
+          } catch (error) {
+            resolve(false);
+          }
+        });
       });
 
       req.on('error', () => resolve(false));
@@ -284,15 +291,19 @@ class ServerManager {
     this.addLog('info', 'Stopping server...');
 
     try {
-      if (this.localService) {
+      if (this.localService && this.ownsService) {
         const stopResult = await this.localService.stop({ stopDaemon: false });
         if (!stopResult.success && !stopResult.alreadyStopped) {
           throw new Error(stopResult.error || 'LocalService failed to stop');
         }
+      } else if (this.remoteService && !this.ownsService) {
+        this.addLog('info', `Detaching from existing service: ${this.remoteService.baseUrl}`);
       }
 
       await this.cleanup();
       this.isRunning = false;
+      this.ownsService = false;
+      this.remoteService = null;
       this.addLog('info', 'Server stopped');
 
       const status = { running: false, config: this.config };
@@ -311,6 +322,15 @@ class ServerManager {
   }
 
   async restart() {
+    if (this.remoteService && !this.ownsService) {
+      this.addLog('warn', 'Attached service is owned by another process; refreshing connection instead of restarting');
+      const healthy = await this.checkServerHealth();
+      const status = this.getStatus();
+      this.notifyRenderer('server-status-changed', status);
+      this.emitStatusChange(status);
+      return healthy;
+    }
+
     this.addLog('info', 'Restarting server...');
     this.notifyRenderer('server-status-changed', { running: false, restarting: true, config: this.config });
 
@@ -327,7 +347,10 @@ class ServerManager {
   getStatus() {
     return {
       running: this.isRunning,
+      attached: Boolean(this.remoteService && !this.ownsService),
+      owned: this.ownsService,
       config: this.config,
+      remoteService: this.remoteService,
       service: this.localService ? this.localService.getStatus() : null
     };
   }

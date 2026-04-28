@@ -5,7 +5,7 @@
  */
 
 import chalk from 'chalk';
-import { getConfig } from '../index.mjs';
+import { getConfig, getDiscovery } from '../index.mjs';
 import { readPidFile, isProcessRunning } from '../utils/process.mjs';
 
 /**
@@ -14,9 +14,11 @@ import { readPidFile, isProcessRunning } from '../utils/process.mjs';
 export async function statusCommand(options) {
     try {
         const config = await getConfig();
+        const discovery = await getDiscovery();
         const pidPath = config.getPidFilePath();
         const pid = readPidFile(pidPath);
         const port = config.DEFAULT_HTTP_PORT;
+        const service = await discovery.discoverService({ port });
         
         // 基础状态
         const status = {
@@ -25,26 +27,35 @@ export async function statusCommand(options) {
             httpPort: port,
             wsPort: config.DEFAULT_WS_PORT,
             dataDir: config.getDataDir(),
+            serviceInfo: config.readServiceInfo ? config.readServiceInfo() : null,
+            mode: null,
+            startedBy: null,
+            protocolVersion: null,
+            compatible: false,
+            attached: false,
             service: null
         };
         
-        // 检查进程是否运行
-        if (pid && isProcessRunning(pid)) {
+        if (service.sameApp && service.compatible) {
             status.running = true;
+            status.pid = service.pid || pid;
+            status.httpPort = service.httpPort || port;
+            status.wsPort = service.wsPort || config.DEFAULT_WS_PORT;
+            status.mode = service.mode;
+            status.startedBy = service.startedBy;
+            status.protocolVersion = service.protocolVersion;
+            status.compatible = true;
+            status.attached = !pid || service.pid !== pid;
             
             // 尝试获取详细状态
             try {
-                const response = await fetch(`http://localhost:${port}/api/status`, {
-                    signal: AbortSignal.timeout(3000)
-                });
-                
-                if (response.ok) {
-                    const data = await response.json();
-                    status.service = data.status;
-                }
+                const data = await discovery.fetchServiceStatus(service.baseUrl);
+                status.service = data.status;
             } catch (e) {
                 // 服务可能未完全启动或未响应
             }
+        } else if (pid && isProcessRunning(pid)) {
+            status.running = true;
         }
         
         // JSON 输出
@@ -63,6 +74,9 @@ export async function statusCommand(options) {
             console.log(chalk.white(`  PID:          ${status.pid}`));
             console.log(chalk.white(`  HTTP:         http://localhost:${status.httpPort}`));
             console.log(chalk.white(`  WebSocket:    ws://localhost:${status.wsPort}`));
+            if (status.startedBy) {
+                console.log(chalk.white(`  Started By:   ${status.startedBy}`));
+            }
             
             if (status.service) {
                 console.log('');
@@ -103,6 +117,10 @@ export async function statusCommand(options) {
         console.log('');
         console.log(chalk.dim('Data Directory:'));
         console.log(`  ${status.dataDir}`);
+        if (status.serviceInfo) {
+            console.log(chalk.dim('Service Info:'));
+            console.log(`  ${config.getServiceInfoPath()}`);
+        }
         console.log('');
         
         // 提示命令
