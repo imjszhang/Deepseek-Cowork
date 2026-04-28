@@ -19,12 +19,6 @@ class MobileDrawer {
         contentSelector: '#files-list-pane',
         icon: '<svg viewBox="0 0 24 24"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg>'
       },
-      browser: {
-        title: 'sidebar.browser',
-        side: 'right',
-        contentSelector: '#browser-menu-pane',
-        icon: '<svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 3v6"/></svg>'
-      },
       settings: {
         title: 'settings.title',
         side: 'right',
@@ -122,7 +116,7 @@ class MobileDrawer {
 
   /**
    * 显示抽屉
-   * @param {string} drawerId - 抽屉 ID (files, browser, settings)
+   * @param {string} drawerId - 抽屉 ID (files, settings)
    * @param {string} [side='right'] - 抽屉方向
    */
   show(drawerId, side = 'right') {
@@ -298,20 +292,6 @@ class MobileDrawer {
       });
     }
     
-    // 浏览器面板菜单项
-    if (sourceSelector === '#browser-menu-pane') {
-      container.querySelectorAll('.browser-menu-item').forEach(item => {
-        item.addEventListener('click', () => {
-          const view = item.dataset.view;
-          if (view && this.app && this.app.browserPanel) {
-            // 触发原始菜单项的点击
-            const originalItem = document.querySelector(`#browser-menu-pane .browser-menu-item[data-view="${view}"]`);
-            originalItem?.click();
-            this.hide();
-          }
-        });
-      });
-    }
   }
 
   /**

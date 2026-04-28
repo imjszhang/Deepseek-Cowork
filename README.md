@@ -72,7 +72,7 @@ This would have been impossible before. But two things changed:
 
 Use natural language to have AI help you with:
 
-- 🌐 **Browser Automation** - Open pages, batch fill forms, extract data, cross-site operations
+- 🤖 **Task Coordination** - Turn natural language requests into multi-step AI workflows
 - 📁 **File Management** - Browse, organize, and preview your workspace files
 - 🧠 **Persistent Memory** - AI remembers conversation context, understands your habits
 
@@ -80,10 +80,10 @@ Use natural language to have AI help you with:
 
 | Scenario | Example |
 |----------|---------|
-| Data Collection | "Extract prices from these 10 pages and make a spreadsheet" |
-| Form Filling | "Batch fill registration forms using this contact list" |
+| Task Delegation | "Review this module, summarize the risks, and suggest a safe refactor plan" |
+| Project Setup | "Create the project structure and prepare the initial configuration files" |
 | Content Organization | "Sort files in my downloads folder by type" |
-| Monitoring | "Check this page daily and notify me of updates" |
+| Session Follow-up | "Summarize what changed today and remind me what to do next" |
 
 > 💡 Like having a 24/7 digital assistant at your command
 
@@ -152,7 +152,7 @@ DeepSeek Cowork integrates with [Happy](https://github.com/slopus/happy), an ope
 |-----------|-------------|
 | **Claude Code** | Original Claude Code integrated as Agent kernel with all features and capabilities |
 | **[Happy](https://github.com/slopus/happy)** | Open-source AI session management with E2E encryption and mobile app support |
-| **[JS Eyes](https://github.com/imjszhang/js-eyes)** | Browser extension for tab control, script execution, data extraction |
+| **LocalService** | Local runtime that powers the desktop app, web UI, and CLI workflows |
 | **Electron App** | Cross-platform desktop interface integrating all components |
 
 ## Quick Start
@@ -165,6 +165,13 @@ npm start
 ```
 
 Development mode: `npm run dev`
+
+### Runtime Entry Points
+
+- `npm start` launches the Electron desktop app.
+- `npm run local-service` starts the supported LocalService runtime directly.
+- `npm run server` is kept as a compatibility alias for `npm run local-service`.
+- `server/index.js` is deprecated and is no longer a supported standalone entry point.
 
 ## Web Version (Hybrid SaaS)
 
@@ -184,6 +191,9 @@ Visit [deepseek-cowork.com](https://deepseek-cowork.com) to try the web interfac
 ```bash
 # Install CLI tool globally (latest version: 0.2.0)
 npm install -g deepseek-cowork@0.2.0
+
+# Or start the same LocalService from the repository
+npm run local-service
 
 # Start local service (background mode)
 deepseek-cowork start --daemon
@@ -245,6 +255,9 @@ deepseek-cowork module status
 # Build static files for web deployment
 npm run build:web
 
+# Verify docs/app is still in sync with renderer sources
+npm run check:web-sync
+
 # Output: docs/app/
 ```
 
@@ -286,34 +299,6 @@ The version number is automatically synchronized to:
 - `renderer/index.html` - UI display (auto-updated during build)
 - Application runtime - Dynamically loaded from package.json
 
-## Browser Extension
-
-Browser automation requires the **[JS Eyes](https://github.com/imjszhang/js-eyes)** extension.
-
-### Installation
-
-1. Download the latest extension assets from [JS Eyes Releases](https://github.com/imjszhang/js-eyes/releases/latest), or clone the repository if you want to load the source extension manually.
-2. Install the extension in your browser
-   - Chrome / Edge: open `chrome://extensions/` or `edge://extensions/`, enable Developer mode, then load the `extensions/chrome` folder if using the source tree
-   - Firefox: install the signed `.xpi` from the release, or load `extensions/firefox/manifest.json` temporarily from `about:debugging`
-3. Start DeepSeek Cowork so the Browser Control service is available
-4. Open the JS Eyes popup and connect it to DeepSeek Cowork's HTTP address (default: `http://localhost:3333`)
-5. If authentication is enabled, sync or paste the `server.token` value before waiting for the extension to show `Connected`
-
-### Connection Notes
-
-- DeepSeek Cowork exposes Browser Control over HTTP on `http://localhost:3333` and the extension WebSocket on `ws://localhost:8080` by default.
-- Current JS Eyes releases support token-based authentication. This project now exposes a compatible `server.token` file for manual token copy/paste.
-- Native-host based token sync belongs to the upstream JS Eyes ecosystem and is not yet a one-click flow inside DeepSeek Cowork.
-
-### Compatibility Boundary
-
-- DeepSeek Cowork is compatible with the current JS Eyes browser extension handshake and connection flow.
-- DeepSeek Cowork is **not** a drop-in replacement for the full `js-eyes` CLI runtime. Native-host installation, `js-eyes doctor`, and `js-eyes skills` remain upstream-managed workflows for now.
-- The built-in Browser Control skill and deployment assets in this repository are still the primary workflow inside DeepSeek Cowork.
-
-See [JS Eyes documentation](https://github.com/imjszhang/js-eyes) for details
-
 ## Contributing
 
 PRs welcome! Fork → Change → Submit.
@@ -327,7 +312,6 @@ MIT
 This project is built upon:
 
 - [Happy](https://github.com/slopus/happy) - AI session management client
-- [JS Eyes](https://github.com/imjszhang/js-eyes) - Browser automation extension
 - [Electron](https://www.electronjs.org/) - Cross-platform desktop framework
 - [DeepSeek](https://www.deepseek.com/) - Open-source LLM
 

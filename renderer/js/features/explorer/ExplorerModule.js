@@ -195,13 +195,13 @@ class ExplorerModule {
    * 设置服务器状态监听器
    */
   setupServerStatusListener() {
-    if (!window.browserControlManager) {
-      console.warn('[ExplorerModule] browserControlManager not available');
+    if (!window.appBridge) {
+      console.warn('[ExplorerModule] appBridge not available');
       return;
     }
 
     // 监听服务器状态变化
-    this.serverStatusUnsubscribe = window.browserControlManager.onServerStatusChanged(async (response) => {
+    this.serverStatusUnsubscribe = window.appBridge.onServerStatusChanged(async (response) => {
       console.log('[ExplorerModule] Server status changed:', response);
       
       // 兼容两种返回格式
@@ -225,14 +225,14 @@ class ExplorerModule {
    * 检查服务器状态并连接 SSE
    */
   async checkAndConnectSSE() {
-    if (!window.browserControlManager || !this.explorerManager) {
-      console.warn('[ExplorerModule] browserControlManager or explorerManager not available');
+    if (!window.appBridge || !this.explorerManager) {
+      console.warn('[ExplorerModule] appBridge or explorerManager not available');
       return;
     }
 
     try {
       // 检查服务器状态
-      const response = await window.browserControlManager.getServerStatus();
+      const response = await window.appBridge.getServerStatus();
       console.log('[ExplorerModule] Current server status response:', response);
       
       // 兼容两种返回格式：
@@ -660,7 +660,7 @@ class ExplorerModule {
       
       // 回退到 IPC
       if (content === null) {
-        const result = await window.browserControlManager?.readFileContent?.(filePath);
+        const result = await window.appBridge?.readFileContent?.(filePath);
         if (result?.success) {
           content = result.content;
         } else {
@@ -1429,7 +1429,7 @@ class ExplorerModule {
     if (this.filePreviewPath) {
       // 检测运行环境：仅通过 _isPolyfill 标记判断是否为 Web 模式
       // 注意：window.apiAdapter 在 Electron 和 Web 模式下都会存在，不能用于判断
-      const isWebMode = window.browserControlManager?._isPolyfill === true;
+      const isWebMode = window.appBridge?._isPolyfill === true;
       
       console.log('[ExplorerModule] renderHtmlPreview:', {
         filePath: this.filePreviewPath,
@@ -1573,8 +1573,8 @@ class ExplorerModule {
     const normalizedPath = filePath.replace(/\\/g, '/');
     
     // 检测运行环境
-    const isWebMode = typeof window.browserControlManager?._isPolyfill === 'boolean' && 
-                      window.browserControlManager._isPolyfill === true;
+    const isWebMode = typeof window.appBridge?._isPolyfill === 'boolean' && 
+                      window.appBridge._isPolyfill === true;
     
     let fileUrl;
     if (isWebMode) {
@@ -1739,7 +1739,7 @@ class ExplorerModule {
     let ctx = null;
 
     // 检测运行环境
-    const isWebMode = window.browserControlManager?._isPolyfill === true || 
+    const isWebMode = window.appBridge?._isPolyfill === true || 
                       (typeof process === 'undefined' || !process.versions?.electron);
 
     try {
@@ -1761,14 +1761,14 @@ class ExplorerModule {
       if (isWebMode) {
         // Web 版：通过 API 获取
         console.log('[ExplorerModule] Web mode: Reading PDF binary for:', filePath);
-        console.log('[ExplorerModule] browserControlManager available:', !!window.browserControlManager);
-        console.log('[ExplorerModule] readFileBinary available:', !!window.browserControlManager?.readFileBinary);
+        console.log('[ExplorerModule] appBridge available:', !!window.appBridge);
+        console.log('[ExplorerModule] readFileBinary available:', !!window.appBridge?.readFileBinary);
         
-        if (!window.browserControlManager?.readFileBinary) {
+        if (!window.appBridge?.readFileBinary) {
           throw new Error('readFileBinary method not available. Make sure ApiAdapter is loaded.');
         }
         
-        const result = await window.browserControlManager.readFileBinary(filePath);
+        const result = await window.appBridge.readFileBinary(filePath);
         console.log('[ExplorerModule] readFileBinary result:', result);
         
         if (!result?.success) {
@@ -1783,7 +1783,7 @@ class ExplorerModule {
         console.log('[ExplorerModule] PDF data loaded, size:', pdfData.length);
       } else {
         // Electron 版：通过 IPC 获取
-        const result = await window.browserControlManager?.readFileBinary?.(filePath);
+        const result = await window.appBridge?.readFileBinary?.(filePath);
         if (!result?.success) {
           throw new Error(result?.error || 'Failed to read PDF file');
         }
@@ -1944,7 +1944,7 @@ class ExplorerModule {
       }
       
       if (!success) {
-        const result = await window.browserControlManager?.saveFileContent?.(this.filePreviewPath, content);
+        const result = await window.appBridge?.saveFileContent?.(this.filePreviewPath, content);
         success = result?.success;
         if (!success) {
           throw new Error(result?.error || t('errors.saveFailed'));
@@ -2025,7 +2025,7 @@ class ExplorerModule {
       
       // 回退到 IPC
       if (content === null) {
-        const result = await window.browserControlManager?.readFileContent?.(this.filePreviewPath);
+        const result = await window.appBridge?.readFileContent?.(this.filePreviewPath);
         if (result?.success) {
           content = result.content;
         } else {
@@ -2093,8 +2093,8 @@ class ExplorerModule {
     const img = contentEl.querySelector('.image-viewer img');
     if (img) {
       // 检测运行环境
-      const isWebMode = typeof window.browserControlManager?._isPolyfill === 'boolean' && 
-                        window.browserControlManager._isPolyfill === true;
+      const isWebMode = typeof window.appBridge?._isPolyfill === 'boolean' &&
+                        window.appBridge._isPolyfill === true;
       
       let fileUrl;
       if (isWebMode) {
@@ -2142,7 +2142,7 @@ class ExplorerModule {
       
       // 回退到 IPC
       if (content === null) {
-        const result = await window.browserControlManager?.readFileContent?.(tab.path);
+        const result = await window.appBridge?.readFileContent?.(tab.path);
         if (result?.success) {
           content = result.content;
         } else {

@@ -3,8 +3,6 @@ title: Welcome to DeepSeek Cowork Blog
 date: 2026-01-21
 ---
 
-# Welcome to DeepSeek Cowork Blog
-
 Welcome to the DeepSeek Cowork blog! This is an open-source alternative to Claude Cowork, enabling you to enjoy powerful AI assistant features at minimal cost.
 
 ## Our Vision
@@ -20,22 +18,21 @@ We believe that excellent AI assistants shouldn't be limited to a select few. De
 
 ## Core Features
 
-### 1. Browser Automation
+### 1. Task Coordination
 
-Let AI control your browser to accomplish:
+Let AI turn natural language requests into multi-step workflows:
 
 ```javascript
-// Example: Batch data extraction
-const prices = await browser.extractFromPages([
-  'https://example.com/product/1',
-  'https://example.com/product/2',
-  'https://example.com/product/3'
-], '.price');
+// Example: organize a review task
+const task = await agent.planTask({
+  goal: 'review the repository and summarize risks',
+  context: ['recent changes', 'workspace files', 'test status']
+});
 ```
 
-- Open pages, fill forms
-- Extract web data
-- Cross-site automation
+- Break down complex requests
+- Execute with local context
+- Produce summaries and follow-up actions
 
 ### 2. File Management
 
@@ -56,10 +53,10 @@ AI remembers conversation context and understands your habits:
 ## Tech Stack
 
 | Component | Description |
-|-----------|-------------|
+| --------- | ----------- |
 | Claude Code | AI kernel for code understanding and generation |
 | Happy | Session management, E2E encryption, multi-device sync |
-| JS Eyes | Browser extension for tab control |
+| LocalService | Local runtime for desktop, web, and CLI workflows |
 | Electron | Cross-platform desktop application |
 
 ## Getting Started

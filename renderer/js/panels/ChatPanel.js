@@ -413,7 +413,7 @@ class ChatPanel {
         await this.app.loadModelConfig();
       }
       
-      const status = await window.browserControlManager?.getAIStatus?.();
+      const status = await window.appBridge?.getAIStatus?.();
       console.log('[ChatPanel] AI status:', status);
       
       if (status) {
@@ -443,12 +443,12 @@ class ChatPanel {
    */
   async autoConnectAI() {
     try {
-      const result = await window.browserControlManager?.connectAI?.();
+      const result = await window.appBridge?.connectAI?.();
       console.log('[ChatPanel] Auto-connect result:', result);
       
       if (result?.success) {
         // 重新获取状态并更新 UI
-        const status = await window.browserControlManager?.getAIStatus?.();
+        const status = await window.appBridge?.getAIStatus?.();
         if (status) {
           this.updateAIStatus(status);
           if (status.isConnected) {
@@ -466,7 +466,7 @@ class ChatPanel {
    */
   async loadHappyMessageHistory() {
     try {
-      const result = await window.browserControlManager?.getHappyMessages?.(100);
+      const result = await window.appBridge?.getHappyMessages?.(100);
       
       // 先清空显示
       this.renderedMessageIds.clear();
@@ -589,7 +589,7 @@ class ChatPanel {
    */
   async loadLatestUsage() {
     try {
-      const result = await window.browserControlManager?.getLatestUsage?.();
+      const result = await window.appBridge?.getLatestUsage?.();
       // 解析返回值：可能是 { success, usage } 对象或直接是 usage 数据
       const usage = result?.usage || result;
       if (usage && typeof usage === 'object') {
@@ -629,9 +629,9 @@ class ChatPanel {
   async toggleAIConnection() {
     try {
       if (this.aiConnected) {
-        await window.browserControlManager?.disconnectAI?.();
+        await window.appBridge?.disconnectAI?.();
       } else {
-        await window.browserControlManager?.connectAI?.();
+        await window.appBridge?.connectAI?.();
       }
       
       await this.checkAIStatus();
@@ -715,7 +715,7 @@ class ChatPanel {
     }, this.happyStatusTimeoutMs);
 
     try {
-      const result = await window.browserControlManager?.sendAIMessage?.(text);
+      const result = await window.appBridge?.sendAIMessage?.(text);
       
       if (!result?.success) {
         const t = typeof I18nManager !== 'undefined' ? I18nManager.t.bind(I18nManager) : (k) => k;
@@ -745,7 +745,7 @@ class ChatPanel {
     try {
       const sessionId = this.currentSessionId || this.app?.currentSessionId;
       if (sessionId) {
-        await window.browserControlManager?.abortSession?.(sessionId);
+        await window.appBridge?.abortSession?.(sessionId);
       }
       this.updateHappyEventStatus('ready');
     } catch (error) {
@@ -988,7 +988,7 @@ class ChatPanel {
     }, this.happyStatusTimeoutMs);
 
     try {
-      const result = await window.browserControlManager?.sendAIMessage?.(text);
+      const result = await window.appBridge?.sendAIMessage?.(text);
       
       if (!result?.success) {
         const t = typeof I18nManager !== 'undefined' ? I18nManager.t.bind(I18nManager) : (k) => k;

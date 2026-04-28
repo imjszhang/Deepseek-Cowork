@@ -176,7 +176,7 @@ class AccountSetup {
    */
   async loadAccountInfo() {
     try {
-      const accountInfo = await window.browserControlManager?.getAccountInfo?.();
+      const accountInfo = await window.appBridge?.getAccountInfo?.();
       console.log('[AccountSetup] Account info:', accountInfo);
       
       this.accountInfo = accountInfo;
@@ -313,7 +313,7 @@ class AccountSetup {
     } else {
       // 显示 Secret
       try {
-        const result = await window.browserControlManager?.getFormattedSecret?.();
+        const result = await window.appBridge?.getFormattedSecret?.();
         
         if (result?.success) {
           if (this.elements.accountSecretDisplay) {
@@ -435,7 +435,7 @@ class AccountSetup {
         this.elements.btnChangeServerConfirm.textContent = t('common.processing');
       }
       
-      const result = await window.browserControlManager?.changeServer?.(newServer);
+      const result = await window.appBridge?.changeServer?.(newServer);
       
       if (result?.success) {
         this.hideChangeServerDialog();
@@ -475,7 +475,7 @@ class AccountSetup {
     }
     
     try {
-      const result = await window.browserControlManager?.logout?.();
+      const result = await window.appBridge?.logout?.();
       
       if (result?.success) {
         // 更新 UI 状态
@@ -545,11 +545,11 @@ class AccountSetup {
     const t = typeof I18nManager !== 'undefined' ? I18nManager.t.bind(I18nManager) : (k) => k;
     try {
       console.log('[AccountSetup] handleCreateAccount called');
-      console.log('[AccountSetup] browserControlManager:', !!window.browserControlManager);
-      console.log('[AccountSetup] generateHappySecret:', !!window.browserControlManager?.generateHappySecret);
+      console.log('[AccountSetup] appBridge:', !!window.appBridge);
+      console.log('[AccountSetup] generateHappySecret:', !!window.appBridge?.generateHappySecret);
       console.log('[AccountSetup] Generating new secret...');
       
-      const result = await window.browserControlManager?.generateHappySecret?.();
+      const result = await window.appBridge?.generateHappySecret?.();
       console.log('[AccountSetup] generateHappySecret result:', result);
       
       if (result?.success) {
@@ -699,7 +699,7 @@ class AccountSetup {
       // 显示通知提示用户正在处理
       this.showNotification(t('notifications.initializingAccount'), 'info');
       
-      const result = await window.browserControlManager?.saveHappySecret?.(this.pendingSecret.base64url);
+      const result = await window.appBridge?.saveHappySecret?.(this.pendingSecret.base64url);
       
       if (result?.success) {
         this.hideSecretBackupDialog();
@@ -785,7 +785,7 @@ class AccountSetup {
         this.elements.secretInputStatus.className = 'input-status validating';
       }
       
-      const result = await window.browserControlManager?.validateHappySecret?.(input);
+      const result = await window.appBridge?.validateHappySecret?.(input);
       
       if (result?.valid) {
         if (this.elements.secretInputStatus) {
@@ -842,7 +842,7 @@ class AccountSetup {
       }
       
       // 验证 Secret 有效性（连接服务器）
-      const verifyResult = await window.browserControlManager?.verifyHappySecret?.(input);
+      const verifyResult = await window.appBridge?.verifyHappySecret?.(input);
       
       if (verifyResult?.success) {
         // 更新状态：正在初始化账户（服务启动阶段）
@@ -852,7 +852,7 @@ class AccountSetup {
         }
         
         // 保存 Secret（传递 token 以便同步到 ~/.happy/access.key）
-        const saveResult = await window.browserControlManager?.saveHappySecret?.(verifyResult.normalized, verifyResult.token);
+        const saveResult = await window.appBridge?.saveHappySecret?.(verifyResult.normalized, verifyResult.token);
         
         if (saveResult?.success) {
           this.hideSecretInputDialog();

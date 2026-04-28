@@ -178,7 +178,7 @@ export async function startCommand(options) {
                     console.log(chalk.green(`  HTTP:      http://localhost:${httpPort}`));
                     console.log(chalk.green(`  WebSocket: ws://localhost:${wsPort}`));
                     console.log('');
-                    console.log(chalk.cyan('  Open web interface:'), chalk.white('deepseek-cowork open'));
+                    console.log(chalk.cyan('  Open app interface:'), chalk.white('deepseek-cowork open'));
                     console.log(chalk.cyan('  Check status:      '), chalk.white('deepseek-cowork status'));
                     console.log(chalk.cyan('  Stop service:      '), chalk.white('deepseek-cowork stop'));
                 } else {

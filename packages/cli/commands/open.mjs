@@ -45,7 +45,7 @@ export async function openCommand(options) {
             
             if (!options.local) {
                 // 询问是否启动服务
-                console.log('The web interface requires the local service to function properly.');
+                console.log('The app interface requires the local service to function properly.');
                 console.log('');
                 console.log(chalk.cyan('Start the service first:'));
                 console.log(chalk.white('  deepseek-cowork start --daemon'));
@@ -64,11 +64,11 @@ export async function openCommand(options) {
             // 打开本地界面（如果部署了本地前端）
             // 目前本地前端使用 Electron，这里打开的是公域网站连接本地服务
             url = `${PUBLIC_URL}?local=true`;
-            console.log(chalk.dim('Opening local interface...'));
+            console.log(chalk.dim('Opening local app interface...'));
         } else {
             // 打开公域网站
             url = PUBLIC_URL;
-            console.log(chalk.dim('Opening web interface...'));
+            console.log(chalk.dim('Opening app web interface...'));
         }
         
         // 打开浏览器

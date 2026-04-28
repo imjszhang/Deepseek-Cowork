@@ -320,10 +320,11 @@ try {
             "claude-cowork",
             "open-source",
             "ai-assistant",
-            "browser-automation",
             "file-management",
             "llm",
             "claude-code",
+            "local-service",
+            "session-management",
             "cli"
         ],
         dependencies: dependencies,

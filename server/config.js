@@ -74,32 +74,6 @@ function getDefaultConfig() {
             baseUrl: null
         },
         
-        browserControl: {
-            server: {
-                host: 'localhost',
-                port: 3333,
-                routePrefix: '/api/browser',
-                webInterfacePath: '/browser'
-            },
-            extensionWebSocket: {
-                enabled: true,
-                host: 'localhost',
-                port: 8080,
-                maxClients: 10
-            },
-            database: {
-                path: 'data/browser_data.db',
-                directory: 'data'
-            },
-            logging: {
-                level: 'INFO'
-            },
-            monitoring: {
-                enableConnectionMonitor: true,
-                connectionCheckInterval: 30000
-            }
-        },
-        
         cors: {
             origins: ['*'],
             methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],

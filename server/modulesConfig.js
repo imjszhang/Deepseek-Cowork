@@ -14,46 +14,6 @@ const { getUserDataDir } = require('./utils/userDataDir');
  */
 const modules = [
     {
-        // 浏览器控制服务
-        name: 'browser',
-        module: './modules/browser',
-        setupFunction: 'setupBrowserControlService',
-        enabled: true,
-        
-        // 服务特性
-        features: {
-            hasRoutes: true,
-            emitsEvents: true
-        },
-        
-        // 生成初始化参数
-        getOptions: (config, runtimeContext) => ({
-            browserControlConfig: config.browserControl,
-            serverConfig: {
-                host: config.server.host,
-                port: config.server.port
-            }
-        }),
-        
-        // 事件监听配置
-        events: {
-            started: ({ serverInfo }) => {
-                logger.info('Browser control server started');
-                logger.info('Config summary:', JSON.stringify(serverInfo.config, null, 2));
-                if (serverInfo.connections?.extensionWebSocket?.enabled) {
-                    logger.info(`Browser extension WebSocket: ${serverInfo.connections.extensionWebSocket.baseUrl}`);
-                }
-            },
-            stopped: () => {
-                logger.info('Browser control server stopped');
-            },
-            error: ({ type, error }) => {
-                logger.error(`Browser control server error (${type}):`, error);
-            }
-        }
-    },
-    
-    {
         // Explorer 文件浏览服务
         name: 'explorer',
         module: './modules/explorer',

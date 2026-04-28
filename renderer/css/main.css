@@ -202,15 +202,6 @@ body {
   padding: 20px;
 }
 
-/* ============ 浏览器面板 ============ */
-
-#browser-view-container {
-  width: 100%;
-  height: 100%;
-  position: relative;
-  background: var(--background);
-}
-
 #loading-overlay {
   position: absolute;
   inset: 0;
@@ -404,70 +395,6 @@ body {
 
 .env-value.running {
   color: var(--success);
-}
-
-/* Auth Secret Styles */
-.auth-secret-row {
-  margin-top: 8px;
-  padding-top: 8px;
-  border-top: 1px dashed var(--border);
-}
-
-.auth-secret-container {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  flex: 1;
-}
-
-.auth-secret-input {
-  flex: 1;
-  background: var(--input);
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  padding: 4px 8px;
-  font-family: var(--font-mono, 'JetBrains Mono', monospace);
-  font-size: 11px;
-  color: var(--foreground);
-  min-width: 0;
-  max-width: 200px;
-}
-
-.auth-secret-input:focus {
-  outline: none;
-  border-color: var(--primary);
-}
-
-.auth-secret-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--secondary);
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  padding: 4px 6px;
-  cursor: pointer;
-  color: var(--muted-foreground);
-  transition: all 0.15s ease;
-}
-
-.auth-secret-btn:hover {
-  background: var(--accent);
-  color: var(--foreground);
-}
-
-.auth-secret-btn svg {
-  stroke: currentColor;
-  fill: none;
-  stroke-width: 2;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-
-.auth-secret-btn.copied {
-  background: var(--success);
-  color: white;
-  border-color: var(--success);
 }
 
 .env-path {
@@ -1211,27 +1138,6 @@ input:checked + .slider:before {
 }
 
 /* ============ 状态栏样式已移至 layout/statusbar.css ============ */
-
-/* ============ 浏览器标签页列表 ============ */
-
-#browser-tabs-container {
-  height: 100%;
-  overflow-y: auto;
-  padding: 8px;
-  position: relative;
-}
-
-/* 浏览器面板内的 loading-overlay 需要隐藏父级的 */
-#browser-tabs-container #loading-overlay {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  background: var(--background);
-  z-index: 10;
-}
 
 #tabs-list {
   display: flex;

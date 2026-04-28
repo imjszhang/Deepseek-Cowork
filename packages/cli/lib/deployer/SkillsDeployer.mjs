@@ -12,7 +12,6 @@ import ora from 'ora';
 import { getMessages } from './messages.mjs';
 import {
     SKILLS_DIR,
-    SERVER_DOCS_DIR,
     HAPPY_CONFIG_PATH,
     SKILL_NAME,
     SKILL_PATH,
@@ -236,7 +235,7 @@ ${m.memoryIndexUsage3}
             this.log('success', this.msg.claudeCreated);
         }
 
-        // 2. 部署 .claude/skills/browser-control
+        // 2. 部署主内置技能
         const skillDest = path.join(target.path, SKILL_PATH);
         const skillSrc = path.join(sourceDir, 'skills', SKILL_NAME);
 
@@ -247,22 +246,7 @@ ${m.memoryIndexUsage3}
             this.log('success', this.msg.skillDeployed(SKILL_PATH));
         }
 
-        // 3. 同步 server/docs 到 references
-        await this.syncReferences(target.path);
-
-        // 4. 部署 conversation-memory skill
-        const convMemSkillDest = path.join(target.path, CONVERSATION_MEMORY_SKILL_PATH);
-        const convMemSkillSrc = path.join(sourceDir, 'skills', CONVERSATION_MEMORY_SKILL_NAME);
-
-        if (fs.existsSync(convMemSkillSrc)) {
-            if (fs.existsSync(convMemSkillDest)) {
-                this.log('info', this.msg.skillExists(CONVERSATION_MEMORY_SKILL_PATH));
-            } else {
-                this.copyDirRecursive(convMemSkillSrc, convMemSkillDest);
-                this.log('success', this.msg.skillDeployed(CONVERSATION_MEMORY_SKILL_PATH));
-            }
-
-            // 5. 初始化 conversation-memory 数据目录
+        if (SKILL_NAME === CONVERSATION_MEMORY_SKILL_NAME && fs.existsSync(skillSrc)) {
             this.initConversationMemoryData(target.path);
         }
     }
@@ -284,41 +268,7 @@ ${m.memoryIndexUsage3}
     }
 
     /**
-     * 同步 references 文档
-     */
-    async syncReferences(workDir) {
-        const refDest = path.join(workDir, SKILL_PATH, 'references');
-        
-        if (!fs.existsSync(refDest)) {
-            fs.mkdirSync(refDest, { recursive: true });
-        }
-
-        if (!fs.existsSync(SERVER_DOCS_DIR)) {
-            this.log('warn', this.msg.docsSourceNotFound(SERVER_DOCS_DIR));
-            return;
-        }
-
-        const docs = fs.readdirSync(SERVER_DOCS_DIR).filter(f => f.endsWith('.md'));
-        let syncCount = 0;
-
-        for (const doc of docs) {
-            // 跳过 CONTRIBUTING.md
-            if (doc === 'CONTRIBUTING.md') {
-                continue;
-            }
-
-            const srcPath = path.join(SERVER_DOCS_DIR, doc);
-            const destPath = path.join(refDest, doc);
-
-            fs.copyFileSync(srcPath, destPath);
-            syncCount++;
-        }
-
-        this.log('success', this.msg.syncedDocs(syncCount));
-    }
-
-    /**
-     * 更新 references（仅同步文档）
+     * 更新已部署技能
      */
     async update(targetName) {
         const targets = this.getTargetDirs(targetName);
@@ -332,8 +282,6 @@ ${m.memoryIndexUsage3}
                     spinner.warn(this.msg.skillDirNotExist(skillDir));
                     continue;
                 }
-
-                await this.syncReferences(target.path);
                 spinner.succeed(this.msg.updateComplete(target.name));
             } catch (error) {
                 spinner.fail(`Update failed: ${error.message}`);
@@ -436,13 +384,11 @@ ${m.memoryIndexUsage3}
             const claudeMd = path.join(target.path, 'CLAUDE.md');
             const skillDir = path.join(target.path, SKILL_PATH);
             const skillMd = path.join(skillDir, 'SKILL.md');
-            const refDir = path.join(skillDir, 'references');
             const scriptsDir = path.join(skillDir, 'scripts');
 
             const checks = [
                 { name: 'CLAUDE.md', path: claudeMd, type: 'file' },
                 { name: 'SKILL.md', path: skillMd, type: 'file' },
-                { name: 'references/', path: refDir, type: 'dir' },
                 { name: 'scripts/', path: scriptsDir, type: 'dir' }
             ];
 
@@ -459,22 +405,10 @@ ${m.memoryIndexUsage3}
                 console.log(`   ${icon} ${check.name}${extra}`);
             }
 
-            // 检查 references 与源文档的差异
-            if (fs.existsSync(refDir) && fs.existsSync(SERVER_DOCS_DIR)) {
-                const srcDocs = fs.readdirSync(SERVER_DOCS_DIR).filter(f => f.endsWith('.md') && f !== 'CONTRIBUTING.md');
-                const refDocs = fs.readdirSync(refDir).filter(f => f.endsWith('.md'));
-                
-                const missing = srcDocs.filter(d => !refDocs.includes(d));
-                if (missing.length > 0) {
-                    console.log(chalk.yellow(`   ⚠ ${this.msg.refsMissing(missing.join(', '))}`));
-                }
-            }
-
             console.log('');
         }
 
         console.log(chalk.dim(this.msg.configSource(this.getSourceDir())));
-        console.log(chalk.dim(this.msg.docsSource(SERVER_DOCS_DIR)));
         console.log('');
     }
 }

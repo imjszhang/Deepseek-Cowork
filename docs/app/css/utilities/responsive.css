@@ -211,36 +211,6 @@
     display: none;
   }
   
-  /* 浏览器面板 - 移动版下隐藏菜单侧边栏 */
-  #browser-split-container {
-    flex-direction: column;
-  }
-  
-  #browser-menu-pane {
-    display: none;
-  }
-  
-  #browser-display-pane {
-    width: 100%;
-  }
-  
-  #browser-resizer {
-    display: none;
-  }
-  
-  /* 浏览器面板 - 移动版标签卡片样式 */
-  /* 保持双列时的卡片宽度，单列居中显示 */
-  .tabs-grid {
-    grid-template-columns: 1fr !important;
-    justify-items: center;
-    padding: 1rem;
-  }
-  
-  .tabs-grid .glass-card {
-    width: 100%;
-    max-width: 340px;
-  }
-  
   /* 设置面板 - 移动版下隐藏导航侧边栏 */
   .settings-split-layout {
     flex-direction: column;
@@ -511,41 +481,6 @@
   overflow-y: auto;
 }
 
-/* 抽屉内浏览器菜单样式 */
-.mobile-drawer-content .browser-menu-pane {
-  display: flex !important;
-  flex-direction: column;
-}
-
-.mobile-drawer-content .browser-menu-header {
-  padding: 0.75rem 1rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.mobile-drawer-content .browser-menu-list {
-  flex: 1;
-  display: flex !important;
-  flex-direction: column !important;
-  flex-wrap: nowrap !important;
-  overflow-y: auto;
-  overflow-x: hidden !important;
-  padding: 0.5rem;
-}
-
-/* 抽屉内浏览器菜单项样式（覆盖 768px 媒体查询） */
-.mobile-drawer-content .browser-menu-item {
-  display: flex !important;
-  width: 100% !important;
-  flex: 0 0 auto !important;
-  padding: 0.75rem 1rem;
-  margin-bottom: 0.25rem;
-}
-
-/* 强制显示抽屉内浏览器菜单项的文字 */
-.mobile-drawer-content .browser-menu-item .menu-label {
-  display: block !important;
-}
-
 /* ===== 浅色主题 - 全局抽屉样式 ===== */
 body:not(.dark) .mobile-drawer-header {
   border-bottom: 1px solid rgba(0, 0, 0, 0.1);
@@ -559,6 +494,3 @@ body:not(.dark) .mobile-drawer-content .settings-nav-item:hover {
   background: rgba(0, 0, 0, 0.05);
 }
 
-body:not(.dark) .mobile-drawer-content .browser-menu-header {
-  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
-}

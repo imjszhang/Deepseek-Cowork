@@ -15,7 +15,7 @@
  */
 function detectEnvironment() {
     // 首先检查是否是我们创建的 polyfill（polyfill 会有特殊标记）
-    if (window.browserControlManager?._isPolyfill === true) {
+    if (window.appBridge?._isPolyfill === true) {
         return 'web';
     }
     
@@ -29,17 +29,17 @@ function detectEnvironment() {
         return 'electron';
     }
     
-    // 方法3: 检查 browserControlManager 是否是真正的 Electron IPC 接口
+    // 方法3: 检查预加载桥接对象是否是真正的 Electron IPC 接口
     // 真正的 Electron IPC 接口会有特定的方法签名
-    if (window.browserControlManager && typeof window.browserControlManager === 'object') {
-        // 检查是否有多个关键的 IPC 方法（浏览器扩展不会有这些）
+    if (window.appBridge && typeof window.appBridge === 'object') {
+        // 检查是否有多个关键的 IPC 方法
         const hasIpcMethods = [
             'getServerStatus',
             'minimizeWindow',
             'maximizeWindow',
             'closeWindow',
             'getAppVersion'
-        ].every(method => typeof window.browserControlManager[method] === 'function');
+        ].every(method => typeof window.appBridge[method] === 'function');
         
         if (hasIpcMethods) {
             return 'electron';
@@ -136,20 +136,13 @@ const API_MAPPING = {
     'clearLogs': { method: 'DELETE', path: '/api/logs' },
     'getServerLogs': { method: 'GET', path: '/api/logs' },
     
-    // 浏览器控制
-    'getTabs': { method: 'GET', path: '/api/browser/tabs' },
-    'closeTab': { method: 'POST', path: '/api/browser/tab/close' },
-    'openUrl': { method: 'POST', path: '/api/browser/tab/open' },
-    'getExtensionStatus': { method: 'GET', path: '/api/browser/extension/status' },
-    'getExtensionConnections': { method: 'GET', path: '/api/browser/extension/connections' },
-    'getAuthSecret': { method: 'GET', path: '/api/browser/auth/secret' }
 };
 
 /**
  * IPC 方法名到适配器方法名的映射（用于兼容现有代码）
  */
 const IPC_METHOD_MAPPING = {
-    // 从 browserControlManager 的方法名映射
+    // 从 appBridge 的方法名映射
     'getServerStatus': 'getServerStatus',
     'getDetailedStatus': 'getDetailedStatus',
     'getAiStatus': 'getAiStatus',
@@ -282,11 +275,11 @@ class ApiAdapter {
         // 映射方法名
         const ipcMethod = IPC_METHOD_MAPPING[method] || method;
         
-        if (typeof window.browserControlManager[ipcMethod] !== 'function') {
-            throw new Error(`Method "${ipcMethod}" not found in browserControlManager`);
+        if (typeof window.appBridge[ipcMethod] !== 'function') {
+            throw new Error(`Method "${ipcMethod}" not found in appBridge`);
         }
         
-        return window.browserControlManager[ipcMethod](...args);
+        return window.appBridge[ipcMethod](...args);
     }
 
     /**
@@ -393,8 +386,8 @@ class ApiAdapter {
         this._eventListeners.get(event).add(callback);
         
         // 如果是 Electron 模式，直接转发到 IPC 事件
-        if (this._mode === 'electron' && window.browserControlManager.on) {
-            window.browserControlManager.on(event, callback);
+        if (this._mode === 'electron' && window.appBridge.on) {
+            window.appBridge.on(event, callback);
         }
     }
 
@@ -408,8 +401,8 @@ class ApiAdapter {
             this._eventListeners.get(event).delete(callback);
         }
         
-        if (this._mode === 'electron' && window.browserControlManager.off) {
-            window.browserControlManager.off(event, callback);
+        if (this._mode === 'electron' && window.appBridge.off) {
+            window.appBridge.off(event, callback);
         }
     }
 
@@ -455,10 +448,10 @@ window.ApiAdapter = ApiAdapter;
 window.apiAdapter = apiAdapter;
 
 /**
- * Web 模式下的 browserControlManager 兼容层
+ * Web 模式下的 appBridge 兼容层
  * 将 IPC 调用转换为 HTTP/WebSocket 调用
  */
-function createBrowserControlManagerPolyfill() {
+function createAppBridgePolyfill() {
     const eventHandlers = new Map();
     
     // 创建事件监听方法
@@ -488,12 +481,9 @@ function createBrowserControlManagerPolyfill() {
     const DEFAULT_VALUES = {
         // 返回空数组的方法
         'getServerLogs': [],
-        'getTabs': { tabs: [] },
         'getMessages': [],
         'getAllSessions': [],
         // 返回 0 或空对象的方法
-        'getExtensionConnections': { connections: 0 },
-        'getExtensionStatus': { connected: false, count: 0 },
         'getAiStatus': { connected: false },
         'getServerStatus': { running: false },
         // 返回空设置的方法
@@ -689,7 +679,7 @@ function createBrowserControlManagerPolyfill() {
                 return { valid: false, error: error.message };
             }
         },
-        validateHappySecret: async (secret) => window.browserControlManager.validateSecret(secret),
+        validateHappySecret: async (secret) => window.appBridge.validateSecret(secret),
         verifySecret: async (secret) => {
             // 等待连接
             if (!window.apiAdapter || !window.apiAdapter.isConnected()) {
@@ -709,7 +699,7 @@ function createBrowserControlManagerPolyfill() {
                 return { success: false, error: error.message };
             }
         },
-        verifyHappySecret: async (secret) => window.browserControlManager.verifySecret(secret),
+        verifyHappySecret: async (secret) => window.appBridge.verifySecret(secret),
         saveSecret: async (secret, token) => {
             // 等待连接
             if (!window.apiAdapter || !window.apiAdapter.isConnected()) {
@@ -734,7 +724,7 @@ function createBrowserControlManagerPolyfill() {
         },
         saveHappySecret: async (secret, token) => {
             // 调用 saveSecret
-            return window.browserControlManager.saveSecret(secret, token);
+            return window.appBridge.saveSecret(secret, token);
         },
         logout: createApiMethod('logout'),
         changeServer: createApiMethod('changeServer'),
@@ -937,14 +927,6 @@ function createBrowserControlManagerPolyfill() {
         installClaudeCode: createApiMethod('installClaudeCode'),
         upgradeClaudeCode: createApiMethod('upgradeClaudeCode'),
         
-        // ========== 浏览器控制 ==========
-        getTabs: createApiMethod('getTabs'),
-        closeTab: createApiMethod('closeTab'),
-        openUrl: createApiMethod('openUrl'),
-        getExtensionStatus: createApiMethod('getExtensionStatus'),
-        getExtensionConnections: createApiMethod('getExtensionConnections'),
-        getAuthSecret: createApiMethod('getAuthSecret'),
-        
         // ========== 设置向导 ==========
         getSetupRequirements: async () => {
           // 调用依赖检测 API 并转换为设置向导格式
@@ -1014,12 +996,6 @@ function createBrowserControlManagerPolyfill() {
         onUpdateDownloaded: createEventListener('update:downloaded'),
         onUpdateError: createEventListener('update:error'),
         onUpdateStatusChanged: createEventListener('update:statusChanged'),
-        onExtensionConnected: createEventListener('extension:connected'),
-        onExtensionDisconnected: createEventListener('extension:disconnected'),
-        onTabsUpdated: createEventListener('tabs:updated'),
-        onTabsUpdate: createEventListener('tabs:updated'),  // 别名
-        onTabOpened: createEventListener('tab:opened'),
-        onTabClosed: createEventListener('tab:closed'),
         onAIStatusChanged: createEventListener('ai:statusChanged'),
         onAIMessage: createEventListener('ai:message'),
         onAIProgress: createEventListener('ai:progress'),
@@ -1033,29 +1009,29 @@ function createBrowserControlManagerPolyfill() {
 }
 
 // 在 Web 模式下创建 polyfill
-// 注意：即使浏览器扩展已经创建了 browserControlManager，也需要用 polyfill 覆盖
-// 因为扩展创建的对象不包含完整的方法集
+// 如果页面上已有同名对象，仍以当前应用的 polyfill 为准
+// 因为外部对象通常不包含完整的方法集
 if (detectEnvironment() === 'web') {
-    console.log('[ApiAdapter] Creating browserControlManager polyfill for Web mode');
-    // 保存扩展原有的对象引用（如果存在），以便扩展功能仍可使用
-    if (window.browserControlManager) {
-        window._extensionBrowserControlManager = window.browserControlManager;
-        console.log('[ApiAdapter] Saved extension browserControlManager reference');
+    console.log('[ApiAdapter] Creating appBridge polyfill for Web mode');
+    // 保存原有的对象引用（如果存在），以便后续兼容处理
+    if (window.appBridge) {
+        window._externalAppBridge = window.appBridge;
+        console.log('[ApiAdapter] Saved external appBridge reference');
     }
-    window.browserControlManager = createBrowserControlManagerPolyfill();
+    window.appBridge = createAppBridgePolyfill();
 }
 
-// 延迟再次检查，防止浏览器扩展在脚本加载后覆盖 polyfill
+// 延迟再次检查，防止其他脚本在加载后覆盖 polyfill
 setTimeout(() => {
     if (detectEnvironment() === 'web') {
         // 检查 polyfill 是否被覆盖
-        if (typeof window.browserControlManager?.getAppVersion !== 'function' ||
-            typeof window.browserControlManager?.onServerStatusChanged !== 'function') {
+        if (typeof window.appBridge?.getAppVersion !== 'function' ||
+            typeof window.appBridge?.onServerStatusChanged !== 'function') {
             console.log('[ApiAdapter] Polyfill was overwritten, recreating...');
-            if (window.browserControlManager && !window._extensionBrowserControlManager) {
-                window._extensionBrowserControlManager = window.browserControlManager;
+            if (window.appBridge && !window._externalAppBridge) {
+                window._externalAppBridge = window.appBridge;
             }
-            window.browserControlManager = createBrowserControlManagerPolyfill();
+            window.appBridge = createAppBridgePolyfill();
         }
     }
 }, 0);

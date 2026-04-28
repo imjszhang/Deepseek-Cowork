@@ -117,7 +117,7 @@ export async function loginCommand(options) {
             console.log(chalk.green('You are now logged in.'));
             console.log('');
             console.log(chalk.cyan('Start the service:'), chalk.white('deepseek-cowork start'));
-            console.log(chalk.cyan('Open web interface:'), chalk.white('deepseek-cowork open'));
+            console.log(chalk.cyan('Open app interface:'), chalk.white('deepseek-cowork open'));
             console.log('');
             
         } catch (error) {

@@ -2,7 +2,7 @@
  * DeepSeek Cowork - 主进程入口
  * 
  * 功能：
- * - 启动内嵌 browserControlServer（同进程）
+ * - 启动内嵌本地服务（同进程）
  * - 创建应用窗口
  * - 管理 BrowserView 加载管理界面
  * - 处理 IPC 通信
@@ -220,10 +220,6 @@ function setupIpcHandlers() {
     return serverManager ? serverManager.getDetailedStatus() : { running: false };
   });
 
-  ipcMain.handle('server:getExtensionConnections', () => {
-    return serverManager ? serverManager.getExtensionConnections() : 0;
-  });
-
   ipcMain.handle('server:start', async () => {
     if (serverManager) {
       return serverManager.start();
@@ -276,73 +272,6 @@ function setupIpcHandlers() {
       return serverManager.killProcessOnPort(port);
     }
     return false;
-  });
-
-  // ============ 浏览器标签页 ============
-
-  ipcMain.handle('browser:getTabs', async () => {
-    try {
-      const service = serverManager?.getService?.();
-      
-      if (service) {
-        // 尝试多种方式获取 tabsManager
-        let tabsManager = null;
-        if (typeof service.getTabsManager === 'function') {
-          tabsManager = service.getTabsManager();
-        } else if (service.tabsManager) {
-          tabsManager = service.tabsManager;
-        }
-        
-        if (tabsManager) {
-          const result = await tabsManager.getTabs();
-          console.log('[browser:getTabs] Success, tabs count:', result?.tabs?.length || 0);
-          return result;
-        }
-      }
-      return { status: 'error', message: '标签页管理器不可用', tabs: [] };
-    } catch (error) {
-      console.error('[browser:getTabs] Error:', error.message);
-      return { status: 'error', message: error.message, tabs: [] };
-    }
-  });
-
-  ipcMain.handle('browser:closeTab', async (event, tabId) => {
-    try {
-      const service = serverManager?.getService?.();
-      if (service) {
-        const extensionServer = service.getExtensionWebSocketServer?.();
-        if (extensionServer) {
-          return await extensionServer.sendMessage({
-            type: 'close_tab',
-            tabId: tabId,
-            requestId: `close_${tabId}_${Date.now()}`
-          });
-        }
-      }
-      return { status: 'error', message: '扩展服务器不可用' };
-    } catch (error) {
-      return { status: 'error', message: error.message };
-    }
-  });
-
-  ipcMain.handle('browser:openUrl', async (event, url, tabId) => {
-    try {
-      const service = serverManager?.getService?.();
-      if (service) {
-        const extensionServer = service.getExtensionWebSocketServer?.();
-        if (extensionServer) {
-          return await extensionServer.sendMessage({
-            type: 'open_url',
-            url: url,
-            tabId: tabId,
-            requestId: `open_${Date.now()}`
-          });
-        }
-      }
-      return { status: 'error', message: '扩展服务器不可用' };
-    } catch (error) {
-      return { status: 'error', message: error.message };
-    }
   });
 
   // ============ 视图控制 ============
@@ -472,35 +401,11 @@ function setupIpcHandlers() {
 
   // 保留旧的执行指令接口（使用 serverManager 的 AIAgent）
   ipcMain.handle('ai:executeInstruction', async (event, instruction, context = {}) => {
-    try {
-      if (serverManager) {
-        const service = serverManager.getService();
-        const aiAgent = service?.getAIAgent?.();
-        if (aiAgent) {
-          return await aiAgent.executeInstruction(instruction, context);
-        }
-      }
-      return { success: false, error: 'AI Agent 未配置' };
-    } catch (error) {
-      return { success: false, error: error.message };
-    }
+    return { success: false, error: 'AI Agent 未配置' };
   });
 
   ipcMain.handle('ai:getContext', async (event, type = 'full') => {
-    try {
-      if (serverManager) {
-        const service = serverManager.getService();
-        if (service) {
-          const { ContextBuilder } = require('../server/ai');
-          const contextBuilder = new ContextBuilder({ browserService: service });
-          return await contextBuilder.build({ type });
-        }
-      }
-      return null;
-    } catch (error) {
-      console.error('Failed to get browser context:', error);
-      return null;
-    }
+    return null;
   });
 
   ipcMain.handle('ai:getSession', () => {

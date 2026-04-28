@@ -1,6 +1,0 @@
-{
-  "_comment": "执行 JavaScript 脚本请求模板",
-  "_usage": "1. 复制此文件并重命名（如 my_script.json）2. 修改 tabId 为实际的标签页 ID 3. 修改 code 为要执行的脚本 4. 使用 curl -d @my_script.json 发送请求",
-  "tabId": 123456789,
-  "code": "(() => { const title = document.querySelector('h1')?.innerText ?? '未找到标题'; return { success: true, title: title }; })()"
-}

@@ -69,7 +69,7 @@ class WorkspaceSettings {
   async load() {
     try {
       console.log('[WorkspaceSettings] Loading...');
-      const settings = await window.browserControlManager.getAllHappySettings();
+      const settings = await window.appBridge.getAllHappySettings();
       console.log('[WorkspaceSettings] Settings:', settings);
 
       // 工作目录（优先使用当前 session 实际的目录，而不是用户设置）
@@ -176,7 +176,7 @@ class WorkspaceSettings {
         permissionMode: this.elements.permissionModeSelect?.value
       };
 
-      const result = await window.browserControlManager.saveHappySettings(settings);
+      const result = await window.appBridge.saveHappySettings(settings);
       
       if (result.success) {
         if (result.needsRestart) {
@@ -203,7 +203,7 @@ class WorkspaceSettings {
     
     try {
       // selectWorkspaceDir 只返回用户选择的路径
-      const result = await window.browserControlManager.selectWorkspaceDir();
+      const result = await window.appBridge.selectWorkspaceDir();
       
       if (result?.success && result.path) {
         // 显示加载遮罩，阻止用户操作
@@ -211,7 +211,7 @@ class WorkspaceSettings {
         
         try {
           // 调用 switchWorkDir 来实际切换目录
-          const switchResult = await window.browserControlManager.switchWorkDir?.(result.path);
+          const switchResult = await window.appBridge.switchWorkDir?.(result.path);
           
           if (switchResult?.success) {
             this.workspaceDir = result.path;
@@ -265,7 +265,7 @@ class WorkspaceSettings {
     this.app?.showLoadingOverlay?.(t('notifications.resettingToDefault') || '正在重置为默认目录...');
     
     try {
-      const result = await window.browserControlManager.resetWorkspaceDir();
+      const result = await window.appBridge.resetWorkspaceDir();
       
       if (result?.success) {
         this.workspaceDir = result.path;

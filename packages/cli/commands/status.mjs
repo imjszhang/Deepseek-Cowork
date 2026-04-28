@@ -86,12 +86,6 @@ export async function statusCommand(options) {
                     console.log(`  Daemon:       ${daemonStatus}`);
                 }
                 
-                // BrowserControl 状态
-                if (status.service.browserControl) {
-                    const bcStatus = status.service.browserControl === 'running' ? chalk.green('Running') : chalk.red('Stopped');
-                    console.log(`  Browser:      ${bcStatus}`);
-                }
-                
                 // Explorer 状态
                 if (status.service.explorer) {
                     const expStatus = status.service.explorer === 'running' ? chalk.green('Running') : chalk.red('Stopped');
@@ -116,7 +110,7 @@ export async function statusCommand(options) {
             console.log(chalk.cyan('Start service:'), chalk.white('deepseek-cowork start'));
         } else {
             console.log(chalk.cyan('Stop service: '), chalk.white('deepseek-cowork stop'));
-            console.log(chalk.cyan('Open web UI:  '), chalk.white('deepseek-cowork open'));
+            console.log(chalk.cyan('Open app UI:  '), chalk.white('deepseek-cowork open'));
         }
         console.log('');
         

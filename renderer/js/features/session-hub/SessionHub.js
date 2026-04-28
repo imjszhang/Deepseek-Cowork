@@ -56,10 +56,10 @@ class SessionHub {
    */
   async preloadSessionState() {
     try {
-      if (window.browserControlManager?.getFormattedSessionState) {
+      if (window.appBridge?.getFormattedSessionState) {
         // Electron 版本：直接调用 IPC 获取
         console.log('[SessionHub] Preloading state (Electron IPC)...');
-        const state = await window.browserControlManager.getFormattedSessionState();
+        const state = await window.appBridge.getFormattedSessionState();
         if (state?.sessions) {
           this.handleStateUpdated(state);
           this.isStateReady = true;
@@ -91,9 +91,9 @@ class SessionHub {
       
       let messagesData = null;
       
-      if (window.browserControlManager?.getMultiSessionMessages) {
+      if (window.appBridge?.getMultiSessionMessages) {
         // Electron 版本
-        messagesData = await window.browserControlManager.getMultiSessionMessages(sessionIds, this.maxMessagesPerSession);
+        messagesData = await window.appBridge.getMultiSessionMessages(sessionIds, this.maxMessagesPerSession);
       } else if (window.apiAdapter?.request) {
         // Web 版本
         const response = await window.apiAdapter.request('getMultiSessionMessages', {
@@ -127,9 +127,9 @@ class SessionHub {
     // 绑定方法上下文
     this.handleStateUpdated = this.handleStateUpdated.bind(this);
     
-    if (window.browserControlManager?.onSessionStateUpdated) {
+    if (window.appBridge?.onSessionStateUpdated) {
       // Electron 版本：通过 IPC 监听
-      this._unsubscribeState = window.browserControlManager.onSessionStateUpdated(this.handleStateUpdated);
+      this._unsubscribeState = window.appBridge.onSessionStateUpdated(this.handleStateUpdated);
       console.log('[SessionHub] Subscribed to state updates (Electron)');
     } else if (window.apiAdapter?.on) {
       // Web 版本：通过 WebSocket 监听
@@ -143,9 +143,9 @@ class SessionHub {
    * 兼容 Electron 和 Web 版本
    */
   subscribeToMessageUpdates() {
-    if (window.browserControlManager?.onMessageAdded) {
+    if (window.appBridge?.onMessageAdded) {
       // Electron 版本：通过 IPC 监听
-      this._unsubscribeMessage = window.browserControlManager.onMessageAdded(this.handleMessageAdded);
+      this._unsubscribeMessage = window.appBridge.onMessageAdded(this.handleMessageAdded);
       console.log('[SessionHub] Subscribed to message updates (Electron)');
     } else if (window.apiAdapter?.on) {
       // Web 版本：通过 WebSocket 监听
@@ -163,9 +163,9 @@ class SessionHub {
     this.handleEventStatusUpdated = this.handleEventStatusUpdated.bind(this);
     this.handleSessionStatusChanged = this.handleSessionStatusChanged.bind(this);
     
-    if (window.browserControlManager?.onHappyEventStatus) {
+    if (window.appBridge?.onHappyEventStatus) {
       // Electron 版本：通过 IPC 监听 happy:eventStatus（当前 session 的状态）
-      this._unsubscribeEventStatus = window.browserControlManager.onHappyEventStatus(this.handleEventStatusUpdated);
+      this._unsubscribeEventStatus = window.appBridge.onHappyEventStatus(this.handleEventStatusUpdated);
       console.log('[SessionHub] Subscribed to event status updates (Electron)');
     } else if (window.apiAdapter?.on) {
       // Web 版本：通过 WebSocket 监听
@@ -174,9 +174,9 @@ class SessionHub {
     }
     
     // 订阅单个 session 状态变化事件（所有 session，包括非当前的）
-    if (window.browserControlManager?.onSessionStatusChanged) {
+    if (window.appBridge?.onSessionStatusChanged) {
       // Electron 版本
-      this._unsubscribeSessionStatus = window.browserControlManager.onSessionStatusChanged(this.handleSessionStatusChanged);
+      this._unsubscribeSessionStatus = window.appBridge.onSessionStatusChanged(this.handleSessionStatusChanged);
       console.log('[SessionHub] Subscribed to session status changes (Electron)');
     } else if (window.apiAdapter?.on) {
       // Web 版本
@@ -484,7 +484,7 @@ class SessionHub {
     
     try {
       // 获取所有 sessions（API 返回 { success, sessions: { name: {...} } }）
-      const response = await window.browserControlManager?.getAllSessions?.();
+      const response = await window.appBridge?.getAllSessions?.();
       
       // 处理响应数据
       let sessions = [];
@@ -839,7 +839,7 @@ class SessionHub {
     
     try {
       // 调用 switchWorkDir 来切换目录
-      const result = await window.browserControlManager?.switchWorkDir?.(workspaceDir);
+      const result = await window.appBridge?.switchWorkDir?.(workspaceDir);
       
       if (result?.success) {
         // 更新状态栏工作目录显示
@@ -891,7 +891,7 @@ class SessionHub {
     
     try {
       // 调用选择目录对话框
-      const result = await window.browserControlManager?.selectWorkspaceDir?.();
+      const result = await window.appBridge?.selectWorkspaceDir?.();
       
       if (result?.success && result.path) {
         // 显示加载遮罩
@@ -899,7 +899,7 @@ class SessionHub {
         
         try {
           // 调用 switchWorkDir 来实际切换目录
-          const switchResult = await window.browserControlManager?.switchWorkDir?.(result.path);
+          const switchResult = await window.appBridge?.switchWorkDir?.(result.path);
           
           if (switchResult?.success) {
             // 更新状态栏工作目录显示

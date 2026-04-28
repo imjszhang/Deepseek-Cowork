@@ -17,7 +17,7 @@ class SetupWizard {
     
     // 当前步骤
     this.currentWizardStep = 1;
-    this.totalSteps = 5;
+    this.totalSteps = 4;
     
     // 需求检查状态
     this.wizardRequirements = null;
@@ -77,13 +77,7 @@ class SetupWizard {
       prev3: document.getElementById('wizard-prev-3'),
       saveApi: document.getElementById('wizard-save-api'),
       
-      // Step 4 元素 (JS-EYES)
-      prev4: document.getElementById('wizard-prev-4'),
-      skip4: document.getElementById('wizard-skip-4'),
-      next4: document.getElementById('wizard-next-4'),
-      openJsEyesBtn: document.getElementById('open-jseyes-github-btn'),
-      
-      // Step 5 元素 (完成)
+      // Step 4 元素 (完成)
       completeBtn: document.getElementById('wizard-complete-btn'),
       configSummary: document.getElementById('config-summary')
     };
@@ -104,7 +98,7 @@ class SetupWizard {
     this.elements.next2?.addEventListener('click', () => this.goToStep(3));
     this.elements.copyCommandBtn?.addEventListener('click', () => this.copyInstallCommand());
     this.elements.openClaudeDocsBtn?.addEventListener('click', () => {
-      window.browserControlManager?.openClaudeCodeDocs?.();
+      window.appBridge?.openClaudeCodeDocs?.();
     });
     
     // Step 3 事件
@@ -113,15 +107,7 @@ class SetupWizard {
     this.elements.prev3?.addEventListener('click', () => this.goToStep(2));
     this.elements.saveApi?.addEventListener('click', () => this.saveApiConfig());
     
-    // Step 4 事件 (JS-EYES)
-    this.elements.prev4?.addEventListener('click', () => this.goToStep(3));
-    this.elements.skip4?.addEventListener('click', () => this.goToStep(5));
-    this.elements.next4?.addEventListener('click', () => this.goToStep(5));
-    this.elements.openJsEyesBtn?.addEventListener('click', () => {
-      window.browserControlManager?.openExternalUrl?.('https://github.com/imjszhang/js-eyes/releases/latest');
-    });
-    
-    // Step 5 事件 (完成)
+    // Step 4 事件 (完成)
     this.elements.completeBtn?.addEventListener('click', () => this.complete());
   }
 
@@ -192,7 +178,7 @@ class SetupWizard {
    */
   async shouldShow() {
     try {
-      const result = await window.browserControlManager?.shouldShowSetup?.();
+      const result = await window.appBridge?.shouldShowSetup?.();
       console.log('[SetupWizard] shouldShowSetup result:', result);
       
       if (result?.shouldShow) {
@@ -211,7 +197,7 @@ class SetupWizard {
    */
   async checkAndShow() {
     try {
-      const result = await window.browserControlManager?.shouldShowSetup?.();
+      const result = await window.appBridge?.shouldShowSetup?.();
       console.log('[SetupWizard] shouldShowSetup result:', result);
       
       if (result?.shouldShow) {
@@ -231,7 +217,7 @@ class SetupWizard {
     
     // 获取最新的配置需求
     if (!this.wizardRequirements) {
-      this.wizardRequirements = await window.browserControlManager?.getSetupRequirements?.();
+      this.wizardRequirements = await window.appBridge?.getSetupRequirements?.();
     }
     
     // 渲染需求列表
@@ -355,8 +341,6 @@ class SetupWizard {
     } else if (step === 3) {
       this.initApiConfigStep();
     } else if (step === 4) {
-      this.initJsEyesStep();
-    } else if (step === 5) {
       this.initCompleteStep();
     }
   }
@@ -413,9 +397,9 @@ class SetupWizard {
         'info'
       );
 
-      const result = await window.browserControlManager?.[methodName]?.();
+      const result = await window.appBridge?.[methodName]?.();
       if (result?.success) {
-        this.wizardRequirements = await window.browserControlManager?.recheckSetup?.();
+        this.wizardRequirements = await window.appBridge?.recheckSetup?.();
         this.renderRequirementsList();
         await this.initClaudeCodeStep();
 
@@ -458,7 +442,7 @@ class SetupWizard {
     
     try {
       // 重新检测
-      this.wizardRequirements = await window.browserControlManager?.recheckSetup?.();
+      this.wizardRequirements = await window.appBridge?.recheckSetup?.();
       
       // 更新需求列表
       this.renderRequirementsList();
@@ -514,15 +498,6 @@ class SetupWizard {
       this.elements.provider.value = 'deepseek';
       this.onProviderChange();
     }
-  }
-
-  /**
-   * 初始化 JS-EYES 安装步骤
-   */
-  initJsEyesStep() {
-    // JS-EYES 是推荐依赖，不需要特殊检测
-    // 只显示安装指南，用户可以选择跳过
-    console.log('[SetupWizard] JS-EYES step initialized');
   }
 
   /**
@@ -617,15 +592,15 @@ class SetupWizard {
       }
       
       // 保存配置
-      const result = await window.browserControlManager?.saveClaudeCodeSettings?.(settings);
+      const result = await window.appBridge?.saveClaudeCodeSettings?.(settings);
       
       if (result?.success) {
         this.showApiStatus('配置保存成功', 'success');
         
         // 更新需求状态
-        this.wizardRequirements = await window.browserControlManager?.recheckSetup?.();
+        this.wizardRequirements = await window.appBridge?.recheckSetup?.();
         
-        // 进入 JS-EYES 安装页
+        // 进入完成页
         setTimeout(() => {
           this.goToStep(4);
         }, 500);
@@ -720,7 +695,7 @@ class SetupWizard {
   async skip() {
     const t = this.getTranslator();
     try {
-      await window.browserControlManager?.skipSetup?.();
+      await window.appBridge?.skipSetup?.();
       this.hide();
       this.showNotification(t('notifications.configLater'), 'info');
     } catch (error) {
@@ -734,7 +709,7 @@ class SetupWizard {
   async complete() {
     const t = this.getTranslator();
     try {
-      await window.browserControlManager?.completeSetup?.();
+      await window.appBridge?.completeSetup?.();
       this.hide();
       this.showNotification(t('notifications.configComplete'), 'success');
       
@@ -754,10 +729,10 @@ class SetupWizard {
     const t = this.getTranslator();
     try {
       // 重置向导状态
-      await window.browserControlManager?.resetSetupWizard?.();
+      await window.appBridge?.resetSetupWizard?.();
       
       // 获取最新需求
-      this.wizardRequirements = await window.browserControlManager?.getSetupRequirements?.();
+      this.wizardRequirements = await window.appBridge?.getSetupRequirements?.();
       
       // 显示向导
       this.show();

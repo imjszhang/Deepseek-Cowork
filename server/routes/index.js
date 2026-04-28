@@ -11,9 +11,9 @@ const modulesManager = require('../modulesManager');
 
 // 服务列表配置
 const servicesList = [
-    { name: '浏览器控制', path: '/browser', description: '浏览器自动化控制', icon: '🌐', category: 'core' },
+    { name: '本地服务', path: '/', description: '本地运行时与服务入口', icon: '🖥️', category: 'core' },
     { name: '文件浏览器', path: '/explorer', description: '文件系统浏览和管理', icon: '📁', category: 'core' },
-    { name: 'AI 助手', path: '/ai', description: '浏览器 AI 智能助手', icon: '🤖', category: 'ai' }
+    { name: 'AI 助手', path: '/ai', description: '本地 AI 会话与任务协作', icon: '🤖', category: 'ai' }
 ];
 
 /**

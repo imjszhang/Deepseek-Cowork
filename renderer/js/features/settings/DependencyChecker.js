@@ -91,7 +91,7 @@ class DependencyChecker {
   async load() {
     try {
       console.log('[DependencyChecker] Loading...');
-      const result = await window.browserControlManager.getDependencyStatus();
+      const result = await window.appBridge.getDependencyStatus();
       console.log('[DependencyChecker] Result:', result);
       this.applyDependencyStatus(result);
     } catch (error) {
@@ -111,7 +111,7 @@ class DependencyChecker {
         this.elements.refreshBtn.disabled = true;
       }
       
-      const result = await window.browserControlManager.checkAllDependencies();
+      const result = await window.appBridge.checkAllDependencies();
       console.log('[DependencyChecker] Refresh result:', result);
       this.applyDependencyStatus(result);
       
@@ -319,7 +319,7 @@ class DependencyChecker {
       this.claudeActionInProgress = action;
       this.updateClaudeCodeActionButtons();
 
-      const result = await window.browserControlManager?.[methodName]?.();
+      const result = await window.appBridge?.[methodName]?.();
       if (result?.success) {
         if (result.status) {
           this.claudeCode = result.status;
@@ -364,7 +364,7 @@ class DependencyChecker {
    */
   async openNodeJsGuide() {
     try {
-      await window.browserControlManager.openNodeJsWebsite();
+      await window.appBridge.openNodeJsWebsite();
     } catch (error) {
       console.error('[DependencyChecker] Open Node.js guide error:', error);
     }
@@ -375,7 +375,7 @@ class DependencyChecker {
    */
   async openClaudeCodeGuide() {
     try {
-      await window.browserControlManager.openClaudeCodeDocs();
+      await window.appBridge.openClaudeCodeDocs();
     } catch (error) {
       console.error('[DependencyChecker] Open Claude Code guide error:', error);
     }
