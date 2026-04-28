@@ -2334,22 +2334,22 @@ async function checkAndInstallDependencies() {
     console.log(`  Electron Node.js: v${status.nodejs.electronBuiltin.version}`);
   }
   
-  // 检查并安装 happy-coder
+  // 检查并安装 happy CLI
   if (status.happyCoder.installed) {
-    console.log(`  happy-coder: v${status.happyCoder.version} (${status.happyCoder.source})`);
+    console.log(`  happy CLI: v${status.happyCoder.version} (${status.happyCoder.source})`);
     if (status.happyCoder.daemon.running) {
       console.log(`    Daemon: Running (PID: ${status.happyCoder.daemon.pid}, Port: ${status.happyCoder.daemon.port})`);
     }
   } else {
-    console.log('  happy-coder: Not installed, attempting to install...');
+    console.log('  happy CLI: Not installed, attempting to install...');
     
     // 尝试安装
     const installResult = await dependencyChecker.installHappyCoder();
     if (installResult.success) {
       status.happyCoder = installResult.status;
-      console.log(`  happy-coder: Installed v${status.happyCoder.version}`);
+      console.log(`  happy CLI: Installed v${status.happyCoder.version}`);
     } else {
-      console.error('  happy-coder: Installation failed -', installResult.error);
+      console.error('  happy CLI: Installation failed -', installResult.error);
     }
   }
   

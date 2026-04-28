@@ -397,6 +397,46 @@ function normalizeRawMessage(id, localId, createdAt, raw) {
     };
   }
 
+  // 处理新版 happy session protocol envelope
+  if (raw.role === 'session' && raw.content?.ev) {
+    const ev = raw.content.ev;
+    const text = ev.text || raw.text || '';
+
+    if (ev.t === 'text' && text) {
+      return {
+        id,
+        localId,
+        createdAt,
+        role: 'agent',
+        isSidechain: !!ev.thinking,
+        content: [{
+          type: 'text',
+          text,
+          uuid: id,
+          parentUUID: null
+        }],
+        meta: raw.meta
+      };
+    }
+
+    if (ev.t === 'turn-end') {
+      return {
+        id,
+        localId,
+        createdAt,
+        role: 'event',
+        content: {
+          type: 'status',
+          status: ev.status || 'completed'
+        },
+        isSidechain: false,
+        meta: raw.meta
+      };
+    }
+
+    return null;
+  }
+
   // 处理 user 消息中的乐观更新（本地发送的消息）
   // 这种消息通常没有 content 或 content 格式简单
   if (raw.role === 'user') {

@@ -235,7 +235,7 @@ try {
         "express": "^4.22.1",
         "cors": "^2.8.5",
         "socket.io": "^4.8.3",
-        "socket.io-client": "^4.8.3",
+        "socket.io-client": "^4.8.1",
         "chokidar": "^3.6.0",
         "node-cron": "^4.2.1",
         "ws": "^8.20.0",
@@ -244,17 +244,23 @@ try {
         "libsodium-wrappers": "^0.7.13",
         
         // happy-cli 工具解压依赖
-        "tar": "^7.5.13",
+        "tar": "^7.5.2",
         
         // happy-cli 运行时依赖（daemon 启动所需）
-        "@agentclientprotocol/sdk": "^0.8.0",
-        "@modelcontextprotocol/sdk": "^1.29.0",
+        "@agentclientprotocol/sdk": "^0.14.1",
+        "@anthropic-ai/claude-agent-sdk": "^0.2.96",
+        "@anthropic-ai/sandbox-runtime": "^0.0.37",
+        "@modelcontextprotocol/sdk": "1.25.3",
+        "@noble/ed25519": "^3.0.0",
+        "@noble/hashes": "^2.0.1",
+        "@paralleldrive/cuid2": "^2.2.2",
+        "@slopus/happy-wire": "file:lib/happy-wire",
         "@stablelib/base64": "^2.0.1",
         "@stablelib/hex": "^2.0.1",
         "ai": "^5.0.107",
         "cross-spawn": "^7.0.6",
         "expo-server-sdk": "^3.15.0",
-        "fastify": "^5.8.5",
+        "fastify": "^5.6.2",
         "fastify-type-provider-zod": "4.0.2",
         "http-proxy": "^1.18.1",
         "http-proxy-middleware": "^3.0.5",
@@ -264,7 +270,7 @@ try {
         "react": "^19.2.0",
         "tmp": "^0.2.5",
         "tweetnacl": "^1.0.3",
-        "zod": "^3.23.8"
+        "zod": "3.25.76"
     };
     
     // 处理 overrides：如果某个包在 dependencies 中已存在，则从 overrides 中移除以避免冲突

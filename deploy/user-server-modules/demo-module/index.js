@@ -84,13 +84,16 @@ function setupDemoModuleService(options = {}) {
             
             // 监听新消息事件
             this.happyService.on('happy:message', (message) => {
-                console.log(`[DemoModule] Message received: ${message.role} - ${message.content?.substring(0, 50)}...`);
+                const contentText = typeof message.content === 'string'
+                    ? message.content
+                    : (message.text || '');
+                console.log(`[DemoModule] Message received: ${message.role} - ${contentText.substring(0, 50)}...`);
                 
                 // 缓存最近的消息
                 this.recentMessages.push({
                     timestamp: new Date().toISOString(),
                     role: message.role,
-                    contentPreview: message.content?.substring(0, 100) || ''
+                    contentPreview: contentText.substring(0, 100)
                 });
                 
                 // 保持缓存大小
