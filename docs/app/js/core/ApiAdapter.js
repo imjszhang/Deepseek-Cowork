@@ -534,7 +534,14 @@ function createAppBridgePolyfill() {
                 }
             }
             try {
-                return await window.apiAdapter.call(methodName, ...args);
+                const result = await window.apiAdapter.call(methodName, ...args);
+                if ((methodName === 'getServerStatus' || methodName === 'getDetailedStatus') && result?.status) {
+                    return {
+                        ...result.status,
+                        success: result.success
+                    };
+                }
+                return result;
             } catch (error) {
                 console.error(`[Polyfill] ${methodName} failed:`, error);
                 throw error;
