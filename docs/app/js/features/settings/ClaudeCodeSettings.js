@@ -264,7 +264,7 @@ class ClaudeCodeSettings {
       const provider = this.elements.providerSelect?.value || 'anthropic';
       const model = this.elements.modelInput?.value?.trim() || null;
       const isDeepSeek = provider === 'deepseek';
-      const deepSeekMainModel = model || 'deepseek-v4-pro';
+      const deepSeekMainModel = model || 'deepseek-v4-pro[1m]';
       const settings = {
         provider,
         baseUrl: this.elements.baseurlInput?.value?.trim() || null,
