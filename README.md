@@ -2,7 +2,7 @@
 
 <p align="center">
 <a href="https://deepseek-cowork.com">
-  <img width="1280" height="640" alt="DeepSeek Cowork banner" src="./docs/images/preview.png">
+  <img width="1280" height="640" alt="DeepSeek Cowork banner" src="./site/images/preview.png">
 </a>
 </p>
 
@@ -22,7 +22,7 @@
 </p>
 
 <p align="center">
-  <a href="#why-this-project">English</a> | <a href="./docs/README_CN.md">中文文档</a>
+  <a href="#why-this-project">English</a> | <a href="./site/README_CN.md">中文文档</a>
 </p>
 
 ---
@@ -256,10 +256,10 @@ deepseek-cowork module status
 # Build static files for web deployment
 npm run build:web
 
-# Verify docs/app is still in sync with renderer sources
+# Verify dist/app is still in sync with renderer sources
 npm run check:web-sync
 
-# Output: docs/app/
+# Output: dist/
 ```
 
 The web frontend is deployed to GitHub Pages automatically.

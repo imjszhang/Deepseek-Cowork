@@ -6,7 +6,7 @@
   "scripts": {
     "start": "electron .",
     "dev": "electron . --enable-logging",
-    "test": "npm run check:web-sync && npm run check:claude-detector && node lib/happy/__tests__/smoke.test.js",
+    "test": "npm run build:web && npm run check:web-sync && npm run check:claude-detector && node lib/happy/__tests__/smoke.test.js",
     "local-service": "node packages/cli/bin/cli.mjs start",
     "server": "node packages/cli/bin/cli.mjs start",
     "server:pages": "node scripts/server-pages.js",

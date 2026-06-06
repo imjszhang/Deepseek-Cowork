@@ -59,4 +59,4 @@ This release simplifies the local backend surface, hardens long-running session 
 
 - Existing local checkouts should run `npm install` (and `cd packages/cli && npm install`) so the renamed happy runtime, new bundled tools (ripgrep, difftastic), and updated lockfiles are picked up cleanly.
 - The legacy browser-control routes and panel are gone. If you depended on them, switch to the JS Eyes extension based flow as documented in the setup wizard and READMEs.
-- Run `npm run check:web-sync` after pulling to confirm `docs/app` is still in sync with the renderer sources, and `npm run check:claude-detector` to validate Claude Code detection on your machine.
+- Run `npm run check:web-sync` after pulling to confirm `dist/app` is still in sync with the renderer sources, and `npm run check:claude-detector` to validate Claude Code detection on your machine.

@@ -10,9 +10,11 @@ const path = require('path');
 const fs = require('fs');
 
 // 源目录和输出目录
-// renderer 是唯一源码，docs/app 是构建产物
+// site 是 Pages 静态源，renderer 是 Web app 源码，dist 是完整 Pages 构建产物
 const SRC_DIR = path.join(__dirname, '../renderer');
-const OUT_DIR = path.join(__dirname, '../docs/app');
+const SITE_DIR = path.join(__dirname, '../site');
+const OUT_DIR = path.join(__dirname, '../dist');
+const APP_OUT_DIR = path.join(OUT_DIR, 'app');
 
 // 需要复制的静态资源
 const STATIC_ASSETS = [
@@ -86,16 +88,20 @@ function ensureDir(dir) {
 /**
  * 复制目录
  */
-function copyDir(src, dest) {
+function copyDir(src, dest, filter = () => true) {
     ensureDir(dest);
     const entries = fs.readdirSync(src, { withFileTypes: true });
     
     for (const entry of entries) {
         const srcPath = path.join(src, entry.name);
         const destPath = path.join(dest, entry.name);
+
+        if (!filter(srcPath, entry)) {
+            continue;
+        }
         
         if (entry.isDirectory()) {
-            copyDir(srcPath, destPath);
+            copyDir(srcPath, destPath, filter);
         } else {
             fs.copyFileSync(srcPath, destPath);
         }
@@ -129,7 +135,7 @@ function processJsFile(srcPath, destPath) {
 function processHtml(srcPath, destPath) {
     let content = fs.readFileSync(srcPath, 'utf8');
     
-    // Google Analytics 代码（格式与 docs/app 完全一致）
+    // Google Analytics 代码（格式与 Web app 构建产物完全一致）
     const GA_CODE = `  <!-- Google tag (gtag.js) -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-P4QSHKNJFM"></script>
   <script>
@@ -140,7 +146,7 @@ function processHtml(srcPath, destPath) {
     gtag('config', 'G-P4QSHKNJFM');
   </script>`;
     
-    // 正确的 Web 模式 CSP（与 docs/app/index.html 完全一致）
+    // 正确的 Web 模式 CSP（与 Web app 构建产物完全一致）
     const WEB_CSP = `default-src 'self' blob: https: data:; script-src 'self' 'unsafe-inline' 'unsafe-eval' https: blob:; style-src 'self' 'unsafe-inline' https: blob:; worker-src 'self' blob: https:; connect-src 'self' http://localhost:3333 ws://localhost:3333 https:; img-src 'self' data: blob: https: http://localhost:3333; font-src 'self' data:; frame-src 'self' blob: http://localhost:3333;`;
     
     // 1. 修改 CSP 为 Web 版本（移除 file: 协议，使用正确的端口）
@@ -198,12 +204,22 @@ async function build() {
         fs.rmSync(OUT_DIR, { recursive: true, force: true });
     }
     ensureDir(OUT_DIR);
+
+    // 复制 Pages 静态源（landing page、blog、CNAME、robots、sitemap 等）
+    if (fs.existsSync(SITE_DIR)) {
+        console.log('Copying site assets...');
+        copyDir(SITE_DIR, OUT_DIR, (srcPath, entry) => {
+            // app 是构建产物目录，不能作为源内容复制。
+            return !(entry.isDirectory() && path.basename(srcPath) === 'app');
+        });
+        console.log('  ✓ site');
+    }
     
     // 复制静态资源
-    console.log('Copying static assets...');
+    console.log('\nCopying app static assets...');
     for (const asset of STATIC_ASSETS) {
         const srcPath = path.join(SRC_DIR, asset);
-        const destPath = path.join(OUT_DIR, asset);
+        const destPath = path.join(APP_OUT_DIR, asset);
         
         if (fs.existsSync(srcPath)) {
             if (fs.statSync(srcPath).isDirectory()) {
@@ -221,7 +237,7 @@ async function build() {
     console.log('\nProcessing JS files...');
     for (const jsFile of JS_FILES) {
         const srcPath = path.join(SRC_DIR, jsFile);
-        const destPath = path.join(OUT_DIR, jsFile);
+        const destPath = path.join(APP_OUT_DIR, jsFile);
         
         if (fs.existsSync(srcPath)) {
             processJsFile(srcPath, destPath);
@@ -233,7 +249,7 @@ async function build() {
     
     // 复制图标
     const iconsDir = path.join(__dirname, '../icons');
-    const iconsDestDir = path.join(OUT_DIR, 'icons');
+    const iconsDestDir = path.join(APP_OUT_DIR, 'icons');
     if (fs.existsSync(iconsDir)) {
         copyDir(iconsDir, iconsDestDir);
         console.log('\n  ✓ icons');
@@ -241,7 +257,7 @@ async function build() {
     
     // 复制 favicon.ico 到 app 根目录
     const faviconSrc = path.join(__dirname, '../icons/icon.ico');
-    const faviconDest = path.join(OUT_DIR, 'favicon.ico');
+    const faviconDest = path.join(APP_OUT_DIR, 'favicon.ico');
     if (fs.existsSync(faviconSrc)) {
         fs.copyFileSync(faviconSrc, faviconDest);
         console.log('  ✓ favicon.ico');
@@ -249,8 +265,6 @@ async function build() {
     
     // 创建 .nojekyll 文件（用于 GitHub Pages）
     fs.writeFileSync(path.join(OUT_DIR, '.nojekyll'), '', 'utf8');
-    
-    // 注意：CNAME 不需要复制到 app 子目录，已在 docs 根目录
     
     console.log('\n✅ Web build complete!');
     console.log(`   Output: ${OUT_DIR}`);

@@ -256,10 +256,10 @@ deepseek-cowork module status
 # 构建静态文件用于 Web 部署
 npm run build:web
 
-# 检查 docs/app 是否仍与 renderer 源码同步
+# 检查 dist/app 是否仍与 renderer 源码同步
 npm run check:web-sync
 
-# 输出目录: docs/app/
+# 输出目录: dist/
 ```
 
 Web 前端会自动部署到 GitHub Pages。

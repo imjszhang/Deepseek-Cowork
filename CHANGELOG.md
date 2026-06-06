@@ -78,7 +78,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 ### Changed
 
 - Updated Claude Code detection to support both the legacy `cli.js` layout and the newer `bin/claude.exe` npm package layout.
-- Improved version syncing so the app version display is updated in both `renderer/index.html` and `docs/app/index.html`.
+- Improved version syncing so the app version display is updated in both `renderer/index.html` and `dist/app/index.html`.
 - Bumped the project version from `0.1.35` to `0.2.0`.
 - Upgraded core runtime and packaging dependencies including Electron, Electron Builder, Electron Updater, Axios, Express, Socket.IO, SQL.js, and ws.
 - Migrated server-side UUID generation from the external `uuid` package to Node.js `crypto.randomUUID()`.

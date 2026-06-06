@@ -1,5 +1,5 @@
 /**
- * 启动本地服务器访问 docs 目录（GitHub Pages）
+ * 启动本地服务器访问 dist 目录（GitHub Pages）
  * 用于本地预览 GitHub Pages 网站
  */
 
@@ -9,7 +9,7 @@ const fs = require('fs');
 const net = require('net');
 
 const DEFAULT_PORT = process.env.PORT ? parseInt(process.env.PORT) : 3000;
-const DOCS_DIR = path.join(__dirname, '../docs');
+const PAGES_DIR = path.join(__dirname, '../dist');
 
 // 检测端口是否可用
 function checkPort(port) {
@@ -43,12 +43,12 @@ function startPagesServer() {
   const app = express();
 
   // 静态文件服务
-  app.use(express.static(DOCS_DIR));
+  app.use(express.static(PAGES_DIR));
 
   // 处理 SPA 路由：所有非文件请求都返回 index.html
   // 这样可以支持 GitHub Pages 的单页应用路由
   app.get('*', (req, res, next) => {
-    const filePath = path.join(DOCS_DIR, req.path);
+    const filePath = path.join(PAGES_DIR, req.path);
     
     // 检查是否是文件请求（有扩展名）
     if (path.extname(req.path)) {
@@ -62,7 +62,7 @@ function startPagesServer() {
       }
       
       // 对于目录或不存在的情况，返回 index.html（SPA 路由）
-      const indexPath = path.join(DOCS_DIR, 'index.html');
+      const indexPath = path.join(PAGES_DIR, 'index.html');
       if (fs.existsSync(indexPath)) {
         res.sendFile(indexPath);
       } else {
@@ -76,7 +76,7 @@ function startPagesServer() {
     .then((port) => {
       const server = app.listen(port, () => {
         console.log('🚀 GitHub Pages 服务器已启动');
-        console.log(`📁 网站目录: ${DOCS_DIR}`);
+        console.log(`📁 网站目录: ${PAGES_DIR}`);
         if (port !== DEFAULT_PORT) {
           console.log(`⚠️  端口 ${DEFAULT_PORT} 已被占用，使用端口 ${port}`);
         }
