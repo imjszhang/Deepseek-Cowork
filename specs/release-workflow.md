@@ -90,21 +90,21 @@ cd ../../..
 - `CHANGELOG.md`
 - `RELEASE_NOTES.md`
 - `README.md`
-- `docs/README_CN.md`
+- `site/README_CN.md`
 
 ### 4.2 当前项目特别注意
 
 本项目除了包版本外，还要注意以下内容：
 
 - `README.md` 中公开展示的 CLI 版本号
-- `docs/README_CN.md` 中公开展示的 CLI 版本号、页面底部版本号与日期
+- `site/README_CN.md` 中公开展示的 CLI 版本号、页面底部版本号与日期
 - GitHub Release 标题与 `RELEASE_NOTES.md` 内容保持一致
 - CLI npm 包版本必须和本次计划发布的版本一致
 
 ### 4.3 建议验证命令
 
 ```powershell
-git diff -- package.json package-lock.json packages/cli/package.json packages/cli/package-lock.json CHANGELOG.md RELEASE_NOTES.md README.md docs/README_CN.md
+git diff -- package.json package-lock.json packages/cli/package.json packages/cli/package-lock.json CHANGELOG.md RELEASE_NOTES.md README.md site/README_CN.md
 ```
 
 ## 5. 在 develop 完成发布准备
@@ -285,7 +285,7 @@ npm run build:win -- --dir --config.electronVersion=40.9.2
 本项目历史上出现过 README / 文档页 / 实际包版本不一致的问题。每次 release 前后都要额外检查：
 
 - `README.md`
-- `docs/README_CN.md`
+- `site/README_CN.md`
 - `package.json`
 - `packages/cli/package.json`
 - `CHANGELOG.md`

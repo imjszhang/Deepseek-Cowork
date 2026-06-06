@@ -53,7 +53,7 @@ grep '"version"' package.json
 | 文件 | 更新位置数 | 说明 |
 |------|-----------|------|
 | `README.md` | 5 | 见下方详细列表 |
-| `docs/README_CN.md` | 6 | 见下方详细列表 |
+| `site/README_CN.md` | 6 | 见下方详细列表 |
 
 **README.md** 中需要更新的 5 处：
 1. 版本徽章 `Version-{NEW}-blue`
@@ -61,7 +61,7 @@ grep '"version"' package.json
 3. CLI 版本说明 `` deepseek-cowork@{NEW} ``
 4. 当前版本说明 `Current version: **V{NEW}**`
 
-**docs/README_CN.md** 中需要更新的 6 处：
+**site/README_CN.md** 中需要更新的 6 处：
 1. 版本徽章 `Version-{NEW}-blue`
 2. CLI 安装命令 `npm install -g deepseek-cowork@{NEW}`
 3. CLI 版本说明 `` deepseek-cowork@{NEW} ``
@@ -151,7 +151,7 @@ npm run version:major   # Major 更新
 ## 注意事项
 
 1. **版本号一致性** — 确保所有 6 个文件中的版本号完全一致
-2. **日期更新** — 更新 `docs/README_CN.md` 页面底部时，记得同时更新日期为当天
+2. **日期更新** — 更新 `site/README_CN.md` 页面底部时，记得同时更新日期为当天
 3. **构建前清理** — 每次构建前务必删除旧的 `dist` 目录，避免残留文件干扰
 4. **测试验证** — 更新后务必运行 CLI 命令验证是否正常
 5. **Git 提交** — 版本更新建议单独提交，便于版本追踪和回溯

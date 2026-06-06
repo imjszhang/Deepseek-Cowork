@@ -4,11 +4,11 @@ const path = require('path');
 const ROOT = path.join(__dirname, '..');
 
 const FILES_TO_COMPARE = [
-  ['renderer/js/app.js', 'docs/app/js/app.js'],
-  ['renderer/js/core/ApiAdapter.js', 'docs/app/js/core/ApiAdapter.js'],
-  ['renderer/js/features/explorer/ExplorerModule.js', 'docs/app/js/features/explorer/ExplorerModule.js'],
-  ['renderer/css/main.css', 'docs/app/css/main.css'],
-  ['renderer/css/utilities/responsive.css', 'docs/app/css/utilities/responsive.css']
+  ['renderer/js/app.js', 'dist/app/js/app.js'],
+  ['renderer/js/core/ApiAdapter.js', 'dist/app/js/core/ApiAdapter.js'],
+  ['renderer/js/features/explorer/ExplorerModule.js', 'dist/app/js/features/explorer/ExplorerModule.js'],
+  ['renderer/css/main.css', 'dist/app/css/main.css'],
+  ['renderer/css/utilities/responsive.css', 'dist/app/css/utilities/responsive.css']
 ];
 
 function normalize(content) {
@@ -43,7 +43,7 @@ function main() {
 
   if (mismatches.length > 0) {
     console.error('Web build output is out of sync with renderer sources.');
-    console.error('Run `npm run build:web` to refresh docs/app, then rerun this check.');
+    console.error('Run `npm run build:web` to refresh dist/app, then rerun this check.');
     console.error('');
     mismatches.forEach((mismatch) => console.error(`- ${mismatch}`));
     process.exitCode = 1;

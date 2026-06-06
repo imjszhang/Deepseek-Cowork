@@ -9,7 +9,7 @@ const path = require('path');
 const packageJsonPath = path.join(__dirname, '../package.json');
 const htmlPaths = [
   path.join(__dirname, '../renderer/index.html'),
-  path.join(__dirname, '../docs/app/index.html')
+  path.join(__dirname, '../dist/app/index.html')
 ];
 
 // 读取 package.json 获取版本号
