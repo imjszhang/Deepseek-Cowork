@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "bash",
+      "npm",
+      "git"
+    ]
+  },
+  "hooks": {
+    "on_message_submit": "scripts/email-monitor.sh check-and-respond"
+  },
+  "environment": {
+    "BERT_EMAIL": "dtrammell-bert@agentmail.to",
+    "CHIEF_EMAIL": "dtrammell-scribe@agentmail.to",
+    "MONITOR_INTERVAL": "300"
+  }
+}
